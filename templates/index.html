@@ -35,17 +35,26 @@
       <section class="grid">
         {% for article in articles %}
           <article class="card">
-            {% if article.image %}
-              <div class="card-image">
-                <img src="{{ article.image }}" alt="{{ article.title }}">
-              </div>
-            {% endif %}
+            <div class="card-image">
+              {% if article.image %}
+                <img
+                  src="{{ article.image }}"
+                  alt="{{ article.title }}"
+                  loading="lazy"
+                  onerror="handleImageError(this)"
+                >
+              {% else %}
+                <div class="fallback-text">Image not available</div>
+              {% endif %}
+            </div>
+
             <div class="card-body">
               <h2 class="card-title">
                 <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">
                   {{ article.title }}
                 </a>
               </h2>
+
               {% if article.source or article.published_at_human %}
                 <p class="card-meta">
                   {% if article.source %}<span>{{ article.source }}</span>{% endif %}
@@ -53,6 +62,7 @@
                   {% if article.published_at_human %}<span>{{ article.published_at_human }}</span>{% endif %}
                 </p>
               {% endif %}
+
               {% if article.description %}
                 <p class="card-description">{{ article.description }}</p>
               {% endif %}
@@ -68,5 +78,25 @@
       <p>Powered by NewsAPI.org</p>
     </div>
   </footer>
+
+  <script>
+    function handleImageError(img) {
+      const wrapper = img.closest('.card-image');
+      if (!wrapper) return;
+
+      // Remove broken image
+      img.remove();
+
+      // Apply fallback styles
+      wrapper.classList.add('card-image--fallback');
+
+      if (!wrapper.querySelector('.fallback-text')) {
+        const msg = document.createElement('div');
+        msg.className = 'fallback-text';
+        msg.textContent = 'Image not available';
+        wrapper.appendChild(msg);
+      }
+    }
+  </script>
 </body>
 </html>

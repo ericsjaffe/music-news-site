@@ -1,15 +1,4 @@
-:root {
-  --bg: #05040a;
-  --bg-card: #111526;
-  --accent: #ff3b6a;
-  --accent-soft: rgba(255, 59, 106, 0.12);
-  --text: #f4f4f8;
-  --muted: #a7adc3;
-  --border: #262b3f;
-  --radius-lg: 16px;
-  --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.45);
-}
-
+/* Basic page styling */
 *,
 *::before,
 *::after {
@@ -18,178 +7,202 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top, #141b3f 0, var(--bg) 45%, #020109 100%);
-  color: var(--text);
   min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #1e293b, #020617);
+  color: #e5e7eb;
 }
 
+/* Layout */
 .container {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1.25rem;
+  padding: 1.5rem;
 }
 
 /* Header */
-
 .site-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  padding: 1.5rem 0 1.75rem;
-  backdrop-filter: blur(18px);
-  background: linear-gradient(135deg, rgba(9, 10, 22, 0.9), rgba(10, 7, 23, 0.9));
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 10;
+  background: linear-gradient(to right, #020617, #020617e6);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(16px);
 }
 
 .header-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
   justify-content: space-between;
+  gap: 1rem;
 }
 
 .site-header h1 {
-  font-size: 1.6rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-/* Search */
-
+/* Search form */
 .search-form {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.search-form input {
-  border-radius: 999px;
-  border: 1px solid var(--border);
+.search-form input[type="text"] {
   padding: 0.6rem 0.9rem;
-  background: rgba(2, 3, 12, 0.9);
-  color: var(--text);
-  min-width: 210px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e5e7eb;
+  min-width: 260px;
 }
 
 .search-form input::placeholder {
-  color: var(--muted);
+  color: #9ca3af;
 }
 
 .search-form button {
+  padding: 0.6rem 1.3rem;
   border-radius: 999px;
   border: none;
-  padding: 0.6rem 1.1rem;
-  font-weight: 600;
   cursor: pointer;
-  background: linear-gradient(135deg, var(--accent), #ff7ba6);
-  color: #0b0610;
-  box-shadow: 0 10px 25px rgba(255, 59, 106, 0.45);
+  font-weight: 600;
+  background: linear-gradient(135deg, #fb7185, #ec4899);
+  color: white;
+  box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
 }
 
-.search-form button:hover {
-  opacity: 0.92;
-  transform: translateY(-1px);
+/* Alerts */
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-/* Grid */
-
-main {
-  padding: 1.75rem 0 2.5rem;
+.alert-error {
+  background: rgba(127, 29, 29, 0.6);
+  border: 1px solid rgba(239, 68, 68, 0.7);
 }
 
+/* Grid of cards */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
 }
 
-/* Card */
-
+/* Cards */
 .card {
-  background: radial-gradient(circle at top left, rgba(255, 59, 106, 0.12), rgba(11, 10, 30, 0.98));
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  box-shadow: var(--shadow-soft);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: radial-gradient(circle at top left, #111827, #020617);
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.85),
+    0 0 0 1px rgba(148, 163, 184, 0.12);
+  color: #f9fafb;
 }
 
-.card-image img {
+/* Image wrapper: keeps consistent height even on failure */
+.card-image {
+  position: relative;
   width: 100%;
-  display: block;
-  object-fit: cover;
-  max-height: 190px;
+  padding-top: 56.25%; /* 16:9 aspect ratio */
+  background: #020617;
+  overflow: hidden;
 }
 
+/* Normal image style */
+.card-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Fallback state when image is missing / broken */
+.card-image--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0; /* remove aspect ratio padding */
+  height: 220px;
+  background: radial-gradient(circle at top, #1f2937, #020617);
+}
+
+/* Fallback text */
+.fallback-text {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+/* Card body */
 .card-body {
-  padding: 1rem 1.1rem 1.3rem;
+  padding: 1.2rem 1.4rem 1.4rem;
 }
 
 .card-title {
-  font-size: 1.05rem;
   margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .card-title a {
-  color: var(--text);
+  color: inherit;
   text-decoration: none;
 }
 
 .card-title a:hover {
-  color: var(--accent);
+  text-decoration: underline;
 }
 
 .card-meta {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 .card-description {
+  margin: 0;
   font-size: 0.9rem;
-  color: #d7daf1;
-}
-
-/* Alerts */
-
-.alert {
-  padding: 0.85rem 1rem;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-}
-
-.alert-error {
-  background: rgba(255, 67, 98, 0.1);
-  border: 1px solid rgba(255, 67, 98, 0.6);
-  color: #ffc9d6;
+  color: #e5e7eb;
 }
 
 /* Footer */
-
 .site-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 1.2rem 0 1.6rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 1rem 0 2rem;
+  text-align: center;
   font-size: 0.85rem;
-  color: var(--muted);
+  color: #9ca3af;
 }
 
 /* Responsive tweaks */
-
 @media (max-width: 640px) {
-  .header-inner {
-    flex-direction: column;
-    align-items: flex-start;
+  .site-header h1 {
+    font-size: 1.4rem;
   }
+
   .search-form {
     width: 100%;
   }
-  .search-form input {
+
+  .search-form input[type="text"] {
     flex: 1;
     min-width: 0;
   }

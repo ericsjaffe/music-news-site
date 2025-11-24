@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Latest Music News</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Latest Music News</h1>
+      <form method="get" action="/" class="search-form">
+        <input
+          type="text"
+          name="q"
+          placeholder="Search by artist, genre, album…"
+          value="{{ query or '' }}"
+        >
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if error %}
+      <div class="alert alert-error">
+        <strong>Error:</strong> {{ error }}
+      </div>
+    {% endif %}
+
+    {% if not articles %}
+      <p>No articles found. Try a different search term like “Taylor Swift”, “hip-hop”, or “rock”.</p>
+    {% else %}
+      <section class="grid">
+        {% for article in articles %}
+          <article class="card">
+            {% if article.image %}
+              <div class="card-image">
+                <img src="{{ article.image }}" alt="{{ article.title }}">
+              </div>
+            {% endif %}
+            <div class="card-body">
+              <h2 class="card-title">
+                <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">
+                  {{ article.title }}
+                </a>
+              </h2>
+              {% if article.source or article.published_at_human %}
+                <p class="card-meta">
+                  {% if article.source %}<span>{{ article.source }}</span>{% endif %}
+                  {% if article.source and article.published_at_human %} • {% endif %}
+                  {% if article.published_at_human %}<span>{{ article.published_at_human }}</span>{% endif %}
+                </p>
+              {% endif %}
+              {% if article.description %}
+                <p class="card-description">{{ article.description }}</p>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+    {% endif %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Powered by NewsAPI.org</p>
+    </div>
+  </footer>
+</body>
+</html>

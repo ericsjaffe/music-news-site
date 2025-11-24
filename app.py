@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-NEWSAPI_KEY = os.getenv("c327de8ff2ef4c608528adfb805963a6")
+NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 
 def fetch_music_news(query=None, page_size=30):
     """

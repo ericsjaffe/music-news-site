@@ -2,6 +2,7 @@ import re
 from html import unescape
 from datetime import datetime
 from typing import List, Dict, Any
+from urllib.parse import quote_plus
 
 import feedparser
 from flask import Flask, render_template, request
@@ -10,7 +11,7 @@ from dedupe import dedupe_articles_fuzzy  # reuse your existing dedupe helper
 
 app = Flask(__name__)
 
-# Blabbermouth main RSS feed
+# Loudwire main RSS feed
 LOUDWIRE_LATEST_FEED = "http://loudwire.com/category/news/feed"
 
 # Default image when a story has no usable image
@@ -101,8 +102,7 @@ def extract_image(entry: Dict[str, Any]) -> str:
 
 
 def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict[str, Any]]:
-    """Fetch latest heavy music news from Blabbermouth RSS."""
-        from urllib.parse import quote_plus
+    """Fetch latest heavy music news from Loudwire RSS or search."""
     q_raw = (query or "").strip()
     if q_raw:
         feed_url = f"https://loudwire.com/?s={quote_plus(q_raw)}&feed=rss2"
@@ -113,8 +113,8 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
     # Only treat as fatal if there are no entries at all
     if not getattr(feed, "entries", None):
         if getattr(feed, "bozo", False):
-            raise RuntimeError(f"Could not fetch Blabbermouth RSS feed: {feed.bozo_exception}")
-        raise RuntimeError("Blabbermouth RSS feed returned no entries")
+            raise RuntimeError(f"Could not fetch Loudwire RSS feed: {feed.bozo_exception}")
+        raise RuntimeError("Loudwire RSS feed returned no entries")
 
     entries = feed.entries
     articles: List[Dict[str, Any]] = []
@@ -147,7 +147,7 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
                 "description": summary_clean,
                 "url": link,
                 "image": image_url,
-                "source": "Blabbermouth.net",
+                "source": "Loudwire",
                 "published_at": published_iso,
             }
         )

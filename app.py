@@ -11,7 +11,7 @@ from dedupe import dedupe_articles_fuzzy  # reuse your existing dedupe helper
 app = Flask(__name__)
 
 # Blabbermouth main RSS feed
-BLABBERMOUTH_RSS_URL = "http://loudwire.com/category/news/feed"
+LOUDWIRE_LATEST_FEED = "http://loudwire.com/category/news/feed"
 
 # Default image when a story has no usable image
 DEFAULT_IMAGE_URL = "/static/default-music.png"
@@ -102,7 +102,13 @@ def extract_image(entry: Dict[str, Any]) -> str:
 
 def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict[str, Any]]:
     """Fetch latest heavy music news from Blabbermouth RSS."""
-    feed = feedparser.parse(BLABBERMOUTH_RSS_URL)
+        from urllib.parse import quote_plus
+    q_raw = (query or "").strip()
+    if q_raw:
+        feed_url = f"https://loudwire.com/?s={quote_plus(q_raw)}&feed=rss2"
+    else:
+        feed_url = LOUDWIRE_LATEST_FEED
+    feed = feedparser.parse(feed_url)
 
     # Only treat as fatal if there are no entries at all
     if not getattr(feed, "entries", None):

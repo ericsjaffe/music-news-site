@@ -102,13 +102,10 @@ def extract_image(entry: Dict[str, Any]) -> str:
 
 
 def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict[str, Any]]:
-    """Fetch latest heavy music news from Loudwire RSS or search."""
-    q_raw = (query or "").strip()
-    if q_raw:
-        feed_url = f"https://loudwire.com/?s={quote_plus(q_raw)}&feed=rss2"
-    else:
-        feed_url = LOUDWIRE_LATEST_FEED
-    feed = feedparser.parse(feed_url)
+    """Fetch latest heavy music news from Loudwire RSS.
+    Search is done locally over the latest feed items (title + summary).
+    """
+    feed = feedparser.parse(LOUDWIRE_LATEST_FEED)
 
     # Only treat as fatal if there are no entries at all
     if not getattr(feed, "entries", None):
@@ -158,6 +155,7 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
     # De-duplicate similar headlines, just in case
     articles = dedupe_articles_fuzzy(articles, threshold=0.85)
     return articles
+
 
 
 @app.route("/")

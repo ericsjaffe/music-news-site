@@ -4,27 +4,86 @@ from datetime import datetime, timedelta
 import requests
 from flask import Flask, render_template, request
 
-from dedupe import dedupe_articles_fuzzy  # <-- NEW: fuzzy dedupe for near-identical headlines
+from dedupe import dedupe_articles_fuzzy  # fuzzy dedupe for near-identical headlines
 
 app = Flask(__name__)
 
 # Read API key from environment
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 
-# Words that strongly suggest the article is about music
-MUSIC_KEYWORDS = [
-    "music", "song", "single", "album", "ep", "lp", "track", "tracks",
-    "mixtape", "remix", "setlist", "tour", "world tour", "concert",
-    "gig", "festival", "band", "rapper", "rap", "hip-hop", "hip hop",
-    "r&b", "rnb", "pop star", "dj", "producer", "singer", "vocalist",
-    "grammy", "grammys", "billboard", "chart", "top 40"
+# Strongly music-specific keywords (used for filtering)
+MUSIC_KEYWORDS_STRONG = [
+    "music",
+    "new music",
+    "song",
+    "new song",
+    "single",
+    "new single",
+    "album",
+    "new album",
+    "ep",
+    "lp",
+    "track",
+    "tracks",
+    "mixtape",
+    "remix",
+    "music video",
+    "music festival",
+    "setlist",
+    "concert",
+    "live show",
+    "headline show",
+    "world tour",
+    "tour dates",
+    "grammy",
+    "grammys",
+    "billboard",
+    "billboard hot 100",
+    "chart",
+    "top 40",
+    "dj",
+    "rapper",
+    "band",
+    "singer",
+    "vocalist",
 ]
+
+# Words that usually indicate a non-music story even if "tour" or similar appears
+NON_MUSIC_BLOCKLIST = [
+    "pga",
+    "golf",
+    "nfl",
+    "nba",
+    "mlb",
+    "nhl",
+    "premier league",
+    "bundesliga",
+    "serie a",
+    "la liga",
+    "f1",
+    "formula 1",
+    "grand prix",
+    "nascar",
+    "motogp",
+    "cricket",
+    "rugby",
+    "tennis",
+    "olympics",
+    "world cup",
+]
+
+# Default image used when a story has no image
+DEFAULT_IMAGE_URL = "/static/default-music.png"
 
 
 def looks_like_music_article(article: dict) -> bool:
     """
-    Return True only if the article's text clearly looks music-related.
-    We check the title + description for any of the MUSIC_KEYWORDS.
+    Return True only if the article clearly looks music-related.
+
+    Strategy:
+    - Work with lower‑cased title + description.
+    - Immediately reject if any NON_MUSIC_BLOCKLIST term appears (sports, etc).
+    - Require at least one MUSIC_KEYWORDS_STRONG term.
     """
     title = (article.get("title") or "").lower()
     desc = (article.get("description") or "").lower()
@@ -33,7 +92,12 @@ def looks_like_music_article(article: dict) -> bool:
     if not text.strip():
         return False
 
-    return any(keyword in text for keyword in MUSIC_KEYWORDS)
+    # Filter out obvious non‑music topics (sports, etc.)
+    if any(block in text for block in NON_MUSIC_BLOCKLIST):
+        return False
+
+    # Must contain at least one strong music keyword
+    return any(keyword in text for keyword in MUSIC_KEYWORDS_STRONG)
 
 
 def fetch_music_news(query: str | None = None, page_size: int = 30) -> list[dict]:
@@ -46,11 +110,12 @@ def fetch_music_news(query: str | None = None, page_size: int = 30) -> list[dict
 
     base_url = "https://newsapi.org/v2/everything"
 
-    # Default query focused on music content
+    # Default query focused on explicitly music-related content
     default_query = (
-        '"new album" OR "new single" OR "music video" OR '
-        'song OR album OR artist OR band OR rapper OR singer OR '
-        '"music festival" OR "world tour"'
+        '"new album" OR "new single" OR "new song" OR "music video" OR '
+        '"debut album" OR "EP" OR "LP" OR "mixtape" OR '
+        '"music festival" OR "world tour" OR concert OR "setlist" OR '
+        'Grammy OR "Billboard Hot 100"'
     )
     final_query = query if query else default_query
 
@@ -76,18 +141,19 @@ def fetch_music_news(query: str | None = None, page_size: int = 30) -> list[dict
 
     cleaned: list[dict] = []
     for a in filtered:
+        image_url = a.get("urlToImage") or DEFAULT_IMAGE_URL
         cleaned.append(
             {
                 "title": a.get("title"),
                 "description": a.get("description"),
                 "url": a.get("url"),
-                "image": a.get("urlToImage"),
+                "image": image_url,
                 "source": (a.get("source") or {}).get("name"),
                 "published_at": a.get("publishedAt"),
             }
         )
 
-    # NEW: deduplicate very similar headlines (e.g. multiple Donald Glover stroke stories)
+    # Deduplicate very similar headlines (e.g. multiple versions of same story)
     cleaned = dedupe_articles_fuzzy(cleaned, threshold=0.86)
 
     return cleaned

@@ -51,13 +51,12 @@
                 </a>
               </h2>
 
-              {% if article.source or article.published_at_human %}
-                <p class="card-meta">
-                  {% if article.source %}<span>{{ article.source }}</span>{% endif %}
-                  {% if article.source and article.published_at_human %} • {% endif %}
-                  {% if article.published_at_human %}<span>{{ article.published_at_human }}</span>{% endif %}
-                </p>
-              {% endif %}
+           {% if article.published_at_human %}
+              <p class="card-meta">
+                <span>{{ article.published_at_human }}</span>
+              </p>
+            {% endif %}
+
 
               {% if article.description %}
                 <p class="card-description">{{ article.description }}</p>

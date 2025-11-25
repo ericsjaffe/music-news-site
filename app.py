@@ -1,209 +1,136 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import List, Dict, Any
 
-import requests
+import feedparser
 from flask import Flask, render_template, request
 
-from dedupe import dedupe_articles, dedupe_articles_fuzzy
+from dedupe import dedupe_articles_fuzzy  # reuse your existing dedupe helper
 
 app = Flask(__name__)
 
-# Read API key from environment
-NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
-
-# Core music words that must be present somewhere in the title/description
-MUSIC_CORE_KEYWORDS = [
-    "music",
-    "song",
-    "single",
-    "new single",
-    "album",
-    "new album",
-    "ep",
-    "e.p.",
-    "lp",
-    "track",
-    "tracks",
-    "mixtape",
-    "playlist",
-    "music video",
-    "soundtrack",
-    "studio version",
-    "acoustic version",
-]
-
-# Extra music-ish context terms that we only accept if a core word is also present
-MUSIC_CONTEXT_KEYWORDS = [
-    "tour",
-    "world tour",
-    "tour dates",
-    "live show",
-    "headline show",
-    "setlist",
-    "concert",
-    "festival",
-    "headline slot",
-    "dj",
-    "rapper",
-    "band",
-    "singer",
-    "vocalist",
-    "producer",
-    "grammy",
-    "grammys",
-    "billboard",
-    "billboard hot 100",
-    "chart",
-    "top 40",
-    "record deal",
-    "label",
-]
-
-# Words that usually indicate a non-music story even if words like "tour" appear
-NON_MUSIC_BLOCKLIST = [
-    "pga",
-    "golf",
-    "nfl",
-    "nba",
-    "mlb",
-    "nhl",
-    "premier league",
-    "bundesliga",
-    "serie a",
-    "la liga",
-    "f1",
-    "formula 1",
-    "grand prix",
-    "nascar",
-    "motogp",
-    "cricket",
-    "rugby",
-    "tennis",
-    "olympics",
-    "world cup",
-    "mls",
-    "college football",
-    "college basketball",
-]
+# Blabbermouth RSS feed (FeedBurner URL they advertise)
+BLABBERMOUTH_RSS_URL = "http://feeds.feedburner.com/blabbermouth"
 
 # Default image when a story has no usable image
 DEFAULT_IMAGE_URL = "/static/default-music.png"
 
 
-def looks_like_music_article(article: dict) -> bool:
+def parse_published(entry: Dict[str, Any]) -> str | None:
+    """Normalize published/updated fields from the RSS entry into ISO 8601 string.
+    If we can't parse, just return the raw string.
     """
-    Return True only if the article clearly looks music-related.
+    raw = entry.get("published") or entry.get("updated")
+    if not raw:
+        return None
 
-    Rules (aggressive filter):
-    1. Combine title + description, lowercase.
-    2. If any NON_MUSIC_BLOCKLIST term appears -> reject.
-    3. Require at least one MUSIC_CORE_KEYWORD.
-       (So generic "tour" or "concert" alone is NOT enough.)
+    # feedparser often gives 'published_parsed' as a time.struct_time; we convert to ISO.
+    if entry.get("published_parsed"):
+        try:
+            dt = datetime(*entry.published_parsed[:6])
+            return dt.isoformat() + "Z"
+        except Exception:
+            pass
+
+    return raw
+
+
+def extract_image(entry: Dict[str, Any]) -> str:
+    """Try a few common RSS media fields to find an image; fall back to default."""
+    # 1) media:content or media:thumbnail
+    media = entry.get("media_content") or entry.get("media_thumbnail")
+    if media and isinstance(media, list):
+        url = media[0].get("url")
+        if url:
+            return url
+
+    # 2) enclosures (e.g. <enclosure url="..." type="image/jpeg">)
+    enclosures = entry.get("enclosures")
+    if enclosures and isinstance(enclosures, list):
+        for enc in enclosures:
+            url = enc.get("href") or enc.get("url")
+            if url:
+                return url
+
+    # 3) fall back
+    return DEFAULT_IMAGE_URL
+
+
+def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict[str, Any]]:
     """
-    title = (article.get("title") or "").lower()
-    desc = (article.get("description") or "").lower()
-    text = f"{title} {desc}"
+    Fetch latest heavy metal / hard rock news from Blabbermouth RSS.
 
-    if not text.strip():
-        return False
-
-    # Hard filter: exclude obvious non-music topics
-    if any(block in text for block in NON_MUSIC_BLOCKLIST):
-        return False
-
-    # Must contain at least one core music word
-    if any(core in text for core in MUSIC_CORE_KEYWORDS):
-        return True
-
-    # If nothing core appeared, treat it as non-music even if it mentions tours etc.
-    return False
-
-
-def fetch_music_news(query: str | None = None, page_size: int = 40) -> list[dict]:
+    - We pull the feed once via feedparser.
+    - Optionally filter results using a simple case-insensitive search on title + summary.
+    - Normalize into the same article shape your template expects.
+    - Apply fuzzy dedupe to avoid near-identical repeats.
     """
-    Fetch latest music-related news using NewsAPI 'everything' endpoint,
-    then filter to keep only clearly music-related articles and de-duplicate.
-    """
-    if not NEWSAPI_KEY:
-        raise RuntimeError("NEWSAPI_KEY environment variable is not set")
+    feed = feedparser.parse(BLABBERMOUTH_RSS_URL)
 
-    base_url = "https://newsapi.org/v2/everything"
+    if feed.bozo:
+        # feed.bozo_exception holds the underlying error if you want to log it
+        raise RuntimeError(f"Failed to parse Blabbermouth RSS feed: {feed.bozo_exception}")
 
-    # Default query focused on explicitly music-related content.
-    # We keep it fairly broad but still clearly music-ish.
-    default_query = (
-        '"new album" OR "new single" OR "new song" OR "music video" OR '
-        '"debut album" OR "EP" OR "LP" OR mixtape OR '
-        '"music festival" OR "world tour" OR concert OR setlist OR '
-        'Grammy OR "Billboard Hot 100" OR "new track" OR "studio album"'
-    )
-    final_query = query if query else default_query
+    entries = feed.entries or []
 
-    # Only look at the last 7 days
-    from_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
+    articles: List[Dict[str, Any]] = []
 
-    params = {
-        "q": final_query,
-        "from": from_date,
-        "sortBy": "publishedAt",
-        "language": "en",
-        "pageSize": page_size,
-        "apiKey": NEWSAPI_KEY,
-    }
+    q_norm = (query or "").strip().lower()
+    for entry in entries:
+        title = entry.get("title", "")
+        summary = entry.get("summary", "")
+        link = entry.get("link")
+        published_iso = parse_published(entry)
+        image_url = extract_image(entry)
 
-    resp = requests.get(base_url, params=params, timeout=10)
-    resp.raise_for_status()
-    data = resp.json()
+        # Optional search filter: if q is provided, require it in title or summary
+        if q_norm:
+            haystack = f"{title} {summary}".lower()
+            if q_norm not in haystack:
+                continue
 
-    raw_articles = data.get("articles", [])
-
-    # First, filter to only obviously music-related articles
-    filtered = [a for a in raw_articles if looks_like_music_article(a)]
-
-    # Clean + normalize shape
-    cleaned: list[dict] = []
-    for a in filtered:
-        image_url = a.get("urlToImage") or DEFAULT_IMAGE_URL
-        cleaned.append(
+        articles.append(
             {
-                "title": a.get("title") or "",
-                "description": a.get("description") or "",
-                "url": a.get("url"),
+                "title": title,
+                "description": summary,
+                "url": link,
                 "image": image_url,
-                "source": (a.get("source") or {}).get("name"),
-                "published_at": a.get("publishedAt"),
+                "source": "Blabbermouth.net",
+                "published_at": published_iso,
             }
         )
 
-    # 1) Exact-title dedupe
-    cleaned = dedupe_articles(cleaned)
+        if len(articles) >= page_size:
+            break
 
-    # 2) Fuzzy dedupe to collapse slightly different versions of same headline
-    cleaned = dedupe_articles_fuzzy(cleaned, threshold=0.80)
+    # De-duplicate by similar title/description (usually not necessary with a single feed,
+    # but it helps if Blabbermouth republishes slightly tweaked headlines)
+    articles = dedupe_articles_fuzzy(articles, threshold=0.85)
 
-    return cleaned
+    return articles
 
 
 @app.route("/")
 def index():
     """
-    Home page: shows latest music news, optionally filtered by a search term (?q=...).
+    Home page: shows latest heavy music news from Blabbermouth, optionally
+    filtered by a search term (?q=...).
     """
-    q = request.args.get("q")  # e.g. /?q=hip-hop
-    articles: list[dict] = []
+    q = request.args.get("q")  # e.g. /?q=metallica
+    articles: List[Dict[str, Any]] = []
     error: str | None = None
 
     try:
         articles = fetch_music_news(query=q)
     except Exception as e:
-        # Surface any error (like missing API key) in the UI
         error = str(e)
 
     # Format timestamps nicely for display
     for a in articles:
         if a["published_at"]:
             try:
-                dt = datetime.fromisoformat(a["published_at"].replace("Z", "+00:00"))
+                # If we stored ISO 8601 with 'Z'
+                dt = datetime.fromisoformat(str(a["published_at"]).replace("Z", "+00:00"))
                 a["published_at_human"] = dt.strftime("%b %d, %Y %I:%M %p")
             except Exception:
                 a["published_at_human"] = a["published_at"]

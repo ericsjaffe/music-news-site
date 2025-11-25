@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import requests
 from flask import Flask, render_template, request
 
+from dedupe import dedupe_articles_fuzzy  # <-- NEW: fuzzy dedupe for near-identical headlines
+
 app = Flask(__name__)
 
 # Read API key from environment
@@ -84,6 +86,10 @@ def fetch_music_news(query: str | None = None, page_size: int = 30) -> list[dict
                 "published_at": a.get("publishedAt"),
             }
         )
+
+    # NEW: deduplicate very similar headlines (e.g. multiple Donald Glover stroke stories)
+    cleaned = dedupe_articles_fuzzy(cleaned, threshold=0.86)
+
     return cleaned
 
 

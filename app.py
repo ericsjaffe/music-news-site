@@ -9,8 +9,8 @@ from dedupe import dedupe_articles_fuzzy  # reuse your existing dedupe helper
 
 app = Flask(__name__)
 
-# Blabbermouth RSS feed (FeedBurner URL they advertise)
-BLABBERMOUTH_RSS_URL = "http://feeds.feedburner.com/blabbermouth"
+# Use Blabbermouth's main feed instead of the old FeedBurner URL
+BLABBERMOUTH_RSS_URL = "https://blabbermouth.net/feed"
 
 # Default image when a story has no usable image
 DEFAULT_IMAGE_URL = "/static/default-music.png"
@@ -60,18 +60,22 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
     """
     Fetch latest heavy metal / hard rock news from Blabbermouth RSS.
 
-    - We pull the feed once via feedparser.
-    - Optionally filter results using a simple case-insensitive search on title + summary.
+    - Pull the feed with feedparser.
+    - Optionally filter by a simple case-insensitive search on title + summary.
     - Normalize into the same article shape your template expects.
     - Apply fuzzy dedupe to avoid near-identical repeats.
     """
     feed = feedparser.parse(BLABBERMOUTH_RSS_URL)
 
-    if feed.bozo:
-        # feed.bozo_exception holds the underlying error if you want to log it
-        raise RuntimeError(f"Failed to parse Blabbermouth RSS feed: {feed.bozo_exception}")
+    # Blabbermouth's feed sometimes has minor XML issues. feed.bozo=True just means
+    # the parser saw *something* odd, but there may still be perfectly good entries.
+    # Only error out if we truly have no entries at all.
+    if not getattr(feed, "entries", None):
+        if getattr(feed, "bozo", False):
+            raise RuntimeError(f"Could not fetch Blabbermouth RSS feed: {feed.bozo_exception}")
+        raise RuntimeError("Blabbermouth RSS feed returned no entries")
 
-    entries = feed.entries or []
+    entries = feed.entries
 
     articles: List[Dict[str, Any]] = []
 

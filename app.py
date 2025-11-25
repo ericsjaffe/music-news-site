@@ -11,7 +11,7 @@ from dedupe import dedupe_articles_fuzzy  # reuse your existing dedupe helper
 app = Flask(__name__)
 
 # Blabbermouth main RSS feed
-BLABBERMOUTH_RSS_URL = "https://blabbermouth.net/feed"
+BLABBERMOUTH_RSS_URL = "http://www.blabbermouth.net/feed.rss"
 
 # Default image when a story has no usable image
 DEFAULT_IMAGE_URL = "/static/default-music.png"

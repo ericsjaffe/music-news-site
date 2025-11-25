@@ -36,16 +36,12 @@
         {% for article in articles %}
           <article class="card">
             <div class="card-image">
-              {% if article.image %}
-                <img
-                  src="{{ article.image }}"
-                  alt="{{ article.title }}"
-                  loading="lazy"
-                  onerror="handleImageError(this)"
-                >
-              {% else %}
-                <div class="fallback-text">Image not available</div>
-              {% endif %}
+              <img
+                src="{{ article.image or url_for('static', filename='default-music.png') }}"
+                alt="{{ article.title }}"
+                loading="lazy"
+                onerror="this.onerror=null; this.src='{{ url_for('static', filename='default-music.png') }}';"
+              >
             </div>
 
             <div class="card-body">
@@ -78,25 +74,5 @@
       <p>Powered by NewsAPI.org</p>
     </div>
   </footer>
-
-  <script>
-    function handleImageError(img) {
-      const wrapper = img.closest('.card-image');
-      if (!wrapper) return;
-
-      // Remove broken image
-      img.remove();
-
-      // Apply fallback styles
-      wrapper.classList.add('card-image--fallback');
-
-      if (!wrapper.querySelector('.fallback-text')) {
-        const msg = document.createElement('div');
-        msg.className = 'fallback-text';
-        msg.textContent = 'Image not available';
-        wrapper.appendChild(msg);
-      }
-    }
-  </script>
 </body>
 </html>

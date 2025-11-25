@@ -33,18 +33,19 @@ def parse_published(entry: Dict[str, Any]) -> str | None:
     return raw
 
 
-def image_from_html(summary_html: str) -> str | None:
-    """Try to pull the first <img src="..."> URL out of the HTML summary."""
-    if not summary_html:
+def image_from_html(html: str) -> str | None:
+    """Pull the first <img src='...'> or <img src="..."> URL out of HTML."""
+    if not html:
         return None
-    match = re.search(r'<img[^>]+src="([^"]+)"', summary_html, flags=re.IGNORECASE)
+    # handle both single and double quotes
+    match = re.search(r'<img[^>]+src=[\'\"]([^\'\"]+)[\'\"]', html, flags=re.IGNORECASE)
     if match:
         return match.group(1)
     return None
 
 
 def clean_html_summary(summary_html: str) -> str:
-    """Strip HTML tags out of the RSS summary and collapse whitespace."""
+    """Strip HTML tags out of the RSS summary/content and collapse whitespace."""
     if not summary_html:
         return ""
     # Remove all tags
@@ -58,20 +59,36 @@ def clean_html_summary(summary_html: str) -> str:
 
 def extract_image(entry: Dict[str, Any]) -> str:
     """Try multiple locations to find a good image URL; fall back to default."""
-    # 0) Some Blabbermouth items put an <img> in the summary HTML
+    # 0) WordPress-style feeds often store HTML in content[0].value
+    content_list = entry.get("content") or []
+    if content_list and isinstance(content_list, list):
+        value = content_list[0].get("value") or ""
+        html_img = image_from_html(value)
+        if html_img:
+            return html_img
+
+    # 1) summary_detail.value
+    summary_detail = entry.get("summary_detail") or {}
+    if isinstance(summary_detail, dict):
+        html = summary_detail.get("value") or ""
+        html_img = image_from_html(html)
+        if html_img:
+            return html_img
+
+    # 2) plain summary
     summary_html = entry.get("summary") or ""
     html_img = image_from_html(summary_html)
     if html_img:
         return html_img
 
-    # 1) media:content or media:thumbnail
+    # 3) media:content or media:thumbnail
     media = entry.get("media_content") or entry.get("media_thumbnail")
     if media and isinstance(media, list):
         url = media[0].get("url")
         if url:
             return url
 
-    # 2) enclosures (e.g. <enclosure url="..." type="image/jpeg">)
+    # 4) enclosures (e.g. <enclosure url="..." type="image/jpeg">)
     enclosures = entry.get("enclosures")
     if enclosures and isinstance(enclosures, list):
         for enc in enclosures:
@@ -79,7 +96,7 @@ def extract_image(entry: Dict[str, Any]) -> str:
             if url:
                 return url
 
-    # 3) fall back
+    # 5) fall back
     return DEFAULT_IMAGE_URL
 
 
@@ -99,9 +116,15 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
     q_norm = (query or "").strip().lower()
 
     for entry in entries:
-        raw_summary = entry.get("summary", "")
+        # Prefer full content HTML if available for description text
+        content_list = entry.get("content") or []
+        if content_list and isinstance(content_list, list):
+            raw_html = content_list[0].get("value") or ""
+        else:
+            raw_html = entry.get("summary", "")
+
         title = entry.get("title", "")
-        summary_clean = clean_html_summary(raw_summary)
+        summary_clean = clean_html_summary(raw_html)
         link = entry.get("link")
         published_iso = parse_published(entry)
         image_url = extract_image(entry)

@@ -4,51 +4,62 @@ from datetime import datetime, timedelta
 import requests
 from flask import Flask, render_template, request
 
-from dedupe import dedupe_articles_fuzzy  # fuzzy dedupe for near-identical headlines
+from dedupe import dedupe_articles, dedupe_articles_fuzzy
 
 app = Flask(__name__)
 
 # Read API key from environment
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 
-# Strongly music-specific keywords (used for filtering)
-MUSIC_KEYWORDS_STRONG = [
+# Core music words that must be present somewhere in the title/description
+MUSIC_CORE_KEYWORDS = [
     "music",
-    "new music",
     "song",
-    "new song",
     "single",
     "new single",
     "album",
     "new album",
     "ep",
+    "e.p.",
     "lp",
     "track",
     "tracks",
     "mixtape",
-    "remix",
+    "playlist",
     "music video",
-    "music festival",
-    "setlist",
-    "concert",
-    "live show",
-    "headline show",
+    "soundtrack",
+    "studio version",
+    "acoustic version",
+]
+
+# Extra music-ish context terms that we only accept if a core word is also present
+MUSIC_CONTEXT_KEYWORDS = [
+    "tour",
     "world tour",
     "tour dates",
+    "live show",
+    "headline show",
+    "setlist",
+    "concert",
+    "festival",
+    "headline slot",
+    "dj",
+    "rapper",
+    "band",
+    "singer",
+    "vocalist",
+    "producer",
     "grammy",
     "grammys",
     "billboard",
     "billboard hot 100",
     "chart",
     "top 40",
-    "dj",
-    "rapper",
-    "band",
-    "singer",
-    "vocalist",
+    "record deal",
+    "label",
 ]
 
-# Words that usually indicate a non-music story even if "tour" or similar appears
+# Words that usually indicate a non-music story even if words like "tour" appear
 NON_MUSIC_BLOCKLIST = [
     "pga",
     "golf",
@@ -70,9 +81,12 @@ NON_MUSIC_BLOCKLIST = [
     "tennis",
     "olympics",
     "world cup",
+    "mls",
+    "college football",
+    "college basketball",
 ]
 
-# Default image used when a story has no image
+# Default image when a story has no usable image
 DEFAULT_IMAGE_URL = "/static/default-music.png"
 
 
@@ -80,10 +94,11 @@ def looks_like_music_article(article: dict) -> bool:
     """
     Return True only if the article clearly looks music-related.
 
-    Strategy:
-    - Work with lower‑cased title + description.
-    - Immediately reject if any NON_MUSIC_BLOCKLIST term appears (sports, etc).
-    - Require at least one MUSIC_KEYWORDS_STRONG term.
+    Rules (aggressive filter):
+    1. Combine title + description, lowercase.
+    2. If any NON_MUSIC_BLOCKLIST term appears -> reject.
+    3. Require at least one MUSIC_CORE_KEYWORD.
+       (So generic "tour" or "concert" alone is NOT enough.)
     """
     title = (article.get("title") or "").lower()
     desc = (article.get("description") or "").lower()
@@ -92,33 +107,39 @@ def looks_like_music_article(article: dict) -> bool:
     if not text.strip():
         return False
 
-    # Filter out obvious non‑music topics (sports, etc.)
+    # Hard filter: exclude obvious non-music topics
     if any(block in text for block in NON_MUSIC_BLOCKLIST):
         return False
 
-    # Must contain at least one strong music keyword
-    return any(keyword in text for keyword in MUSIC_KEYWORDS_STRONG)
+    # Must contain at least one core music word
+    if any(core in text for core in MUSIC_CORE_KEYWORDS):
+        return True
+
+    # If nothing core appeared, treat it as non-music even if it mentions tours etc.
+    return False
 
 
-def fetch_music_news(query: str | None = None, page_size: int = 30) -> list[dict]:
+def fetch_music_news(query: str | None = None, page_size: int = 40) -> list[dict]:
     """
     Fetch latest music-related news using NewsAPI 'everything' endpoint,
-    then filter to keep only clearly music-related articles.
+    then filter to keep only clearly music-related articles and de-duplicate.
     """
     if not NEWSAPI_KEY:
         raise RuntimeError("NEWSAPI_KEY environment variable is not set")
 
     base_url = "https://newsapi.org/v2/everything"
 
-    # Default query focused on explicitly music-related content
+    # Default query focused on explicitly music-related content.
+    # We keep it fairly broad but still clearly music-ish.
     default_query = (
         '"new album" OR "new single" OR "new song" OR "music video" OR '
-        '"debut album" OR "EP" OR "LP" OR "mixtape" OR '
-        '"music festival" OR "world tour" OR concert OR "setlist" OR '
-        'Grammy OR "Billboard Hot 100"'
+        '"debut album" OR "EP" OR "LP" OR mixtape OR '
+        '"music festival" OR "world tour" OR concert OR setlist OR '
+        'Grammy OR "Billboard Hot 100" OR "new track" OR "studio album"'
     )
     final_query = query if query else default_query
 
+    # Only look at the last 7 days
     from_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
 
     params = {
@@ -136,16 +157,17 @@ def fetch_music_news(query: str | None = None, page_size: int = 30) -> list[dict
 
     raw_articles = data.get("articles", [])
 
-    # Filter to only obviously music-related articles
+    # First, filter to only obviously music-related articles
     filtered = [a for a in raw_articles if looks_like_music_article(a)]
 
+    # Clean + normalize shape
     cleaned: list[dict] = []
     for a in filtered:
         image_url = a.get("urlToImage") or DEFAULT_IMAGE_URL
         cleaned.append(
             {
-                "title": a.get("title"),
-                "description": a.get("description"),
+                "title": a.get("title") or "",
+                "description": a.get("description") or "",
                 "url": a.get("url"),
                 "image": image_url,
                 "source": (a.get("source") or {}).get("name"),
@@ -153,8 +175,11 @@ def fetch_music_news(query: str | None = None, page_size: int = 30) -> list[dict
             }
         )
 
-    # Deduplicate very similar headlines (e.g. multiple versions of same story)
-    cleaned = dedupe_articles_fuzzy(cleaned, threshold=0.86)
+    # 1) Exact-title dedupe
+    cleaned = dedupe_articles(cleaned)
+
+    # 2) Fuzzy dedupe to collapse slightly different versions of same headline
+    cleaned = dedupe_articles_fuzzy(cleaned, threshold=0.80)
 
     return cleaned
 

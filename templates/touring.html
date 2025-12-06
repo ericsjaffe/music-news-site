@@ -2288,16 +2288,19 @@
 
     // Load events from followed artists
     async function loadYourArtistsCarousel() {
+      const section = document.getElementById('your-artists-section');
+      if (!section) return; // Section doesn't exist
+      
       const followedArtists = getFollowedArtists();
       
       if (followedArtists.length === 0) {
         // Hide the carousel if no artists followed
-        document.getElementById('your-artists-section').style.display = 'none';
+        section.style.display = 'none';
         return;
       }
       
       // Show the carousel
-      document.getElementById('your-artists-section').style.display = 'block';
+      section.style.display = 'block';
       
       // Fetch events for followed artists
       const track = document.querySelector('#carousel-your-artists .carousel-track');
@@ -2306,10 +2309,15 @@
       try {
         // Fetch events for each artist and combine
         const allEvents = [];
+        console.log('Fetching events for followed artists:', followedArtists);
         for (const artist of followedArtists.slice(0, 10)) { // Limit to 10 artists
-          const response = await fetch(`/api/artist-events?artist=${encodeURIComponent(artist)}`);
+          const url = `/api/artist-events?artist=${encodeURIComponent(artist)}`;
+          console.log('Fetching:', url);
+          const response = await fetch(url);
+          console.log('Response status:', response.status);
           if (response.ok) {
             const data = await response.json();
+            console.log('Data received:', data);
             if (data.events) {
               allEvents.push(...data.events.slice(0, 5)); // Max 5 events per artist
             }
@@ -2344,16 +2352,19 @@
 
     // Load recommended events based on user preferences
     async function loadRecommendedCarousel() {
+      const section = document.getElementById('recommended-section');
+      if (!section) return; // Section doesn't exist
+      
       const followedArtists = getFollowedArtists();
       
       if (followedArtists.length === 0) {
         // Hide the carousel if no preferences
-        document.getElementById('recommended-section').style.display = 'none';
+        section.style.display = 'none';
         return;
       }
       
       // Show the carousel
-      document.getElementById('recommended-section').style.display = 'block';
+      section.style.display = 'block';
       
       const track = document.querySelector('#carousel-recommended .carousel-track');
       track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">Finding recommendations...</div>';

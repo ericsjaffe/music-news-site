@@ -101,6 +101,20 @@
   </header>
 
   <main class="container tours-page" role="main" itemprop="mainContentOfPage">
+    <!-- Page Title -->
+    <div class="tours-header">
+      <h2>Discover Live Music</h2>
+      <p class="tours-subtitle">
+        {% if view_mode == 'nationwide' %}
+          Events across the United States
+        {% elif location_query %}
+          Events in {{ location_query }}
+        {% else %}
+          Concerts and events near you
+        {% endif %}
+      </p>
+    </div>
+
     <!-- Market/Region Tabs -->
     <div class="market-tabs" role="tablist" aria-label="Location filters">
       <a href="/touring" class="market-tab {% if view_mode == 'local' or not view_mode %}active{% endif %}" role="tab" aria-selected="{% if view_mode == 'local' or not view_mode %}true{% else %}false{% endif %}">
@@ -321,19 +335,6 @@
       {% endif %}
     {% else %}
       <!-- Multiple Carousels -->
-      <div class="tours-header">
-        <h2>Discover Live Music</h2>
-        <p class="tours-subtitle">
-          {% if view_mode == 'nationwide' %}
-            Events across the United States
-          {% elif location_query %}
-            Events in {{ location_query }}
-          {% else %}
-            Concerts and events near you
-          {% endif %}
-        </p>
-      </div>
-
       {% if error %}
         <div class="tour-error">
           <p>{{ error }}</p>

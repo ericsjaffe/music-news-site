@@ -115,9 +115,18 @@ def extract_image(entry: Dict[str, Any]) -> str:
 
 def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict[str, Any]]:
     """Fetch latest heavy music news from Loudwire RSS.
-    Search is done locally over the latest feed items (title + summary).
+    If query provided, search via Loudwire's search RSS to get more relevant results.
     """
-    feed = feedparser.parse(LOUDWIRE_LATEST_FEED)
+    q_norm = (query or "").strip().lower()
+    
+    # If there's a search query, use Loudwire's search feed for better results
+    if q_norm:
+        # Loudwire search RSS URL
+        search_url = f"https://loudwire.com/?s={quote_plus(query)}&feed=rss2"
+        feed = feedparser.parse(search_url)
+    else:
+        # Use main news feed for browsing
+        feed = feedparser.parse(LOUDWIRE_LATEST_FEED)
 
     # Only treat as fatal if there are no entries at all
     if not getattr(feed, "entries", None):
@@ -127,8 +136,6 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
 
     entries = feed.entries
     articles: List[Dict[str, Any]] = []
-
-    q_norm = (query or "").strip().lower()
 
     for entry in entries:
         # Prefer full content HTML if available for description text
@@ -143,12 +150,6 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
         link = entry.get("link")
         published_iso = parse_published(entry)
         image_url = extract_image(entry)
-
-        # Optional search filter: if q is provided, require it in title or summary text
-        if q_norm:
-            haystack = f"{title} {summary_clean}".lower()
-            if q_norm not in haystack:
-                continue
 
         articles.append(
             {
@@ -225,9 +226,9 @@ def releases():
     current_year = datetime.now().year
     today = datetime.now()
 
-    # Defaults for first load / GET - use today's date
+    # Defaults for first load / GET - use today's date and last 20 years
     date_value = today.strftime("%Y-%m-%d")
-    start_year = 2000
+    start_year = current_year - 20  # Last 20 years to stay under the 25 year limit
     end_year = current_year
     pretty_date = today.strftime("%B %d")
     mm_dd = today.strftime("%m-%d")
@@ -450,11 +451,17 @@ def article():
         
         if article_body:
             # Remove unwanted elements
-            for element in article_body.find_all(['script', 'style', 'iframe', 'nav', 'aside', 'footer']):
+            for element in article_body.find_all(['script', 'style', 'iframe', 'nav', 'aside', 'footer', 'h1', 'h2']):
                 element.decompose()
             
-            # Remove images from content since we display the featured image separately
-            for img in article_body.find_all('img'):
+            # Keep the first image as featured image, remove the rest
+            images = article_body.find_all('img')
+            if images and not image:
+                # Use first image from content as featured image if we don't have one
+                image = images[0].get('src')
+            
+            # Now remove all images from content
+            for img in images:
                 img.decompose()
             
             # Get clean HTML

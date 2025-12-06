@@ -32,6 +32,12 @@
         {% endif %}
       </div>
 
+      {% if image %}
+        <div class="article-image">
+          <img src="{{ image }}" alt="{{ title }}" onerror="this.style.display='none'">
+        </div>
+      {% endif %}
+
       <div class="article-body">
         {{ content|safe }}
       </div>

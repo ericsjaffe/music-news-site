@@ -92,7 +92,7 @@
   <main class="container">
     <div class="releases-intro">
       <h2>On This Day in Music</h2>
-      <p>Search by <strong>artist name</strong> to find all their releases in a year range, OR search by <strong>date</strong> to find all releases on a specific day. (Artist search ignores the date field)</p>
+      <p>Search by <strong>artist name</strong> to find ALL their releases (year range ignored), OR search by <strong>date</strong> to find all releases on a specific day within a year range.</p>
     </div>
 
     <form method="post" class="releases-form">
@@ -167,7 +167,7 @@
     {% if results is not none %}
       <div class="summary">
         {% if artist_filter %}
-          Found {{ results|length }} releases by "{{ artist_filter }}" across {{ start_year }}–{{ end_year }}{% if pretty_date %} on {{ pretty_date }}{% endif %}.
+          Found {{ results|length }} releases by "{{ artist_filter }}".
         {% else %}
           Found {{ results|length }} releases for {{ pretty_date }} across {{ start_year }}–{{ end_year }}.
         {% endif %}

@@ -838,8 +838,9 @@ def releases():
                         except (ValueError, TypeError):
                             pass
                     
-                    # Skip if no year or outside the requested range
-                    if not release_year or release_year < start_year or release_year > end_year:
+                    # When searching by artist, show ALL releases regardless of year
+                    # Skip only if no year could be extracted
+                    if not release_year:
                         continue
                     
                     artist = None

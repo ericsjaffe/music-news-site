@@ -715,7 +715,7 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
-def get_artist_tour_dates(artist_name: str, limit: int = 50):
+def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None, radius: int = 50):
     """
     Fetch upcoming tour dates from Ticketmaster Discovery API.
     Returns list of tour date dicts.
@@ -728,11 +728,20 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50):
     
     params = {
         "apikey": api_key,
-        "keyword": artist_name,
         "classificationName": "Music",
         "size": min(limit, 200),
         "sort": "date,asc"
     }
+    
+    # Add keyword if provided
+    if artist_name and artist_name.lower() != 'concert':
+        params["keyword"] = artist_name
+    
+    # Add location if provided (format: "latitude,longitude")
+    if latlong:
+        params["latlong"] = latlong
+        params["radius"] = radius
+        params["unit"] = "miles"
     
     headers = {
         "User-Agent": USER_AGENT
@@ -750,9 +759,18 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50):
         if not events:
             return []
         
-        # Process and return events
+        # Process and return events (remove duplicates)
         tour_dates = []
+        seen_event_ids = set()
+        
         for event in events:
+            event_id = event.get('id', '')
+            
+            # Skip duplicate events
+            if event_id in seen_event_ids:
+                continue
+            seen_event_ids.add(event_id)
+            
             # Get event details
             event_name = event.get('name', '')
             event_url = event.get('url', '')
@@ -1323,19 +1341,27 @@ def artist_page(artist_name):
 def touring():
     """Touring page with concert tour data from Ticketmaster API."""
     artist_query = request.args.get('artist', '').strip()
+    latlong = request.args.get('latlong', '').strip()
+    radius = request.args.get('radius', '50')
     
     tours = []
     error = None
     
     try:
+        # Convert radius to int
+        try:
+            radius = int(radius)
+        except:
+            radius = 50
+            
         if artist_query:
             # Search for specific artist
-            tours = get_artist_tour_dates(artist_query, limit=50)
+            tours = get_artist_tour_dates(artist_query, limit=50, latlong=latlong, radius=radius)
             if not tours:
                 error = f"No upcoming tour dates found for '{artist_query}'"
         else:
-            # Show general music events
-            tours = get_artist_tour_dates('concert', limit=50)
+            # Show general music events in user's area
+            tours = get_artist_tour_dates('concert', limit=50, latlong=latlong, radius=radius)
             
     except Exception as e:
         error = "Unable to fetch tour data at this time. Please try again later."

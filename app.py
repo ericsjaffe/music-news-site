@@ -253,7 +253,7 @@ def releases():
                 start_year, end_year = end_year, start_year
         except ValueError:
             error = (error + " | " if error else "") + "Start/end year must be numbers."
-            start_year = 1950
+            start_year = 2000
             end_year = current_year
         
         should_fetch = True
@@ -309,7 +309,7 @@ def releases():
 
         # Sort nicely
         if results:
-            results.sort(key=lambda x: (x.year, x.artist or "", x.title or ""))
+            results.sort(key=lambda x: (-x.year, x.artist or "", x.title or ""))
 
     return render_template(
         "releases.html",

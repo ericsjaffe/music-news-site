@@ -1268,15 +1268,35 @@ def sitemap():
     domain = request.host_url.rstrip("/")
     
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>{domain}/</loc>
     <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>
-    <changefreq>daily</changefreq>
+    <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>{domain}/releases</loc>
+    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>{domain}/touring</loc>
+    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>{domain}/videos</loc>
+    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>{domain}/merch</loc>
     <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -1303,21 +1323,137 @@ def sms_status_callback():
 
 @app.route("/robots.txt")
 def robots():
-    """Generate robots.txt file."""
+    """Generate robots.txt file with comprehensive rules."""
     from flask import make_response
     
     # Get your actual domain
     domain = request.host_url.rstrip("/")
     
-    txt = f"""User-agent: *
+    txt = f"""# Music Hub - Robots.txt
+User-agent: *
 Allow: /
-Disallow: /static/
+Allow: /static/*.css
+Allow: /static/*.js
+Allow: /static/*.png
+Disallow: /admin/
+Disallow: /newsletter/unsubscribe
+Disallow: /sms/unsubscribe
 
+# Crawl-delay for politeness
+Crawl-delay: 1
+
+# Sitemaps
 Sitemap: {domain}/sitemap.xml
+
+# AI Crawlers (OpenAI GPT, Google Bard, Anthropic Claude, etc.)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Search Engine Bots
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
 """
     
     response = make_response(txt)
     response.headers["Content-Type"] = "text/plain"
+    return response
+
+
+@app.route("/rss")
+@app.route("/feed")
+def rss_feed():
+    """Generate RSS feed for latest music news."""
+    from flask import make_response
+    from html import escape
+    
+    try:
+        articles = fetch_music_news(page_size=20)
+    except Exception:
+        articles = []
+    
+    domain = request.host_url.rstrip("/")
+    build_date = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")
+    
+    items = []
+    for article in articles[:20]:
+        pub_date = article.get("published_at_human", build_date)
+        if article.get("published_at"):
+            try:
+                dt = datetime.fromisoformat(str(article["published_at"]).replace("Z", "+00:00"))
+                pub_date = dt.strftime("%a, %d %b %Y %H:%M:%S +0000")
+            except Exception:
+                pass
+        
+        description = escape(article.get("description", ""))[:500]
+        title = escape(article.get("title", ""))
+        link = f"{domain}/article?url={quote_plus(article.get('url', ''))}"
+        image = article.get("image", "")
+        
+        item = f"""
+    <item>
+      <title>{title}</title>
+      <link>{link}</link>
+      <guid isPermaLink="false">{article.get('url', '')}</guid>
+      <description>{description}</description>
+      <pubDate>{pub_date}</pubDate>
+      <source url="{domain}">Music Hub</source>"""
+        
+        if image:
+            item += f"""
+      <enclosure url="{escape(image)}" type="image/jpeg"/>"""
+        
+        if article.get("genres"):
+            for genre in article["genres"][:3]:
+                item += f"""
+      <category>{escape(genre)}</category>"""
+        
+        item += "\n    </item>"
+        items.append(item)
+    
+    rss = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Music Hub - Latest Music News</title>
+    <link>{domain}/</link>
+    <description>Stay updated with the latest music news, album releases, tour dates, and artist updates for rock, metal, punk, and alternative music.</description>
+    <language>en-us</language>
+    <copyright>Music Hub {datetime.now().year}</copyright>
+    <lastBuildDate>{build_date}</lastBuildDate>
+    <atom:link href="{domain}/rss" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>{domain}/static/icon-192.png</url>
+      <title>Music Hub</title>
+      <link>{domain}/</link>
+    </image>
+{''.join(items)}
+  </channel>
+</rss>"""
+    
+    response = make_response(rss)
+    response.headers["Content-Type"] = "application/rss+xml"
     return response
 
 

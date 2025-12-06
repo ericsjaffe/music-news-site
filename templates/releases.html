@@ -2,14 +2,56 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>On This Day in Music - Releases</title>
+  <title>Music Releases by Date - Music Hub | Find Albums Released on Any Day</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Find music releases by date across multiple years">
+  <meta name="description" content="Discover music albums and releases on any date in history. Search releases by day across multiple years using MusicBrainz database.">
+  <meta name="keywords" content="music releases, album release dates, music history, MusicBrainz, on this day in music, album search by date">
+  <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#ec4899">
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://music-news-site.onrender.com/releases">
+  <meta property="og:title" content="Find Music Releases by Date - Music Hub">
+  <meta property="og:description" content="Discover what albums were released on any day in history. Search across decades of music releases.">
+  <meta property="og:image" content="https://music-news-site.onrender.com{{ url_for('static', filename='icon-512.png') }}">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Music Releases by Date - Music Hub">
+  <meta name="twitter:description" content="Discover what albums were released on any day in history.">
+  <meta name="twitter:image" content="https://music-news-site.onrender.com{{ url_for('static', filename='icon-512.png') }}">
+  
+  <link rel="canonical" href="https://music-news-site.onrender.com/releases">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Music Releases by Date",
+    "url": "https://music-news-site.onrender.com/releases",
+    "description": "Search for music albums released on any date in history",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://music-news-site.onrender.com/"
+      },{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Releases",
+        "item": "https://music-news-site.onrender.com/releases"
+      }]
+    }
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">

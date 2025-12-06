@@ -2,17 +2,73 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Latest Music News - Music Hub</title>
+  <title>Latest Music News - Music Hub | Rock, Metal & Alternative Music Updates</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Stay updated with the latest music news, releases, and artist updates">
+  <meta name="description" content="Stay updated with the latest music news, album releases, tour dates, and artist updates. Your source for rock, metal, punk, and alternative music news.">
+  <meta name="keywords" content="music news, rock news, metal news, album releases, tour dates, music videos, concert tickets, loudwire, alternative music">
+  <meta name="author" content="Music Hub">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="theme-color" content="#ec4899">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://music-news-site.onrender.com/">
+  <meta property="og:title" content="Music Hub - Latest Music News & Updates">
+  <meta property="og:description" content="Your source for the latest rock, metal, and alternative music news, album releases, and artist updates.">
+  <meta property="og:image" content="https://music-news-site.onrender.com{{ url_for('static', filename='icon-512.png') }}">
+  <meta property="og:site_name" content="Music Hub">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://music-news-site.onrender.com/">
+  <meta name="twitter:title" content="Music Hub - Latest Music News">
+  <meta name="twitter:description" content="Stay updated with the latest music news, releases, and artist updates.">
+  <meta name="twitter:image" content="https://music-news-site.onrender.com{{ url_for('static', filename='icon-512.png') }}">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://music-news-site.onrender.com/">
+  
+  <!-- PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Music Hub">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icon-192.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icon-512.png') }}">
+  
+  <!-- RSS Feed -->
+  <link rel="alternate" type="application/rss+xml" title="Music Hub RSS Feed" href="/rss">
+  
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  
+  <!-- Structured Data / JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Music Hub",
+    "url": "https://music-news-site.onrender.com/",
+    "description": "Latest music news, album releases, tour dates, and artist updates for rock, metal, and alternative music.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://music-news-site.onrender.com/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Music Hub",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://music-news-site.onrender.com{{ url_for('static', filename='icon-512.png') }}"
+      }
+    }
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">

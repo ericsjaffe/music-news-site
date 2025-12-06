@@ -54,7 +54,7 @@
 
             <div class="card-body">
               <h2 class="card-title">
-                <a href="{{ url_for('article') }}?url={{ article.url|urlencode }}">
+                <a href="/article?url={{ article.url|urlencode }}">
                   {{ article.title }}
                 </a>
               </h2>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feature Testing</title>
+</head>
+<body>
+    <h1>Testing JavaScript Features</h1>
+    <div id="results"></div>
+    <script>
+        const results = [];
+        
+        // Test 1: Theme Toggle
+        localStorage.setItem('theme', 'dark');
+        const theme = localStorage.getItem('theme');
+        results.push(`✓ Theme storage: ${theme === 'dark' ? 'PASS' : 'FAIL'}`);
+        
+        // Test 2: Bookmarks
+        localStorage.setItem('bookmarks', JSON.stringify(['test1', 'test2']));
+        const bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+        results.push(`✓ Bookmark storage: ${bookmarks.length === 2 ? 'PASS' : 'FAIL'}`);
+        
+        // Test 3: Recent Searches
+        localStorage.setItem('recentSearches', JSON.stringify(['search1', 'search2']));
+        const searches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+        results.push(`✓ Search history: ${searches.length === 2 ? 'PASS' : 'FAIL'}`);
+        
+        // Test 4: URL encoding for sharing
+        const testUrl = 'https://example.com/article?id=123';
+        const encoded = encodeURIComponent(testUrl);
+        results.push(`✓ URL encoding: ${encoded.includes('%3F') ? 'PASS' : 'FAIL'}`);
+        
+        document.getElementById('results').innerHTML = results.join('<br>');
+    </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ app = Flask(__name__)
 init_db()
 
 # Loudwire main RSS feed
-LOUDWIRE_LATEST_FEED = "http://loudwire.com/category/news/feed"
+LOUDWIRE_LATEST_FEED = "https://loudwire.com/category/news/feed"
 
 # Default image when a story has no usable image
 DEFAULT_IMAGE_URL = "/static/default-music.png"
@@ -115,18 +115,12 @@ def extract_image(entry: Dict[str, Any]) -> str:
 
 def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict[str, Any]]:
     """Fetch latest heavy music news from Loudwire RSS.
-    If query provided, search via Loudwire's search RSS to get more relevant results.
+    If query provided, filter results by search term.
     """
     q_norm = (query or "").strip().lower()
     
-    # If there's a search query, use Loudwire's search feed for better results
-    if q_norm:
-        # Loudwire search RSS URL
-        search_url = f"https://loudwire.com/?s={quote_plus(query)}&feed=rss2"
-        feed = feedparser.parse(search_url)
-    else:
-        # Use main news feed for browsing
-        feed = feedparser.parse(LOUDWIRE_LATEST_FEED)
+    # Always use the main news feed (search RSS is not working reliably)
+    feed = feedparser.parse(LOUDWIRE_LATEST_FEED)
 
     # Only treat as fatal if there are no entries at all
     if not getattr(feed, "entries", None):
@@ -150,6 +144,13 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
         link = entry.get("link")
         published_iso = parse_published(entry)
         image_url = extract_image(entry)
+
+        # If there's a search query, filter by title and description
+        if q_norm:
+            title_lower = title.lower()
+            desc_lower = summary_clean.lower()
+            if q_norm not in title_lower and q_norm not in desc_lower:
+                continue  # Skip articles that don't match the search query
 
         articles.append(
             {

@@ -161,8 +161,8 @@
           </div>
           <div class="carousel-container" id="carousel-venues">
             <div class="carousel-track">
-              {% for event in nearby_venues %}
-                {% include 'event_card.html' %}
+              {% for venue in nearby_venues %}
+                {% include 'venue_card.html' %}
               {% endfor %}
             </div>
           </div>

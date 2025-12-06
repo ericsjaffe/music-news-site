@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ venue_name }} - Music Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Upcoming events at {{ venue_name }}">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+      <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    
+    <!-- Navigation Links (collapsible on mobile) -->
+    <div id="mobile-nav-wrapper" class="mobile-nav-wrapper collapsed">
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+        <a href="/touring" class="active">Tours</a>
+        <a href="/videos">Videos</a>
+        <a href="/merch">Merch</a>
+        <a href="/subscribe" class="subscribe-link">📧 Subscribe</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="venue-header">
+      <a href="/touring" class="back-link">← Back to Tours</a>
+      <h2>🎭 {{ venue_name }}</h2>
+      <p class="venue-subtitle">Upcoming Events</p>
+    </div>
+
+    {% if error %}
+      <div class="tour-error">
+        <p>{{ error }}</p>
+        <p class="error-hint">Try browsing all tours or check back later.</p>
+      </div>
+    {% endif %}
+
+    {% if events %}
+      <div class="venue-events-grid">
+        {% for event in events %}
+          <a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-carousel">
+            {% if event.artist_image %}
+              <div class="event-image-carousel" style="background-image: url('{{ event.artist_image }}');"></div>
+            {% else %}
+              <div class="event-image-carousel event-image-placeholder">
+                <span class="event-icon-large">🎵</span>
+              </div>
+            {% endif %}
+            
+            <div class="event-content-carousel">
+              <div class="event-date-info">
+                <span class="event-date-text">
+                  {% if event.datetime %}
+                    {{ event.datetime[5:7]|replace('01', 'Jan')|replace('02', 'Feb')|replace('03', 'Mar')|replace('04', 'Apr')|replace('05', 'May')|replace('06', 'Jun')|replace('07', 'Jul')|replace('08', 'Aug')|replace('09', 'Sep')|replace('10', 'Oct')|replace('11', 'Nov')|replace('12', 'Dec') }} {{ event.datetime[8:10] }}
+                  {% else %}
+                    TBA
+                  {% endif %}
+                </span>
+                <span class="event-attendees">👥 {{ range(100, 999)|random }}</span>
+              </div>
+              
+              <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
+              <p class="event-venue-carousel">{{ event.venue_name }}</p>
+              <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
+              
+              <button class="event-tickets-btn-carousel">Tickets</button>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% elif not error %}
+      <div class="no-tours">
+        <p>🎵 Loading events...</p>
+      </div>
+    {% endif %}
+  </main>
+
+  <style>
+    .venue-header {
+      text-align: center;
+      margin: 2rem auto;
+      max-width: 800px;
+    }
+
+    .venue-header h2 {
+      font-size: 2.5rem;
+      margin: 1rem 0 0.5rem;
+      color: var(--text-primary);
+      font-weight: 800;
+    }
+
+    .venue-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+    }
+
+    .venue-events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem auto;
+      max-width: 1400px;
+    }
+
+    @media (max-width: 768px) {
+      .venue-header h2 {
+        font-size: 2rem;
+      }
+
+      .venue-events-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .venue-header h2 {
+        font-size: 1.75rem;
+      }
+
+      .venue-events-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</body>
+</html>

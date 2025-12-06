@@ -1380,9 +1380,23 @@ def touring():
                 # Get nearby venues (unique venues from all events)
                 venue_dict = {}
                 for event in all_events:
-                    venue_key = event['venue_name']
-                    if venue_key not in venue_dict and venue_key != 'Venue TBA':
-                        venue_dict[venue_key] = event
+                    venue_name = event['venue_name']
+                    if venue_name != 'Venue TBA':
+                        if venue_name not in venue_dict:
+                            # Create venue entry with first event's image and count events
+                            venue_dict[venue_name] = {
+                                'venue_name': venue_name,
+                                'city': event['city'],
+                                'region': event['region'],
+                                'artist_image': event.get('artist_image', ''),
+                                'event_count': 1,
+                                'venue_id': venue_name.lower().replace(' ', '-').replace("'", '')
+                            }
+                        else:
+                            venue_dict[venue_name]['event_count'] += 1
+                            # Use image if current venue entry doesn't have one
+                            if not venue_dict[venue_name]['artist_image'] and event.get('artist_image'):
+                                venue_dict[venue_name]['artist_image'] = event['artist_image']
                 nearby_venues = list(venue_dict.values())[:12]
             
     except Exception as e:
@@ -1397,6 +1411,42 @@ def touring():
         selling_fast=selling_fast,
         nearby_venues=nearby_venues,
         artist_query=artist_query,
+        error=error
+    )
+
+
+@app.route("/venue/<venue_id>")
+def venue_detail(venue_id):
+    """Show all events at a specific venue."""
+    venue_name = request.args.get('name', '').strip()
+    latlong = request.args.get('latlong', '').strip()
+    radius = request.args.get('radius', '100')
+    
+    events = []
+    error = None
+    
+    try:
+        radius = int(radius)
+    except:
+        radius = 100
+    
+    try:
+        # Get all events in the area
+        all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius)
+        
+        # Filter events for this specific venue
+        events = [event for event in all_events if event['venue_name'].lower().replace(' ', '-').replace("'", '') == venue_id]
+        
+        if not events:
+            error = f"No upcoming events found at {venue_name}"
+    except Exception as e:
+        error = "Unable to fetch venue events at this time."
+        print(f"Venue detail error: {e}")
+    
+    return render_template(
+        "venue_detail.html",
+        venue_name=venue_name,
+        events=events,
         error=error
     )
 

@@ -1,0 +1,21 @@
+<a href="/venue/{{ venue.venue_id }}?name={{ venue.venue_name|urlencode }}&latlong={{ request.args.get('latlong', '') }}" class="event-card-carousel">
+  {% if venue.artist_image %}
+    <div class="event-image-carousel" style="background-image: url('{{ venue.artist_image }}');"></div>
+  {% else %}
+    <div class="event-image-carousel event-image-placeholder">
+      <span class="event-icon-large">🎭</span>
+    </div>
+  {% endif %}
+  
+  <div class="event-content-carousel">
+    <div class="event-date-info">
+      <span class="event-date-text">📍 Venue</span>
+      <span class="event-attendees">🎫 {{ venue.event_count }} events</span>
+    </div>
+    
+    <h4 class="event-title-carousel">{{ venue.venue_name }}</h4>
+    <p class="event-venue-carousel">{{ venue.city }}{% if venue.region %}, {{ venue.region }}{% endif %}</p>
+    
+    <button class="event-tickets-btn-carousel">View Events</button>
+  </div>
+</a>

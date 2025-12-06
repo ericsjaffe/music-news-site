@@ -230,7 +230,7 @@ If you didn't sign up for this newsletter, you can safely ignore this email.
         if SENDGRID_AVAILABLE and SENDGRID_API_KEY:
             print(f"Attempting to send confirmation email to {email} via SendGrid")
             message = Mail(
-                from_email=Email(SMTP_USERNAME if SMTP_USERNAME != "your-email@gmail.com" else "noreply@musichub.com"),
+                from_email=Email(SMTP_USERNAME if SMTP_USERNAME != "your-email@gmail.com" else "noreply@musichub.com", "Music Hub"),
                 to_emails=To(email),
                 subject=subject,
                 plain_text_content=Content("text/plain", text),

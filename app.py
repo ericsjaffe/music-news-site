@@ -19,6 +19,15 @@ load_dotenv()
 import feedparser
 import requests
 
+# Try to import SendGrid for email sending (preferred for Render)
+try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail, Email, To, Content
+    SENDGRID_AVAILABLE = True
+except ImportError:
+    SENDGRID_AVAILABLE = False
+    print("Warning: SendGrid not installed. Email features may not work on Render.")
+
 from dedupe import dedupe_articles_fuzzy
 from cache_db import init_db, get_cached_results, save_cached_results, cleanup_old_cache
 from newsletter_db import (
@@ -54,6 +63,7 @@ init_newsletter_db()
 init_sms_db()
 
 # Email configuration (optional - configure for production)
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
 SMTP_USERNAME = os.getenv('SMTP_USERNAME', 'your-email@gmail.com')
@@ -159,22 +169,13 @@ def get_apple_music_search_url(artist: str, track: str = "") -> str:
 
 def send_confirmation_email(email: str, token: str, base_url: str = None) -> bool:
     """Send confirmation email to subscriber."""
-    # Skip if SMTP not configured
-    if SMTP_USERNAME == "your-email@gmail.com":
-        print(f"Email confirmation skipped (SMTP not configured). Token: {token}")
-        return True
-    
     try:
         # Generate confirmation link
         if base_url is None:
             base_url = request.host_url
         confirmation_url = f"{base_url}newsletter/confirm/{token}"
         
-        # Create email
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = "Confirm your Music Hub Newsletter Subscription"
-        msg['From'] = FROM_EMAIL
-        msg['To'] = email
+        subject = "Confirm your Music Hub Newsletter Subscription"
         
         # Plain text version
         text = f"""
@@ -225,18 +226,44 @@ If you didn't sign up for this newsletter, you can safely ignore this email.
 </html>
 """
         
-        # Attach both versions
-        part1 = MIMEText(text, 'plain')
-        part2 = MIMEText(html, 'html')
-        msg.attach(part1)
-        msg.attach(part2)
+        # Try SendGrid first (works on Render), fallback to SMTP
+        if SENDGRID_AVAILABLE and SENDGRID_API_KEY:
+            print(f"Attempting to send confirmation email to {email} via SendGrid")
+            message = Mail(
+                from_email=Email(SMTP_USERNAME if SMTP_USERNAME != "your-email@gmail.com" else "noreply@musichub.com"),
+                to_emails=To(email),
+                subject=subject,
+                plain_text_content=Content("text/plain", text),
+                html_content=Content("text/html", html)
+            )
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            response = sg.send(message)
+            print(f"✅ Confirmation email sent successfully to {email} via SendGrid (status: {response.status_code})")
+            return True
         
-        # Send email with timeout
-        print(f"Attempting to send confirmation email to {email} via {SMTP_SERVER}:{SMTP_PORT}")
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-            server.starttls()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
+        # Fallback to SMTP (for local development)
+        elif SMTP_USERNAME != "your-email@gmail.com":
+            print(f"Attempting to send confirmation email to {email} via SMTP {SMTP_SERVER}:{SMTP_PORT}")
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = FROM_EMAIL
+            msg['To'] = email
+            
+            part1 = MIMEText(text, 'plain')
+            part2 = MIMEText(html, 'html')
+            msg.attach(part1)
+            msg.attach(part2)
+            
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+                server.starttls()
+                server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.send_message(msg)
+            
+            print(f"✅ Confirmation email sent successfully to {email} via SMTP")
+            return True
+        else:
+            print(f"⚠️  Email confirmation skipped (no email service configured). Token: {token}")
+            return False
         
         print(f"✅ Confirmation email sent successfully to {email}")
         return True

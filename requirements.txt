@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 feedparser
 beautifulsoup4
 twilio==9.0.4
+sendgrid==6.11.0

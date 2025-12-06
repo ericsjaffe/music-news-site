@@ -717,20 +717,21 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
 
 def get_artist_tour_dates(artist_name: str, limit: int = 50):
     """
-    Fetch upcoming tour dates for an artist from Bandsintown API.
+    Fetch upcoming tour dates for an artist from Ticketmaster Discovery API.
     Returns list of tour date dicts.
     """
-    # Bandsintown API endpoint
-    base_url = "https://rest.bandsintown.com/artists"
+    # Ticketmaster Discovery API endpoint
+    base_url = "https://app.ticketmaster.com/discovery/v2/events.json"
     
-    # URL encode artist name
-    encoded_artist = requests.utils.quote(artist_name)
-    
-    url = f"{base_url}/{encoded_artist}/events"
+    # Get API key from environment
+    api_key = os.getenv('TICKETMASTER_API_KEY', '7elxdku9GGG5k8j0Xm8KWdANDgecv6VC')
     
     params = {
-        "app_id": "music_hub_app",  # Required by Bandsintown
-        "date": "upcoming"
+        "apikey": api_key,
+        "keyword": artist_name,
+        "classificationName": "Music",
+        "size": min(limit, 200),  # Ticketmaster allows up to 200
+        "sort": "date,asc"
     }
     
     headers = {
@@ -738,43 +739,92 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50):
     }
     
     try:
-        resp = requests.get(url, params=params, headers=headers, timeout=10)
-        
-        # Bandsintown returns 404 if artist not found or no events
-        if resp.status_code == 404:
-            return []
-        
+        resp = requests.get(base_url, params=params, headers=headers, timeout=10)
         resp.raise_for_status()
-        events = resp.json()
+        data = resp.json()
         
-        if not isinstance(events, list):
+        # Extract events from response
+        embedded = data.get('_embedded', {})
+        events = embedded.get('events', [])
+        
+        if not events:
             return []
         
         # Process and return events
         tour_dates = []
-        for event in events[:limit]:
-            # Extract venue and location info
-            venue = event.get('venue', {})
-            offers = event.get('offers', [])
+        for event in events:
+            # Get event details
+            event_name = event.get('name', '')
+            event_url = event.get('url', '')
             
-            # Format ticket status
-            ticket_status = ''
-            if offers:
-                ticket_status = offers[0].get('status', '')
+            # Get date/time
+            dates = event.get('dates', {})
+            start = dates.get('start', {})
+            date_str = start.get('localDate', '')
+            time_str = start.get('localTime', '')
+            datetime_str = f"{date_str}T{time_str}" if date_str and time_str else date_str
+            
+            # Get venue info
+            embedded_venue = event.get('_embedded', {})
+            venues = embedded_venue.get('venues', [])
+            
+            venue_name = 'Venue TBA'
+            city = ''
+            region = ''
+            country = ''
+            
+            if venues:
+                venue = venues[0]
+                venue_name = venue.get('name', 'Venue TBA')
+                city_obj = venue.get('city', {})
+                city = city_obj.get('name', '') if isinstance(city_obj, dict) else ''
+                state_obj = venue.get('state', {})
+                region = state_obj.get('stateCode', '') if isinstance(state_obj, dict) else ''
+                country_obj = venue.get('country', {})
+                country = country_obj.get('countryCode', '') if isinstance(country_obj, dict) else ''
+            
+            # Get ticket status
+            sales = event.get('sales', {})
+            public_sales = sales.get('public', {})
+            ticket_status = public_sales.get('startDateTime', '')
+            
+            # Get image
+            images = event.get('images', [])
+            artist_image = ''
+            if images:
+                # Get the largest image
+                for img in images:
+                    if img.get('ratio') == '16_9' and img.get('width', 0) > 1000:
+                        artist_image = img.get('url', '')
+                        break
+                if not artist_image and images:
+                    artist_image = images[0].get('url', '')
+            
+            # Get price range
+            price_ranges = event.get('priceRanges', [])
+            price_info = ''
+            if price_ranges:
+                min_price = price_ranges[0].get('min', '')
+                max_price = price_ranges[0].get('max', '')
+                currency = price_ranges[0].get('currency', 'USD')
+                if min_price and max_price:
+                    price_info = f"{currency} {min_price}-{max_price}"
             
             tour_date = {
                 'id': event.get('id', ''),
                 'artist': artist_name,
-                'datetime': event.get('datetime', ''),
-                'venue_name': venue.get('name', 'Venue TBA'),
-                'city': venue.get('city', ''),
-                'region': venue.get('region', ''),
-                'country': venue.get('country', ''),
-                'ticket_url': event.get('url', ''),
-                'ticket_status': ticket_status,
-                'description': event.get('description', ''),
-                'lineup': event.get('lineup', []),
-                'artist_image': event.get('artist', {}).get('image_url', '') if isinstance(event.get('artist'), dict) else '',
+                'event_name': event_name,
+                'datetime': datetime_str,
+                'venue_name': venue_name,
+                'city': city,
+                'region': region,
+                'country': country,
+                'ticket_url': event_url,
+                'ticket_status': 'On Sale' if ticket_status else 'Check Availability',
+                'description': '',
+                'lineup': [],
+                'artist_image': artist_image,
+                'price_info': price_info,
             }
             
             tour_dates.append(tour_date)
@@ -782,7 +832,7 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50):
         return tour_dates
         
     except Exception as e:
-        print(f"Bandsintown API error for {artist_name}: {e}")
+        print(f"Ticketmaster API error for {artist_name}: {e}")
         return []
 
 

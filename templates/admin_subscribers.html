@@ -128,6 +128,27 @@
         .back-link:hover {
             text-decoration: underline;
         }
+        
+        .clear-pending-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .clear-pending-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .clear-pending-btn:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -135,6 +156,8 @@
         <a href="/" class="back-link">← Back to Music Hub</a>
         
         <h1>📊 Subscriber Dashboard</h1>
+        
+        <button class="clear-pending-btn" onclick="clearPending()">🗑️ Clear All Pending Subscribers</button>
         
         <!-- Email Subscribers -->
         <div class="section">
@@ -242,5 +265,31 @@
             {% endif %}
         </div>
     </div>
+    
+    <script>
+        function clearPending() {
+            if (!confirm('Are you sure you want to delete ALL pending subscribers? This cannot be undone.')) {
+                return;
+            }
+            
+            fetch('/admin/clear-pending', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ ${data.message}`);
+                    location.reload();
+                } else {
+                    alert('❌ Error clearing pending subscribers');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Network error');
+            });
+        }
+    </script>
 </body>
 </html>

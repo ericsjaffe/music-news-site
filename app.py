@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
 from dotenv import load_dotenv
+import threading
 
 # Load environment variables
 load_dotenv()
@@ -227,8 +228,8 @@ If you didn't sign up for this newsletter, you can safely ignore this email.
         msg.attach(part1)
         msg.attach(part2)
         
-        # Send email
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        # Send email with timeout
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
             server.starttls()
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg)
@@ -303,7 +304,7 @@ View all subscribers: http://localhost:5001/newsletter/stats
         msg.attach(part1)
         msg.attach(part2)
         
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
             server.starttls()
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg)
@@ -935,23 +936,20 @@ def newsletter_subscribe():
             return {"error": "You're already subscribed to our newsletter!"}, 400
         return {"error": "Subscription failed. Please try again."}, 500
     
-    # Send confirmation email
+    # Send emails in background thread to avoid blocking
     token = result["token"]
-    email_sent = send_confirmation_email(email, token)
     
-    # Send admin notification
-    send_admin_notification(email)
+    def send_emails_async():
+        send_confirmation_email(email, token)
+        send_admin_notification(email)
     
-    if email_sent:
-        return {
-            "success": True, 
-            "message": "Thanks for subscribing! Please check your email to confirm your subscription."
-        }
-    else:
-        return {
-            "success": True,
-            "message": "Subscription pending. Please check your email for confirmation."
-        }
+    email_thread = threading.Thread(target=send_emails_async, daemon=True)
+    email_thread.start()
+    
+    return {
+        "success": True, 
+        "message": "Thanks for subscribing! Please check your email to confirm your subscription."
+    }
 
 
 @app.route("/newsletter/confirm/<token>")
@@ -1147,6 +1145,46 @@ def admin_subscribers():
                          email_subs=email_subs,
                          sms_stats=sms_stats,
                          sms_subs=sms_subs)
+
+
+@app.route("/admin/clear-pending", methods=["POST"])
+def clear_pending_subscribers():
+    """Admin endpoint to clear all pending subscribers - password protected."""
+    from flask import request, Response
+    
+    # Check for basic auth
+    auth = request.authorization
+    admin_password = os.getenv('ADMIN_PASSWORD', 'musichub2025')
+    
+    if not auth or auth.password != admin_password:
+        return Response(
+            'Admin access required.',
+            401,
+            {'WWW-Authenticate': 'Basic realm="Admin Login"'}
+        )
+    
+    # Clear pending email subscribers
+    conn = sqlite3.connect('newsletter_subscribers.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM subscribers WHERE confirmed = FALSE")
+    email_deleted = cursor.rowcount
+    conn.commit()
+    conn.close()
+    
+    # Clear pending SMS subscribers
+    conn = sqlite3.connect('sms_subscribers.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM sms_subscribers WHERE confirmed = FALSE")
+    sms_deleted = cursor.rowcount
+    conn.commit()
+    conn.close()
+    
+    return {
+        "success": True,
+        "email_deleted": email_deleted,
+        "sms_deleted": sms_deleted,
+        "message": f"Cleared {email_deleted} pending email and {sms_deleted} pending SMS subscribers"
+    }
 
 
 if __name__ == "__main__":

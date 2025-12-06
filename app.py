@@ -29,6 +29,23 @@ API_BASE = "https://musicbrainz.org/ws/2/release"
 USER_AGENT = "EricMusicDateFinder/1.0 (eric.s.jaffe@gmail.com)"
 MAX_YEARS_PER_REQUEST = 25
 
+# Genre keywords for filtering
+GENRE_KEYWORDS = {
+    "rock": ["rock", "hard rock", "classic rock", "punk rock"],
+    "metal": ["metal", "heavy metal", "death metal", "black metal", "thrash metal", "metalcore", "nu-metal"],
+    "pop": ["pop", "pop music", "synth-pop", "indie pop"],
+    "hip-hop": ["hip-hop", "hip hop", "rap", "rapper"],
+    "country": ["country", "country music", "americana"],
+    "electronic": ["electronic", "edm", "techno", "house", "dubstep"],
+    "indie": ["indie", "indie rock", "indie music", "alternative"],
+    "jazz": ["jazz", "jazz music"],
+    "blues": ["blues", "blues rock"],
+    "punk": ["punk", "punk rock", "hardcore punk"]
+}
+
+# Trending article views (in-memory cache for demo)
+trending_views = {}
+
 
 def parse_published(entry: Dict[str, Any]) -> str | None:
     """Normalize published/updated fields into ISO 8601 if possible."""
@@ -44,6 +61,32 @@ def parse_published(entry: Dict[str, Any]) -> str | None:
             pass
 
     return raw
+
+
+def detect_genres(text: str) -> List[str]:
+    """Detect genres mentioned in article text."""
+    text_lower = text.lower()
+    detected = []
+    for genre, keywords in GENRE_KEYWORDS.items():
+        if any(keyword in text_lower for keyword in keywords):
+            detected.append(genre)
+    return detected
+
+
+def extract_artist_from_title(title: str) -> str | None:
+    """Try to extract artist name from article title."""
+    # Common patterns: "Artist Name Does Something" or "Artist Name: Something"
+    # This is a simple heuristic
+    patterns = [
+        r"^([A-Z][a-zA-Z\s&'-]+?)(?:\s+(?:Announces?|Releases?|Drops?|Shares?|Unveils?|Says?|Talks?|Discusses?))",
+        r"^([A-Z][a-zA-Z\s&'-]+?):",
+        r"^([A-Z][a-zA-Z\s&'-]+?)\s+-\s+",
+    ]
+    for pattern in patterns:
+        match = re.match(pattern, title)
+        if match:
+            return match.group(1).strip()
+    return None
 
 
 def image_from_html(html: str) -> str | None:
@@ -145,6 +188,11 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
         published_iso = parse_published(entry)
         image_url = extract_image(entry)
 
+        # Detect genres and artist
+        combined_text = f"{title} {summary_clean}"
+        genres = detect_genres(combined_text)
+        artist = extract_artist_from_title(title)
+        
         # If there's a search query, filter by title and description
         if q_norm:
             title_lower = title.lower()
@@ -160,6 +208,8 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
                 "image": image_url,
                 "source": "Loudwire",
                 "published_at": published_iso,
+                "genres": genres,
+                "artist": artist,
             }
         )
 
@@ -175,11 +225,27 @@ def fetch_music_news(query: str | None = None, page_size: int = 40) -> List[Dict
 @app.route("/")
 def index():
     q = request.args.get("q")  # e.g. /?q=metallica
+    genre_filter = request.args.get("genre")  # e.g. /?genre=metal
+    view = request.args.get("view", "all")  # all, trending
     articles: List[Dict[str, Any]] = []
     error: str | None = None
 
     try:
         articles = fetch_music_news(query=q)
+        
+        # Apply genre filter if specified
+        if genre_filter:
+            articles = [a for a in articles if genre_filter in a.get("genres", [])]
+        
+        # Track views for trending
+        for article in articles:
+            url = article.get("url")
+            if url:
+                trending_views[url] = trending_views.get(url, 0) + 0.1  # Small increment for view
+        
+        # Sort by trending if requested
+        if view == "trending":
+            articles = sorted(articles, key=lambda a: trending_views.get(a.get("url"), 0), reverse=True)
     except Exception as e:
         error = str(e)
 
@@ -194,7 +260,19 @@ def index():
         else:
             a["published_at_human"] = ""
 
-    return render_template("index.html", articles=articles, error=error, query=q)
+    # Get all unique genres from articles
+    all_genres = sorted(set(g for a in articles for g in a.get("genres", [])))
+    
+    return render_template(
+        "index.html", 
+        articles=articles, 
+        error=error, 
+        query=q,
+        genre_filter=genre_filter,
+        all_genres=all_genres,
+        view=view,
+        available_genres=list(GENRE_KEYWORDS.keys())
+    )
 
 
 def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
@@ -370,6 +448,69 @@ def releases():
     )
 
 
+@app.route("/artist/<artist_name>")
+def artist_page(artist_name):
+    """Show articles related to a specific artist."""
+    articles: List[Dict[str, Any]] = []
+    error: str | None = None
+    
+    try:
+        # Fetch all news and filter by artist
+        all_articles = fetch_music_news()
+        articles = [a for a in all_articles if a.get("artist") and artist_name.lower() in a.get("artist", "").lower()]
+        
+        # Also search by artist name in title/description if no artist match
+        if not articles:
+            articles = [a for a in all_articles if artist_name.lower() in a.get("title", "").lower() 
+                       or artist_name.lower() in a.get("description", "").lower()]
+    except Exception as e:
+        error = str(e)
+    
+    # Format timestamps
+    for a in articles:
+        if a["published_at"]:
+            try:
+                dt = datetime.fromisoformat(str(a["published_at"]).replace("Z", "+00:00"))
+                a["published_at_human"] = dt.strftime("%b %d, %Y %I:%M %p")
+            except Exception:
+                a["published_at_human"] = a["published_at"]
+        else:
+            a["published_at_human"] = ""
+    
+    return render_template("artist.html", artist_name=artist_name, articles=articles, error=error)
+
+
+@app.route("/api/load-more")
+def load_more():
+    """API endpoint for infinite scroll - returns JSON of articles."""
+    offset = int(request.args.get("offset", 0))
+    limit = int(request.args.get("limit", 20))
+    genre = request.args.get("genre")
+    
+    try:
+        all_articles = fetch_music_news(page_size=100)
+        
+        # Apply genre filter if specified
+        if genre:
+            all_articles = [a for a in all_articles if genre in a.get("genres", [])]
+        
+        # Paginate
+        paginated = all_articles[offset:offset+limit]
+        
+        # Format timestamps
+        for a in paginated:
+            if a["published_at"]:
+                try:
+                    dt = datetime.fromisoformat(str(a["published_at"]).replace("Z", "+00:00"))
+                    a["published_at_human"] = dt.strftime("%b %d, %Y %I:%M %p")
+                except Exception:
+                    a["published_at_human"] = a["published_at"]
+            else:
+                a["published_at_human"] = ""
+        
+        return {"articles": paginated, "has_more": offset + limit < len(all_articles)}
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
 if __name__ == "__main__":

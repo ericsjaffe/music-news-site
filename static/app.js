@@ -342,12 +342,163 @@ function updatePaginationControls(totalPages) {
   }
 }
 
+// Infinite Scroll
+let infiniteScrollEnabled = false;
+let infiniteScrollLoading = false;
+let infiniteScrollOffset = 20;
+let infiniteScrollHasMore = true;
+
+function initInfiniteScroll() {
+  const toggleBtn = document.getElementById('toggle-infinite-scroll');
+  if (!toggleBtn) return;
+  
+  // Load saved preference
+  infiniteScrollEnabled = localStorage.getItem('infiniteScroll') === 'true';
+  updateInfiniteScrollButton();
+  
+  toggleBtn.addEventListener('click', () => {
+    infiniteScrollEnabled = !infiniteScrollEnabled;
+    localStorage.setItem('infiniteScroll', infiniteScrollEnabled);
+    updateInfiniteScrollButton();
+    
+    if (infiniteScrollEnabled) {
+      // Hide pagination
+      const paginationControls = document.querySelector('.pagination-controls');
+      if (paginationControls) paginationControls.style.display = 'none';
+      
+      // Show all items
+      const cards = document.querySelectorAll('.grid .card');
+      cards.forEach(card => card.style.display = 'block');
+      
+      // Add scroll listener
+      window.addEventListener('scroll', handleInfiniteScroll);
+    } else {
+      // Show pagination
+      const paginationControls = document.querySelector('.pagination-controls');
+      if (paginationControls) paginationControls.style.display = 'flex';
+      
+      // Reset pagination
+      window.removeEventListener('scroll', handleInfiniteScroll);
+      initPagination();
+    }
+  });
+  
+  if (infiniteScrollEnabled) {
+    window.addEventListener('scroll', handleInfiniteScroll);
+  }
+}
+
+function updateInfiniteScrollButton() {
+  const toggleBtn = document.getElementById('toggle-infinite-scroll');
+  if (toggleBtn) {
+    toggleBtn.textContent = infiniteScrollEnabled ? '✓ Infinite Scroll' : 'Infinite Scroll';
+    toggleBtn.classList.toggle('active', infiniteScrollEnabled);
+  }
+}
+
+function handleInfiniteScroll() {
+  if (infiniteScrollLoading || !infiniteScrollHasMore) return;
+  
+  // Check if user scrolled near bottom
+  const scrollPosition = window.innerHeight + window.scrollY;
+  const threshold = document.body.offsetHeight - 500;
+  
+  if (scrollPosition > threshold) {
+    loadMoreArticles();
+  }
+}
+
+async function loadMoreArticles() {
+  infiniteScrollLoading = true;
+  
+  // Show loading indicator
+  let loader = document.getElementById('infinite-scroll-loader');
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'infinite-scroll-loader';
+    loader.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+    document.querySelector('.grid').insertAdjacentElement('afterend', loader);
+  }
+  loader.classList.remove('hidden');
+  
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const genre = urlParams.get('genre') || '';
+    
+    const response = await fetch(`/api/load-more?offset=${infiniteScrollOffset}&limit=20&genre=${genre}`);
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('Error loading more articles:', data.error);
+      infiniteScrollLoading = false;
+      loader.classList.add('hidden');
+      return;
+    }
+    
+    // Add new articles to grid
+    const grid = document.querySelector('.grid');
+    data.articles.forEach(article => {
+      const cardHtml = createArticleCard(article);
+      grid.insertAdjacentHTML('beforeend', cardHtml);
+    });
+    
+    // Re-initialize bookmarks for new cards
+    initBookmarks();
+    
+    infiniteScrollOffset += 20;
+    infiniteScrollHasMore = data.has_more;
+    
+    if (!infiniteScrollHasMore) {
+      loader.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No more articles</p>';
+    } else {
+      loader.classList.add('hidden');
+    }
+  } catch (error) {
+    console.error('Error loading more articles:', error);
+    loader.classList.add('hidden');
+  }
+  
+  infiniteScrollLoading = false;
+}
+
+function createArticleCard(article) {
+  const genres = article.genres?.slice(0, 3).map(g => `<span class="genre-tag">${g}</span>`).join('') || '';
+  const artistLink = article.artist ? `<p class="card-artist"><a href="/artist/${encodeURIComponent(article.artist)}" class="artist-link">🎤 ${article.artist}</a></p>` : '';
+  
+  return `
+    <article class="card">
+      <button class="bookmark-btn" data-url="${article.url}" title="Bookmark this article">☆</button>
+      <div class="card-image">
+        <img src="${article.image || '/static/default-music.png'}" alt="${article.title}" loading="lazy">
+      </div>
+      <div class="card-body">
+        <h2 class="card-title">
+          <a href="/article?url=${encodeURIComponent(article.url)}">${article.title}</a>
+        </h2>
+        ${artistLink}
+        <p class="card-meta">
+          <span>${article.published_at_human || ''}</span>
+          ${genres ? `<span class="genres">${genres}</span>` : ''}
+        </p>
+        <p class="card-description">${(article.description || '').substring(0, 150)}${article.description?.length > 150 ? '...' : ''}</p>
+        <div class="share-buttons">
+          <button class="share-btn" onclick="shareOnTwitter('${article.title.replace(/'/g, "\\'")}', '${article.url}')">🐦 Twitter</button>
+          <button class="share-btn" onclick="shareOnFacebook('${article.url}')">📘 Facebook</button>
+          <button class="share-btn" onclick="shareOnReddit('${article.title.replace(/'/g, "\\'")}', '${article.url}')">🔴 Reddit</button>
+          <button class="share-btn" onclick="copyToClipboard('${article.url}')">🔗 Copy</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 // Initialize everything on page load
 document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
   initBookmarks();
   initRecentSearches();
   initPagination();
+  initInfiniteScroll();
 });
 
 // Add fade out animation

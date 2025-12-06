@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Latest Music News - Music Hub</title>
+  <title>{{ artist_name }} - Music Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
@@ -12,7 +12,7 @@
     <div class="container header-inner">
       <h1>Music Hub</h1>
       <nav class="nav-links">
-        <a href="/" class="active">News</a>
+        <a href="/">News</a>
         <a href="/releases">Releases</a>
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
       </nav>
@@ -21,43 +21,20 @@
           type="text"
           name="q"
           placeholder="Search by artist, genre, album…"
-          value="{{ query or '' }}"
           autocomplete="off"
         >
         <button type="submit">Search</button>
       </form>
     </div>
-    
-    <!-- Genre Filters -->
-    <div class="container">
-      <div class="filter-bar">
-        <div class="filter-section">
-          <label>View:</label>
-          <a href="/?view=all{% if query %}&q={{ query }}{% endif %}{% if genre_filter %}&genre={{ genre_filter }}{% endif %}" 
-             class="filter-btn {% if view != 'trending' %}active{% endif %}">All</a>
-          <a href="/?view=trending{% if query %}&q={{ query }}{% endif %}{% if genre_filter %}&genre={{ genre_filter }}{% endif %}" 
-             class="filter-btn {% if view == 'trending' %}active{% endif %}">🔥 Trending</a>
-        </div>
-        
-        <div class="filter-section">
-          <label>Genre:</label>
-          <a href="/?{% if query %}q={{ query }}&{% endif %}{% if view != 'all' %}view={{ view }}&{% endif %}" 
-             class="filter-btn {% if not genre_filter %}active{% endif %}">All</a>
-          {% for genre in available_genres %}
-            <a href="/?genre={{ genre }}{% if query %}&q={{ query }}{% endif %}{% if view != 'all' %}&view={{ view }}{% endif %}" 
-               class="filter-btn {% if genre_filter == genre %}active{% endif %}">{{ genre.title() }}</a>
-          {% endfor %}
-        </div>
-        
-        <div class="filter-section">
-          <label>Load:</label>
-          <button id="toggle-infinite-scroll" class="filter-btn">Infinite Scroll</button>
-        </div>
-      </div>
-    </div>
   </header>
 
   <main class="container">
+    <div class="artist-header">
+      <a href="/" class="back-link">← Back to News</a>
+      <h1 class="artist-title">🎤 {{ artist_name }}</h1>
+      <p class="artist-subtitle">Latest news and updates</p>
+    </div>
+
     {% if error %}
       <div class="alert alert-error">
         <strong>Error:</strong> {{ error }}
@@ -65,8 +42,10 @@
     {% endif %}
 
     {% if not articles %}
-      <p>No articles found. Try a different search term like "Taylor Swift", "hip-hop", or "rock".</p>
+      <p>No articles found for {{ artist_name }}. <a href="/">Browse all news</a></p>
     {% else %}
+      <p class="article-count">{{ articles|length }} article{% if articles|length != 1 %}s{% endif %} found</p>
+      
       <section class="grid">
         {% for article in articles %}
           <article class="card">
@@ -86,12 +65,6 @@
                   {{ article.title }}
                 </a>
               </h2>
-
-              {% if article.artist %}
-                <p class="card-artist">
-                  <a href="/artist/{{ article.artist|urlencode }}" class="artist-link">🎤 {{ article.artist }}</a>
-                </p>
-              {% endif %}
 
               {% if article.published_at_human %}
                 <p class="card-meta">

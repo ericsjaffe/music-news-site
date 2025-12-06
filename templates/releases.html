@@ -49,6 +49,41 @@
                value="{{ end_year or '' }}" min="1900" max="{{ current_year }}">
         <span class="chip">Tip: keep ranges small (e.g. 1990–2025)</span>
       </div>
+      
+      <!-- Advanced Filters (UI ready for backend implementation) -->
+      <details class="advanced-filters">
+        <summary>Advanced Filters</summary>
+        <div class="filter-group">
+          <div class="form-row">
+            <label for="format">Format:</label>
+            <select id="format" name="format">
+              <option value="">All Formats</option>
+              <option value="Album">Album</option>
+              <option value="Single">Single</option>
+              <option value="EP">EP</option>
+              <option value="Compilation">Compilation</option>
+              <option value="Soundtrack">Soundtrack</option>
+              <option value="Live">Live</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="country">Country:</label>
+            <select id="country" name="country">
+              <option value="">All Countries</option>
+              <option value="US">United States</option>
+              <option value="GB">United Kingdom</option>
+              <option value="CA">Canada</option>
+              <option value="AU">Australia</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="JP">Japan</option>
+              <option value="XW">Worldwide</option>
+            </select>
+          </div>
+          <p class="filter-note">Note: Format and country filters require extended MusicBrainz API integration</p>
+        </div>
+      </details>
+      
       <button type="submit" class="submit-btn">Find releases</button>
       {% if error %}
         <div class="alert alert-error">{{ error }}</div>

@@ -842,7 +842,7 @@
 
       // Carousel functionality
       function initCarousels() {
-        const carouselIds = ['popular', 'announced', 'selling', 'venues'];
+        const carouselIds = ['popular', 'announced', 'coming', 'selling', 'venues'];
         
         carouselIds.forEach(id => {
           const container = document.getElementById('carousel-' + id);
@@ -860,8 +860,16 @@
           const totalCards = track.children.length;
           const maxIndex = Math.max(0, totalCards - visibleCards);
           
-          function updateCarousel() {
+          // Touch/swipe support
+          let touchStartX = 0;
+          let touchEndX = 0;
+          let isDragging = false;
+          let startTransform = 0;
+          let currentTransform = 0;
+          
+          function updateCarousel(smooth = true) {
             const offset = -currentIndex * cardWidth;
+            track.style.transition = smooth ? 'transform 0.3s ease-out' : 'none';
             track.style.transform = `translateX(${offset}px)`;
             
             prevBtn.disabled = currentIndex === 0;
@@ -882,6 +890,103 @@
             }
           });
           
+          // Touch events for swipe
+          track.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            isDragging = true;
+            startTransform = -currentIndex * cardWidth;
+            track.style.transition = 'none';
+          }, { passive: true });
+          
+          track.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            touchEndX = e.touches[0].clientX;
+            const diff = touchEndX - touchStartX;
+            currentTransform = startTransform + diff;
+            
+            // Add boundaries
+            const minTransform = -maxIndex * cardWidth;
+            const maxTransform = 0;
+            currentTransform = Math.max(minTransform, Math.min(maxTransform, currentTransform));
+            
+            track.style.transform = `translateX(${currentTransform}px)`;
+          }, { passive: true });
+          
+          track.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            const diff = touchEndX - touchStartX;
+            const threshold = 50; // Minimum swipe distance
+            
+            if (Math.abs(diff) > threshold) {
+              if (diff > 0 && currentIndex > 0) {
+                // Swiped right - go to previous
+                currentIndex--;
+              } else if (diff < 0 && currentIndex < maxIndex) {
+                // Swiped left - go to next
+                currentIndex++;
+              }
+            }
+            
+            updateCarousel();
+            touchStartX = 0;
+            touchEndX = 0;
+          });
+          
+          // Mouse drag support for desktop
+          let mouseStartX = 0;
+          let mouseDown = false;
+          
+          track.addEventListener('mousedown', (e) => {
+            mouseStartX = e.clientX;
+            mouseDown = true;
+            startTransform = -currentIndex * cardWidth;
+            track.style.transition = 'none';
+            track.style.cursor = 'grabbing';
+            e.preventDefault();
+          });
+          
+          track.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            const diff = e.clientX - mouseStartX;
+            currentTransform = startTransform + diff;
+            
+            const minTransform = -maxIndex * cardWidth;
+            const maxTransform = 0;
+            currentTransform = Math.max(minTransform, Math.min(maxTransform, currentTransform));
+            
+            track.style.transform = `translateX(${currentTransform}px)`;
+          });
+          
+          track.addEventListener('mouseup', (e) => {
+            if (!mouseDown) return;
+            mouseDown = false;
+            track.style.cursor = 'grab';
+            
+            const diff = e.clientX - mouseStartX;
+            const threshold = 50;
+            
+            if (Math.abs(diff) > threshold) {
+              if (diff > 0 && currentIndex > 0) {
+                currentIndex--;
+              } else if (diff < 0 && currentIndex < maxIndex) {
+                currentIndex++;
+              }
+            }
+            
+            updateCarousel();
+            mouseStartX = 0;
+          });
+          
+          track.addEventListener('mouseleave', () => {
+            if (mouseDown) {
+              mouseDown = false;
+              track.style.cursor = 'grab';
+              updateCarousel();
+            }
+          });
+          
           // Update on window resize
           let resizeTimer;
           window.addEventListener('resize', () => {
@@ -896,6 +1001,8 @@
             }, 250);
           });
           
+          // Set initial cursor
+          track.style.cursor = 'grab';
           updateCarousel();
         });
       }

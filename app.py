@@ -1,22 +1,71 @@
 import re
 import time
+import os
 from html import unescape
 from datetime import datetime
 from typing import List, Dict, Any
 from urllib.parse import quote_plus
+from flask import Flask, render_template, request, make_response
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 import feedparser
 import requests
-from flask import Flask, render_template, request
 
 from dedupe import dedupe_articles_fuzzy
 from cache_db import init_db, get_cached_results, save_cached_results, cleanup_old_cache
-  # reuse your existing dedupe helper
+from newsletter_db import (
+    init_newsletter_db, 
+    add_subscriber, 
+    confirm_subscriber, 
+    get_subscriber_count,
+    unsubscribe
+)
+from sms_db import (
+    init_sms_db,
+    add_sms_subscriber,
+    confirm_sms_subscriber,
+    get_all_confirmed_sms_subscribers,
+    unsubscribe_sms,
+    get_sms_subscriber_count,
+    article_already_sent,
+    mark_article_sent
+)
+
+try:
+    from twilio.rest import Client
+    TWILIO_AVAILABLE = True
+except ImportError:
+    TWILIO_AVAILABLE = False
+    print("Warning: Twilio not installed. SMS features disabled. Run: pip install twilio")
 
 app = Flask(__name__)
 
-# Initialize cache database
+# Initialize databases
 init_db()
+init_newsletter_db()
+init_sms_db()
+
+# Email configuration (optional - configure for production)
+SMTP_SERVER = "smtp.gmail.com"  # or your SMTP server
+SMTP_PORT = 587
+SMTP_USERNAME = "your-email@gmail.com"  # Configure this
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', 'your-app-password')
+FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@musichub.com')
+
+# Admin notification email
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'eric.s.jaffe@gmail.com')
+
+# Twilio SMS Configuration (configure these to enable SMS)
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', 'your-account-sid')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', 'your-auth-token')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '+1234567890')
+ADMIN_PHONE = os.getenv('ADMIN_PHONE', '+12154319224')
 
 # Loudwire main RSS feed
 LOUDWIRE_LATEST_FEED = "https://loudwire.com/category/news/feed"
@@ -104,6 +153,265 @@ def get_apple_music_search_url(artist: str, track: str = "") -> str:
     """Generate Apple Music search URL."""
     query = f"{artist} {track}".strip()
     return f"https://music.apple.com/us/search?term={quote_plus(query)}"
+
+
+def send_confirmation_email(email: str, token: str) -> bool:
+    """Send confirmation email to subscriber."""
+    # Skip if SMTP not configured
+    if SMTP_USERNAME == "your-email@gmail.com":
+        print(f"Email confirmation skipped (SMTP not configured). Token: {token}")
+        return True
+    
+    try:
+        # Generate confirmation link
+        confirmation_url = f"{request.host_url}newsletter/confirm/{token}"
+        
+        # Create email
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "Confirm your Music Hub Newsletter Subscription"
+        msg['From'] = FROM_EMAIL
+        msg['To'] = email
+        
+        # Plain text version
+        text = f"""
+Thanks for subscribing to Music Hub Newsletter!
+
+Please confirm your subscription by clicking the link below:
+{confirmation_url}
+
+If you didn't sign up for this newsletter, you can safely ignore this email.
+
+- Music Hub Team
+"""
+        
+        # HTML version
+        html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #ec4899, #fb7185); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .button {{ display: inline-block; background: #ec4899; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #666; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Welcome to Music Hub!</h1>
+        </div>
+        <div class="content">
+            <p>Thanks for subscribing to the Music Hub Newsletter!</p>
+            <p>You're one step away from getting the latest music news delivered straight to your inbox.</p>
+            <p style="text-align: center;">
+                <a href="{confirmation_url}" class="button">Confirm Your Subscription</a>
+            </p>
+            <p><small>If the button doesn't work, copy and paste this link into your browser:</small><br>
+            <small>{confirmation_url}</small></p>
+            <p><small>If you didn't sign up for this newsletter, you can safely ignore this email.</small></p>
+        </div>
+        <div class="footer">
+            <p>Music Hub - Your source for the latest music news</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        # Attach both versions
+        part1 = MIMEText(text, 'plain')
+        part2 = MIMEText(html, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+        
+        return True
+    except Exception as e:
+        print(f"Error sending confirmation email: {e}")
+        return False
+
+
+def send_admin_notification(email: str) -> bool:
+    """Send notification to admin when someone subscribes."""
+    # Skip if SMTP not configured
+    if SMTP_USERNAME == "your-email@gmail.com":
+        print(f"Admin notification skipped (SMTP not configured). New subscriber: {email}")
+        return True
+    
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "🎵 New Music Hub Newsletter Subscriber"
+        msg['From'] = FROM_EMAIL
+        msg['To'] = ADMIN_EMAIL
+        
+        text = f"""
+New subscriber signed up for the Music Hub Newsletter!
+
+Email: {email}
+Time: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+
+View all subscribers: http://localhost:5001/newsletter/stats
+"""
+        
+        html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }}
+        .subscriber {{ background: white; padding: 15px; border-left: 4px solid #667eea; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 14px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 New Subscriber!</h1>
+        </div>
+        <div class="content">
+            <p>Great news! Someone just signed up for your Music Hub Newsletter.</p>
+            
+            <div class="subscriber">
+                <strong>Email:</strong> {email}<br>
+                <strong>Time:</strong> {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+            </div>
+            
+            <p>They'll receive a confirmation email shortly.</p>
+            
+            <div class="footer">
+                <p>Music Hub Newsletter System</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        part1 = MIMEText(text, 'plain')
+        part2 = MIMEText(html, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+        
+        return True
+    except Exception as e:
+        print(f"Error sending admin notification: {e}")
+        return False
+
+
+def send_sms_confirmation(phone_number: str, token: str) -> bool:
+    """Send SMS confirmation to subscriber."""
+    if not TWILIO_AVAILABLE:
+        print(f"SMS confirmation skipped (Twilio not installed). Token: {token}")
+        return True
+    
+    if TWILIO_ACCOUNT_SID == "your-account-sid":
+        print(f"SMS confirmation skipped (Twilio not configured). Token: {token}")
+        return True
+    
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        confirmation_url = f"{request.host_url}sms/confirm/{token}"
+        
+        message = client.messages.create(
+            body=f"🎵 Music Hub: Confirm your SMS subscription by visiting: {confirmation_url}\n\nReply STOP to unsubscribe anytime.",
+            from_=TWILIO_PHONE_NUMBER,
+            to=phone_number
+        )
+        
+        print(f"SMS confirmation sent: {message.sid}")
+        return True
+    except Exception as e:
+        print(f"Error sending SMS confirmation: {e}")
+        return False
+
+
+def send_article_sms_notification(article_title: str, article_url: str):
+    """Send SMS notification about new article to all confirmed subscribers."""
+    if not TWILIO_AVAILABLE:
+        print("SMS notifications skipped (Twilio not installed)")
+        return
+    
+    if TWILIO_ACCOUNT_SID == "your-account-sid":
+        print("SMS notifications skipped (Twilio not configured)")
+        return
+    
+    # Check if already sent
+    if article_already_sent(article_url):
+        print(f"SMS notification already sent for: {article_title}")
+        return
+    
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        subscribers = get_all_confirmed_sms_subscribers()
+        
+        if not subscribers:
+            print("No SMS subscribers to notify")
+            return
+        
+        # Truncate title if too long
+        short_title = article_title[:100] + "..." if len(article_title) > 100 else article_title
+        full_url = f"{request.host_url}article?url={article_url}"
+        
+        message_body = f"🎵 New on Music Hub:\n\n{short_title}\n\nRead more: {full_url}\n\nReply STOP to unsubscribe"
+        
+        sent_count = 0
+        for _, phone_number, _, _ in subscribers:
+            try:
+                message = client.messages.create(
+                    body=message_body,
+                    from_=TWILIO_PHONE_NUMBER,
+                    to=phone_number
+                )
+                print(f"SMS sent to {phone_number}: {message.sid}")
+                sent_count += 1
+                time.sleep(1)  # Rate limiting
+            except Exception as e:
+                print(f"Error sending SMS to {phone_number}: {e}")
+        
+        # Mark as sent
+        mark_article_sent(article_url, sent_count)
+        print(f"Article notification sent to {sent_count} subscribers")
+        
+    except Exception as e:
+        print(f"Error sending article SMS notifications: {e}")
+
+
+def send_admin_sms_notification(phone_number: str) -> bool:
+    """Send SMS to admin when someone subscribes."""
+    if not TWILIO_AVAILABLE or TWILIO_ACCOUNT_SID == "your-account-sid":
+        print(f"Admin SMS notification skipped. New subscriber: {phone_number}")
+        return True
+    
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        
+        message = client.messages.create(
+            body=f"🎵 Music Hub: New SMS subscriber!\n\n{phone_number}\n\nTime: {datetime.now().strftime('%I:%M %p')}",
+            from_=TWILIO_PHONE_NUMBER,
+            to=ADMIN_PHONE
+        )
+        
+        print(f"Admin SMS sent: {message.sid}")
+        return True
+    except Exception as e:
+        print(f"Error sending admin SMS: {e}")
+        return False
 
 
 def parse_published(entry: Dict[str, Any]) -> str | None:
@@ -615,15 +923,182 @@ def newsletter_subscribe():
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         return {"error": "Invalid email address"}, 400
     
-    # In a real application, you would:
-    # 1. Save to database
-    # 2. Send confirmation email
-    # 3. Integrate with email service (Mailchimp, SendGrid, etc.)
+    # Get user info
+    ip_address = request.remote_addr
+    user_agent = request.headers.get('User-Agent', '')
     
-    # For now, just log it
-    print(f"Newsletter subscription: {email}")
+    # Add to database
+    result = add_subscriber(email, ip_address, user_agent)
     
-    return {"success": True, "message": "Thanks for subscribing! Check your email for confirmation."}
+    if not result["success"]:
+        if result.get("error") == "already_subscribed":
+            return {"error": "You're already subscribed to our newsletter!"}, 400
+        return {"error": "Subscription failed. Please try again."}, 500
+    
+    # Send confirmation email
+    token = result["token"]
+    email_sent = send_confirmation_email(email, token)
+    
+    # Send admin notification
+    send_admin_notification(email)
+    
+    if email_sent:
+        return {
+            "success": True, 
+            "message": "Thanks for subscribing! Please check your email to confirm your subscription."
+        }
+    else:
+        return {
+            "success": True,
+            "message": "Subscription pending. Please check your email for confirmation."
+        }
+
+
+@app.route("/newsletter/confirm/<token>")
+def newsletter_confirm(token):
+    """Confirm newsletter subscription via email link."""
+    success = confirm_subscriber(token)
+    
+    if success:
+        message = "✓ Your subscription is confirmed! You'll now receive the latest music news."
+        status = "success"
+    else:
+        message = "✗ Invalid or expired confirmation link. Please try subscribing again."
+        status = "error"
+    
+    # Render a simple confirmation page
+    return render_template("newsletter_confirm.html", message=message, status=status)
+
+
+@app.route("/newsletter/unsubscribe")
+def newsletter_unsubscribe_page():
+    """Unsubscribe page."""
+    email = request.args.get("email", "")
+    return render_template("newsletter_unsubscribe.html", email=email)
+
+
+@app.route("/newsletter/unsubscribe", methods=["POST"])
+def newsletter_unsubscribe():
+    """Handle newsletter unsubscription."""
+    email = request.form.get("email", "").strip()
+    
+    if not email:
+        return {"error": "Email is required"}, 400
+    
+    success = unsubscribe(email)
+    
+    if success:
+        return {"success": True, "message": "You've been unsubscribed. Sorry to see you go!"}
+    else:
+        return {"error": "Email not found in our system"}, 404
+
+
+@app.route("/newsletter/stats")
+def newsletter_stats():
+    """Admin endpoint to view subscriber statistics."""
+    stats = get_subscriber_count()
+    return {
+        "confirmed_subscribers": stats["confirmed"],
+        "pending_confirmations": stats["pending"],
+        "total": stats["total"]
+    }
+
+
+@app.route("/sms/subscribe", methods=["POST"])
+def sms_subscribe():
+    """Handle SMS subscription."""
+    phone_number = request.form.get("phone", "").strip()
+    
+    if not phone_number:
+        return {"error": "Phone number is required"}, 400
+    
+    # Basic phone validation (US format)
+    phone_clean = re.sub(r'[^\d+]', '', phone_number)
+    if not phone_clean.startswith('+'):
+        phone_clean = '+1' + phone_clean  # Assume US if no country code
+    
+    if len(phone_clean) < 11:
+        return {"error": "Invalid phone number"}, 400
+    
+    # Get user info
+    ip_address = request.remote_addr
+    user_agent = request.headers.get('User-Agent', '')
+    
+    # Add to database
+    result = add_sms_subscriber(phone_clean, ip_address, user_agent)
+    
+    if not result["success"]:
+        if result.get("error") == "already_subscribed":
+            return {"error": "This number is already subscribed!"}, 400
+        return {"error": "Subscription failed. Please try again."}, 500
+    
+    # Send confirmation SMS
+    token = result["token"]
+    sms_sent = send_sms_confirmation(phone_clean, token)
+    
+    # Notify admin
+    send_admin_sms_notification(phone_clean)
+    
+    if sms_sent:
+        return {
+            "success": True,
+            "message": "Thanks! Check your phone for a confirmation link."
+        }
+    else:
+        return {
+            "success": True,
+            "message": "Subscription pending. Check your phone for confirmation."
+        }
+
+
+@app.route("/sms/confirm/<token>")
+def sms_confirm(token):
+    """Confirm SMS subscription via link."""
+    success = confirm_sms_subscriber(token)
+    
+    if success:
+        message = "✓ Your SMS subscription is confirmed! You'll get alerts for new articles."
+        status = "success"
+    else:
+        message = "✗ Invalid or expired confirmation link. Please try subscribing again."
+        status = "error"
+    
+    return render_template("sms_confirm.html", message=message, status=status)
+
+
+@app.route("/sms/unsubscribe", methods=["GET", "POST"])
+def sms_unsubscribe_route():
+    """Handle SMS unsubscribe."""
+    if request.method == "GET":
+        return render_template("sms_unsubscribe.html")
+    
+    phone_number = request.form.get("phone", "").strip()
+    
+    if not phone_number:
+        return {"error": "Phone number is required"}, 400
+    
+    # Clean phone number
+    phone_clean = re.sub(r'[^\d+]', '', phone_number)
+    if not phone_clean.startswith('+'):
+        phone_clean = '+1' + phone_clean
+    
+    success = unsubscribe_sms(phone_clean)
+    
+    if success:
+        return {"success": True, "message": "You've been unsubscribed from SMS alerts."}
+    else:
+        return {"error": "Phone number not found in our system."}, 404
+
+
+@app.route("/sms/stats")
+def sms_stats():
+    """Admin endpoint to view SMS subscriber statistics."""
+    stats = get_sms_subscriber_count()
+    return {
+        "confirmed_subscribers": stats["confirmed_subscribers"],
+        "pending_confirmations": stats["pending_confirmations"],
+        "total": stats["total"]
+    }
 
 
 if __name__ == "__main__":

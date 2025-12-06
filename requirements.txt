@@ -4,3 +4,4 @@ requests==2.32.3
 python-dotenv==1.0.1
 feedparser
 beautifulsoup4
+twilio==9.0.4

@@ -136,21 +136,45 @@
         {% endfor %}
       </section>
       
-      <!-- Newsletter Signup -->
+      <!-- Newsletter & SMS Signup -->
       <section class="newsletter-section">
         <h2>🎵 Never Miss a Beat</h2>
-        <p>Get the latest music news delivered straight to your inbox</p>
-        <form class="newsletter-form" id="newsletter-form" onsubmit="return subscribeNewsletter(event)">
-          <input 
-            type="email" 
-            name="email" 
-            placeholder="Enter your email address" 
-            required
-            id="newsletter-email"
-          >
-          <button type="submit">Subscribe</button>
-        </form>
-        <div id="newsletter-message" class="newsletter-message" style="display: none;"></div>
+        <p>Get instant alerts for new music articles</p>
+        
+        <div class="signup-container">
+          <!-- Email Signup -->
+          <div class="signup-box">
+            <h3>📧 Email Updates</h3>
+            <form class="newsletter-form" id="newsletter-form" onsubmit="return subscribeNewsletter(event)">
+              <input 
+                type="email" 
+                name="email" 
+                placeholder="Enter your email address" 
+                required
+                id="newsletter-email"
+              >
+              <button type="submit">Subscribe</button>
+            </form>
+            <div id="newsletter-message" class="newsletter-message" style="display: none;"></div>
+          </div>
+          
+          <!-- SMS Signup -->
+          <div class="signup-box">
+            <h3>📱 SMS Alerts</h3>
+            <form class="newsletter-form" id="sms-form" onsubmit="return subscribeSMS(event)">
+              <input 
+                type="tel" 
+                name="phone" 
+                placeholder="Enter your phone number" 
+                required
+                id="sms-phone"
+              >
+              <button type="submit">Subscribe</button>
+            </form>
+            <div id="sms-message" class="newsletter-message" style="display: none;"></div>
+            <p class="sms-note">Standard messaging rates may apply</p>
+          </div>
+        </div>
       </section>
     {% endif %}
   </main>
@@ -174,6 +198,53 @@
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: `email=${encodeURIComponent(email)}`
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          messageDiv.textContent = '✓ ' + data.message;
+          messageDiv.style.color = 'white';
+          form.reset();
+        } else {
+          messageDiv.textContent = '✗ ' + (data.error || 'Subscription failed');
+          messageDiv.style.color = '#ffcccc';
+        }
+      } catch (error) {
+        messageDiv.textContent = '✗ Network error. Please try again.';
+        messageDiv.style.color = '#ffcccc';
+      }
+      
+      messageDiv.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Subscribe';
+      
+      // Hide message after 5 seconds
+      setTimeout(() => {
+        messageDiv.style.display = 'none';
+      }, 5000);
+      
+      return false;
+    }
+    
+    async function subscribeSMS(event) {
+      event.preventDefault();
+      const form = event.target;
+      const phone = document.getElementById('sms-phone').value;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const messageDiv = document.getElementById('sms-message');
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Subscribing...';
+      messageDiv.style.display = 'none';
+      
+      try {
+        const response = await fetch('/sms/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `phone=${encodeURIComponent(phone)}`
         });
         
         const data = await response.json();

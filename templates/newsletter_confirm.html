@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Newsletter Confirmation - Music Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="text-align: center; padding: 4rem 1.5rem;">
+    {% if status == 'success' %}
+      <div style="font-size: 5rem; margin-bottom: 1rem;">✓</div>
+      <h1 style="color: var(--success); margin-bottom: 1rem;">Subscription Confirmed!</h1>
+    {% else %}
+      <div style="font-size: 5rem; margin-bottom: 1rem;">✗</div>
+      <h1 style="color: #ef4444; margin-bottom: 1rem;">Confirmation Failed</h1>
+    {% endif %}
+    
+    <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 2rem;">
+      {{ message }}
+    </p>
+    
+    {% if status == 'success' %}
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">
+        You'll receive the latest music news straight to your inbox.
+      </p>
+    {% endif %}
+    
+    <a href="/" style="display: inline-block; padding: 0.8rem 2rem; background: var(--accent-primary); color: white; text-decoration: none; border-radius: 0.5rem; font-weight: 600;">
+      Back to Music Hub
+    </a>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&nbsp;</p>
+    </div>
+  </footer>
+</body>
+</html>

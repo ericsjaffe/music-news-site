@@ -1012,18 +1012,37 @@ body {
   opacity: 0.9;
 }
 
+.signup-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.signup-box {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  backdrop-filter: blur(10px);
+}
+
+.signup-box h3 {
+  margin: 0 0 1rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
 .newsletter-form {
   display: flex;
   gap: 0.5rem;
-  max-width: 500px;
-  margin: 0 auto;
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .newsletter-form input {
   flex: 1;
-  min-width: 250px;
+  min-width: 200px;
   padding: 0.8rem 1rem;
   border: none;
   border-radius: 0.5rem;
@@ -1051,4 +1070,10 @@ body {
   margin-top: 1rem;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+.sms-note {
+  margin-top: 0.75rem !important;
+  font-size: 0.75rem;
+  opacity: 0.7;
 }

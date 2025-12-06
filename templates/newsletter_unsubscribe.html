@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Unsubscribe - Music Hub Newsletter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="max-width: 600px; padding: 4rem 1.5rem;">
+    <h1 style="text-align: center; margin-bottom: 1rem;">Unsubscribe from Newsletter</h1>
+    <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem;">
+      We're sorry to see you go! Enter your email below to unsubscribe from our newsletter.
+    </p>
+    
+    <form id="unsubscribe-form" onsubmit="return handleUnsubscribe(event)">
+      <div style="margin-bottom: 1rem;">
+        <input 
+          type="email" 
+          name="email" 
+          id="unsubscribe-email"
+          placeholder="your@email.com" 
+          value="{{ email }}"
+          required
+          style="width: 100%; padding: 0.8rem; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 1rem;"
+        >
+      </div>
+      
+      <button 
+        type="submit" 
+        id="unsubscribe-btn"
+        style="width: 100%; padding: 0.8rem; background: #ef4444; color: white; border: none; border-radius: 0.5rem; font-weight: 600; font-size: 1rem; cursor: pointer;"
+      >
+        Unsubscribe
+      </button>
+      
+      <div id="unsubscribe-message" style="margin-top: 1rem; padding: 1rem; border-radius: 0.5rem; display: none;"></div>
+    </form>
+    
+    <p style="text-align: center; margin-top: 2rem;">
+      <a href="/" style="color: var(--link-color);">Back to Music Hub</a>
+    </p>
+  </main>
+
+  <script>
+    async function handleUnsubscribe(event) {
+      event.preventDefault();
+      const form = event.target;
+      const email = form.email.value;
+      const messageDiv = document.getElementById('unsubscribe-message');
+      const submitBtn = document.getElementById('unsubscribe-btn');
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Unsubscribing...';
+      
+      try {
+        const response = await fetch('/newsletter/unsubscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `email=${encodeURIComponent(email)}`
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          messageDiv.textContent = '✓ ' + data.message;
+          messageDiv.style.background = 'var(--success)';
+          messageDiv.style.color = 'white';
+          form.reset();
+          
+          // Redirect after 3 seconds
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 3000);
+        } else {
+          messageDiv.textContent = '✗ ' + (data.error || 'Unsubscribe failed');
+          messageDiv.style.background = '#ef4444';
+          messageDiv.style.color = 'white';
+        }
+      } catch (error) {
+        messageDiv.textContent = '✗ Network error. Please try again.';
+        messageDiv.style.background = '#ef4444';
+        messageDiv.style.color = 'white';
+      }
+      
+      messageDiv.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Unsubscribe';
+      
+      return false;
+    }
+  </script>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&nbsp;</p>
+    </div>
+  </footer>
+</body>
+</html>

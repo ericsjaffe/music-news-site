@@ -1,6 +1,7 @@
 import re
 import time
 import os
+import sqlite3
 from html import unescape
 from datetime import datetime
 from typing import List, Dict, Any

@@ -1373,9 +1373,9 @@ def touring():
             all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius, sort="date,asc")
             
             if all_events:
-                # Just announced - events sorted by on-sale date (most recent first)
-                announced_events = get_artist_tour_dates('concert', limit=24, latlong=latlong, radius=radius, sort="onsale,desc")
-                just_announced = announced_events[:12] if announced_events else all_events[:12]
+                # Just announced - use date-sorted events (recently added events appear last)
+                just_announced = all_events[-12:] if len(all_events) > 12 else all_events
+                just_announced = list(reversed(just_announced))  # Reverse to show newest first
                 
                 # Coming Soon - tickets going on sale soonest
                 coming_soon = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="onSaleStartDate,asc")

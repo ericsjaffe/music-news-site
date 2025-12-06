@@ -222,7 +222,7 @@ def releases():
 
     # Defaults for first load / GET - use today's date
     date_value = today.strftime("%Y-%m-%d")
-    start_year = 1990
+    start_year = 1950
     end_year = current_year
     pretty_date = today.strftime("%B %d")
     mm_dd = today.strftime("%m-%d")
@@ -253,7 +253,7 @@ def releases():
                 start_year, end_year = end_year, start_year
         except ValueError:
             error = (error + " | " if error else "") + "Start/end year must be numbers."
-            start_year = 1990
+            start_year = 1950
             end_year = current_year
         
         should_fetch = True

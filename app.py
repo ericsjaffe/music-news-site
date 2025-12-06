@@ -715,6 +715,69 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
+def get_artist_tour_dates(artist_name: str, limit: int = 50):
+    """
+    Fetch upcoming tour dates for an artist from Bandsintown API.
+    Returns list of tour date dicts.
+    """
+    # Bandsintown API endpoint
+    base_url = "https://rest.bandsintown.com/artists"
+    
+    # URL encode artist name
+    encoded_artist = requests.utils.quote(artist_name)
+    
+    url = f"{base_url}/{encoded_artist}/events"
+    
+    params = {
+        "app_id": "music_hub_app",  # Required by Bandsintown
+        "date": "upcoming"
+    }
+    
+    headers = {
+        "User-Agent": USER_AGENT
+    }
+    
+    try:
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        
+        # Bandsintown returns 404 if artist not found or no events
+        if resp.status_code == 404:
+            return []
+        
+        resp.raise_for_status()
+        events = resp.json()
+        
+        if not isinstance(events, list):
+            return []
+        
+        # Process and return events
+        tour_dates = []
+        for event in events[:limit]:
+            # Extract venue and location info
+            venue = event.get('venue', {})
+            
+            tour_date = {
+                'id': event.get('id', ''),
+                'artist': artist_name,
+                'datetime': event.get('datetime', ''),
+                'venue_name': venue.get('name', 'Venue TBA'),
+                'city': venue.get('city', ''),
+                'region': venue.get('region', ''),
+                'country': venue.get('country', ''),
+                'ticket_url': event.get('url', ''),
+                'description': event.get('description', ''),
+                'lineup': event.get('lineup', []),
+            }
+            
+            tour_dates.append(tour_date)
+        
+        return tour_dates
+        
+    except Exception as e:
+        print(f"Bandsintown API error for {artist_name}: {e}")
+        return []
+
+
 def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 100, offset: int = 0, max_retries: int = 3):
     """
     Call MusicBrainz search by artist name:
@@ -1194,8 +1257,48 @@ def artist_page(artist_name):
 
 @app.route("/touring")
 def touring():
-    """Touring page - coming soon."""
-    return render_template("touring.html")
+    """Touring page with concert tour data from Bandsintown API."""
+    artist_query = request.args.get('artist', '').strip()
+    
+    # Popular artists to show recent tours by default
+    default_artists = [
+        "Pearl Jam", "Taylor Swift", "The Weeknd", "Coldplay", "Ed Sheeran",
+        "Imagine Dragons", "Billie Eilish", "Drake", "Metallica", "Red Hot Chili Peppers"
+    ]
+    
+    tours = []
+    error = None
+    
+    try:
+        if artist_query:
+            # Search for specific artist
+            tours = get_artist_tour_dates(artist_query)
+            if not tours:
+                error = f"No upcoming tour dates found for '{artist_query}'"
+        else:
+            # Show recent announcements from popular artists
+            for artist in default_artists:
+                artist_tours = get_artist_tour_dates(artist, limit=3)
+                if artist_tours:
+                    tours.extend(artist_tours[:3])  # Limit to 3 per artist
+                time.sleep(0.2)  # Be polite to API
+                
+                if len(tours) >= 30:  # Limit total results
+                    break
+            
+            # Sort by date
+            tours.sort(key=lambda x: x.get('datetime', ''))
+            
+    except Exception as e:
+        error = "Unable to fetch tour data at this time. Please try again later."
+        print(f"Touring API error: {e}")
+    
+    return render_template(
+        "touring.html",
+        tours=tours,
+        artist_query=artist_query,
+        error=error
+    )
 
 
 @app.route("/videos")

@@ -52,9 +52,9 @@ init_newsletter_db()
 init_sms_db()
 
 # Email configuration (optional - configure for production)
-SMTP_SERVER = "smtp.gmail.com"  # or your SMTP server
-SMTP_PORT = 587
-SMTP_USERNAME = "your-email@gmail.com"  # Configure this
+SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
+SMTP_USERNAME = os.getenv('SMTP_USERNAME', 'your-email@gmail.com')
 SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', 'your-app-password')
 FROM_EMAIL = os.getenv('FROM_EMAIL', 'noreply@musichub.com')
 

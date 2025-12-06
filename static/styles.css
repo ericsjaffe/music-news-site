@@ -36,6 +36,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -131,6 +135,20 @@ body {
   color: var(--text-primary);
   background: rgba(236, 72, 153, 0.2);
   font-weight: 600;
+}
+
+/* Subscribe link highlight */
+.nav-links a.subscribe-link {
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 600;
+  border: 1px solid var(--accent-primary);
+}
+
+.nav-links a.subscribe-link:hover {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+  color: white;
 }
 
 /* Search form */

@@ -800,12 +800,14 @@ def releases():
         for year in range(end_year, start_year - 1, -1):
             try:
                 releases = search_releases_for_date(year, mm_dd, limit=50)
-            except requests.HTTPError as e:
-                error = f"HTTP error for year {year}: {e}"
-                break
+            except (requests.HTTPError, requests.ConnectionError, ConnectionResetError) as e:
+                # Skip this year and continue with others
+                print(f"Skipping year {year} due to connection issue: {e}")
+                continue
             except Exception as e:
-                error = f"Error for year {year}: {e}"
-                break
+                # For other errors, skip and continue
+                print(f"Skipping year {year} due to error: {e}")
+                continue
 
             for r in releases:
                 title = r.get("title")

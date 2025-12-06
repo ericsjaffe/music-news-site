@@ -715,11 +715,12 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
-def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 100, max_retries: int = 3):
+def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 100, offset: int = 0, max_retries: int = 3):
     """
     Call MusicBrainz search by artist name:
       /ws/2/release/?query=artist:ARTIST&fmt=json&limit=...
     Optionally filter by year if provided.
+    Supports pagination with offset parameter.
     Returns list of releases (dicts).
     """
     query = f"artist:{artist_name}"
@@ -730,6 +731,7 @@ def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 1
         "query": query,
         "fmt": "json",
         "limit": str(limit),
+        "offset": str(offset),
     }
     headers = {
         "User-Agent": USER_AGENT,
@@ -834,14 +836,41 @@ def releases():
         # If artist filter is provided, search by artist instead of date
         if artist_filter:
             results = []
-            # Search by artist - get all releases without year filtering first
+            seen_titles = set()  # Track unique album titles to avoid duplicates
+            
+            # Search by artist - get maximum results from MusicBrainz
             try:
-                # Get more results for artist search
-                releases = search_releases_by_artist(artist_filter, year=None, limit=500)
+                # MusicBrainz max limit is 100 per request, so we need to paginate
+                all_releases = []
+                offset = 0
+                limit = 100
+                max_results = 1000  # Get up to 1000 results total
                 
-                for r in releases:
+                while offset < max_results:
+                    # Fetch releases with pagination
+                    releases = search_releases_by_artist(artist_filter, year=None, limit=limit, offset=offset)
+                    
+                    if not releases:
+                        break  # No more results
+                    
+                    all_releases.extend(releases)
+                    offset += limit
+                    
+                    # Stop if we got fewer results than requested (last page)
+                    if len(releases) < limit:
+                        break
+                    
+                    # Be polite to MusicBrainz API
+                    time.sleep(1)
+                
+                # Process all releases and remove duplicates
+                for r in all_releases:
                     title = r.get("title")
                     date = r.get("date")
+                    
+                    # Skip if no title
+                    if not title:
+                        continue
                     
                     # Extract year from release date
                     release_year = None
@@ -852,10 +881,18 @@ def releases():
                         except (ValueError, TypeError):
                             pass
                     
-                    # When searching by artist, show ALL releases regardless of year
-                    # Skip only if no year could be extracted
+                    # Skip if no year could be extracted
                     if not release_year:
                         continue
+                    
+                    # Create a unique key for deduplication (title + year)
+                    # This helps avoid showing multiple editions of the same album
+                    unique_key = f"{title.lower().strip()}_{release_year}"
+                    
+                    if unique_key in seen_titles:
+                        continue  # Skip duplicate
+                    
+                    seen_titles.add(unique_key)
                     
                     artist = None
                     ac = r.get("artist-credit") or []

@@ -129,6 +129,26 @@
         </section>
       {% endif %}
 
+      <!-- Coming Soon Carousel -->
+      {% if coming_soon %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">🎟️ Coming Soon</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="coming">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="coming">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-coming">
+            <div class="carousel-track">
+              {% for event in coming_soon %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
       <!-- Selling Fast Carousel -->
       {% if selling_fast %}
         <section class="carousel-section">

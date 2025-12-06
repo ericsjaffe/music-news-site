@@ -1347,6 +1347,7 @@ def touring():
     tours = []
     popular_events = []
     just_announced = []
+    coming_soon = []
     selling_fast = []
     nearby_venues = []
     error = None
@@ -1375,6 +1376,9 @@ def touring():
                 # Just announced - events sorted by on-sale date (most recent first)
                 announced_events = get_artist_tour_dates('concert', limit=24, latlong=latlong, radius=radius, sort="onsale,desc")
                 just_announced = announced_events[:12] if announced_events else all_events[:12]
+                
+                # Coming Soon - tickets going on sale soonest
+                coming_soon = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="onSaleStartDate,asc")
                 
                 # Selling fast - use random sampling from popular events to simulate demand
                 if len(all_events) >= 36:
@@ -1413,6 +1417,7 @@ def touring():
         tours=tours,
         popular_events=popular_events,
         just_announced=just_announced,
+        coming_soon=coming_soon,
         selling_fast=selling_fast,
         nearby_venues=nearby_venues,
         artist_query=artist_query,

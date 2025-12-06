@@ -2336,11 +2336,6 @@
           track.innerHTML = allEvents.map(event => renderEventCard(event)).join('');
           // Re-initialize follow buttons for the new cards
           initializeFollowButtons();
-          // Re-init carousel for this section
-          const container = document.getElementById('carousel-your-artists');
-          if (container) {
-            initCarousel(container, 'your-artists');
-          }
         } else {
           track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">No upcoming events found for your followed artists.</div>';
         }
@@ -2401,10 +2396,6 @@
             if (recommendedEvents.length > 0) {
               track.innerHTML = recommendedEvents.map(event => renderEventCard(event)).join('');
               initializeFollowButtons();
-              const container = document.getElementById('carousel-recommended');
-              if (container) {
-                initCarousel(container, 'recommended');
-              }
             } else {
               track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">No new recommendations at this time. Follow more artists to improve recommendations!</div>';
             }

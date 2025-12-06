@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Latest Music News - Music Hub</title>
+  <title>Latest Music News</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -14,7 +13,6 @@
       <nav class="nav-links">
         <a href="/" class="active">News</a>
         <a href="/releases">Releases</a>
-        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
       </nav>
       <form method="get" action="/" class="search-form">
         <input
@@ -22,7 +20,6 @@
           name="q"
           placeholder="Search by artist, genre, album…"
           value="{{ query or '' }}"
-          autocomplete="off"
         >
         <button type="submit">Search</button>
       </form>
@@ -37,12 +34,11 @@
     {% endif %}
 
     {% if not articles %}
-      <p>No articles found. Try a different search term like "Taylor Swift", "hip-hop", or "rock".</p>
+      <p>No articles found. Try a different search term like “Taylor Swift”, “hip-hop”, or “rock”.</p>
     {% else %}
       <section class="grid">
         {% for article in articles %}
           <article class="card">
-            <button class="bookmark-btn" data-url="{{ article.url }}" title="Bookmark this article">☆</button>
             <div class="card-image">
               <img
                 src="{{ article.image or url_for('static', filename='default-music.png') }}"
@@ -66,23 +62,8 @@
               {% endif %}
 
               {% if article.description %}
-                <p class="card-description">{{ article.description[:150] }}{% if article.description|length > 150 %}...{% endif %}</p>
+                <p class="card-description">{{ article.description }}</p>
               {% endif %}
-
-              <div class="share-buttons">
-                <button class="share-btn" onclick="shareOnTwitter('{{ article.title|replace('\'', '\\\'') }}', '{{ article.url }}')">
-                  🐦 Twitter
-                </button>
-                <button class="share-btn" onclick="shareOnFacebook('{{ article.url }}')">
-                  📘 Facebook
-                </button>
-                <button class="share-btn" onclick="shareOnReddit('{{ article.title|replace('\'', '\\\'') }}', '{{ article.url }}')">
-                  🔴 Reddit
-                </button>
-                <button class="share-btn" onclick="copyToClipboard('{{ article.url }}')">
-                  🔗 Copy
-                </button>
-              </div>
             </div>
           </article>
         {% endfor %}
@@ -92,7 +73,6 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>&nbsp;</p>
     </div>
   </footer>
 </body>

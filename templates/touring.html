@@ -33,14 +33,13 @@
 
   <main class="container">
     <div class="tours-header">
-      <h2>🎸 Concert Tours & Live Shows</h2>
-      <p class="tours-subtitle">
-        {% if artist_query %}
-          Showing tour dates for <strong>{{ artist_query }}</strong>
-        {% else %}
-          Recently announced tour dates from popular artists
-        {% endif %}
-      </p>
+      {% if artist_query %}
+        <h2>🎸 {{ artist_query }} Tour Dates</h2>
+        <p class="tours-subtitle">Upcoming concerts and live shows</p>
+      {% else %}
+        <h2>🎸 Featured Concerts & Live Events</h2>
+        <p class="tours-subtitle">Discover upcoming shows from popular artists</p>
+      {% endif %}
     </div>
 
     <!-- Search Form -->
@@ -49,79 +48,72 @@
         <input 
           type="text" 
           name="artist" 
-          placeholder="Search for artist tour dates (e.g., Pearl Jam, Taylor Swift)" 
+          placeholder="Search for artists, concerts, venues and festivals" 
           value="{{ artist_query or '' }}"
           class="tour-search-input"
         >
-        <button type="submit" class="tour-search-btn">🔍 Search Tours</button>
+        <button type="submit" class="tour-search-btn">Search</button>
       </div>
       {% if artist_query %}
-        <a href="/touring" class="clear-search-link">← Back to recent announcements</a>
+        <a href="/touring" class="clear-search-link">← View all featured events</a>
       {% endif %}
     </form>
 
     {% if error %}
       <div class="tour-error">
         <p>{{ error }}</p>
-        <p class="error-hint">Try searching for another artist or browse recent announcements.</p>
+        <p class="error-hint">Try searching for another artist or browse featured events.</p>
       </div>
     {% endif %}
 
     {% if tours %}
-      <div class="tours-list">
+      <div class="tours-grid">
         {% for tour in tours %}
-          <div class="tour-card">
-            <div class="tour-card-header">
-              <h3 class="tour-artist">{{ tour.artist }}</h3>
-              {% if tour.description %}
-                <span class="tour-description">{{ tour.description }}</span>
-              {% endif %}
-            </div>
+          <div class="event-card">
+            {% if tour.artist_image %}
+              <div class="event-image" style="background-image: url('{{ tour.artist_image }}');"></div>
+            {% else %}
+              <div class="event-image event-image-placeholder">
+                <span class="event-icon">🎵</span>
+              </div>
+            {% endif %}
             
-            <div class="tour-details">
-              <div class="tour-detail-item">
-                <span class="detail-icon">📅</span>
-                <span class="detail-text">
+            <div class="event-info">
+              <div class="event-date">
+                <span class="event-month">
                   {% if tour.datetime %}
-                    {{ tour.datetime[:10] }} at {{ tour.datetime[11:16] }}
-                  {% else %}
-                    Date TBA
+                    {{ tour.datetime[5:7]|replace('01', 'Jan')|replace('02', 'Feb')|replace('03', 'Mar')|replace('04', 'Apr')|replace('05', 'May')|replace('06', 'Jun')|replace('07', 'Jul')|replace('08', 'Aug')|replace('09', 'Sep')|replace('10', 'Oct')|replace('11', 'Nov')|replace('12', 'Dec') }}
+                  {% endif %}
+                </span>
+                <span class="event-day">
+                  {% if tour.datetime %}
+                    {{ tour.datetime[8:10] }}
                   {% endif %}
                 </span>
               </div>
               
-              <div class="tour-detail-item">
-                <span class="detail-icon">📍</span>
-                <span class="detail-text">
-                  <strong>{{ tour.venue_name }}</strong><br>
-                  {{ tour.city }}{% if tour.region %}, {{ tour.region }}{% endif %}{% if tour.country %}, {{ tour.country }}{% endif %}
-                </span>
+              <div class="event-details">
+                <h3 class="event-artist">{{ tour.artist }}</h3>
+                <p class="event-venue">{{ tour.venue_name }}</p>
+                <p class="event-location">{{ tour.city }}{% if tour.region %}, {{ tour.region }}{% endif %}</p>
+                {% if tour.ticket_status %}
+                  <span class="ticket-status">{{ tour.ticket_status }}</span>
+                {% endif %}
               </div>
-              
-              {% if tour.lineup and tour.lineup|length > 1 %}
-                <div class="tour-detail-item">
-                  <span class="detail-icon">🎤</span>
-                  <span class="detail-text">
-                    With: {{ tour.lineup[1:] | join(', ') }}
-                  </span>
-                </div>
-              {% endif %}
             </div>
             
             {% if tour.ticket_url %}
-              <div class="tour-actions">
-                <a href="{{ tour.ticket_url }}" target="_blank" rel="noopener noreferrer" class="ticket-btn">
-                  🎟️ Get Tickets
-                </a>
-              </div>
+              <a href="{{ tour.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-tickets-btn">
+                Tickets
+              </a>
             {% endif %}
           </div>
         {% endfor %}
       </div>
     {% elif not error %}
       <div class="no-tours">
-        <p>🎵 No upcoming tour dates available at the moment.</p>
-        <p class="no-tours-hint">Try searching for a specific artist above!</p>
+        <p>🎵 Loading featured events...</p>
+        <p class="no-tours-hint">If no events appear, try refreshing the page or searching for a specific artist.</p>
       </div>
     {% endif %}
 
@@ -133,7 +125,7 @@
   <style>
     .tours-header {
       text-align: center;
-      margin: 2rem auto 2rem;
+      margin: 2rem auto 1.5rem;
       max-width: 800px;
     }
 
@@ -150,17 +142,16 @@
 
     .tour-search-form {
       max-width: 700px;
-      margin: 2rem auto;
-      padding: 1.5rem;
+      margin: 1.5rem auto 2.5rem;
+      padding: 1rem;
       background: var(--bg-card);
-      border-radius: 1rem;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .search-group {
       display: flex;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
+      gap: 0.5rem;
     }
 
     .tour-search-input {
@@ -180,7 +171,7 @@
     }
 
     .tour-search-btn {
-      padding: 0.75rem 1.5rem;
+      padding: 0.75rem 1.75rem;
       border-radius: 0.5rem;
       border: none;
       cursor: pointer;
@@ -194,11 +185,12 @@
 
     .tour-search-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(236, 72, 153, 0.35);
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
     }
 
     .clear-search-link {
       display: inline-block;
+      margin-top: 0.75rem;
       color: var(--text-secondary);
       text-decoration: none;
       font-size: 0.9rem;
@@ -229,99 +221,147 @@
       color: var(--text-secondary);
     }
 
-    .tours-list {
+    /* Grid Layout - Bandsintown Style */
+    .tours-grid {
       display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.5rem;
       margin: 2rem auto;
-      max-width: 1000px;
+      max-width: 1400px;
     }
 
-    .tour-card {
+    .event-card {
       background: var(--bg-card);
       border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       transition: all 0.3s ease;
       border: 1px solid var(--border-color);
-    }
-
-    .tour-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    .tour-card-header {
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .tour-artist {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0 0 0.5rem 0;
-    }
-
-    .tour-description {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      background: linear-gradient(135deg, #ec4899, #f59e0b);
-      color: white;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .tour-details {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      position: relative;
     }
 
-    .tour-detail-item {
+    .event-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    }
+
+    .event-image {
+      width: 100%;
+      height: 280px;
+      background-size: cover;
+      background-position: center;
+      background-color: #1a1a2e;
+      position: relative;
+    }
+
+    .event-image-placeholder {
       display: flex;
-      gap: 0.75rem;
-      align-items: flex-start;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ec4899, #f59e0b);
     }
 
-    .detail-icon {
-      font-size: 1.25rem;
+    .event-icon {
+      font-size: 5rem;
+      opacity: 0.3;
+    }
+
+    .event-info {
+      padding: 1.25rem;
+      flex: 1;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .event-date {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-secondary);
+      border-radius: 0.5rem;
+      padding: 0.75rem 0.5rem;
+      min-width: 60px;
       flex-shrink: 0;
     }
 
-    .detail-text {
+    .event-month {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--accent-primary);
+    }
+
+    .event-day {
+      font-size: 1.75rem;
+      font-weight: 700;
       color: var(--text-primary);
-      line-height: 1.6;
+      line-height: 1;
+      margin-top: 0.25rem;
     }
 
-    .tour-actions {
+    .event-details {
+      flex: 1;
       display: flex;
-      gap: 0.75rem;
+      flex-direction: column;
+      gap: 0.35rem;
     }
 
-    .ticket-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
+    .event-artist {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .event-venue {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .event-location {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .ticket-status {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.25rem 0.6rem;
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .event-tickets-btn {
+      display: block;
+      padding: 0.85rem;
       background: linear-gradient(135deg, #ec4899, #f59e0b);
       color: white;
+      text-align: center;
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 0 0 1rem 1rem;
       transition: all 0.2s;
     }
 
-    .ticket-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(236, 72, 153, 0.4);
+    .event-tickets-btn:hover {
+      background: linear-gradient(135deg, #db2777, #ea580c);
     }
 
     .no-tours {
       text-align: center;
-      padding: 3rem 1rem;
+      padding: 4rem 1rem;
       color: var(--text-secondary);
     }
 
@@ -358,6 +398,17 @@
     }
 
     /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .tours-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+      
+      .event-image {
+        height: 220px;
+      }
+    }
+
     @media (max-width: 640px) {
       .tours-header h2 {
         font-size: 1.8rem;
@@ -375,21 +426,16 @@
         width: 100%;
       }
 
-      .tour-artist {
-        font-size: 1.25rem;
+      .tours-grid {
+        grid-template-columns: 1fr;
       }
 
-      .tour-details {
-        gap: 0.75rem;
+      .event-image {
+        height: 250px;
       }
 
-      .tour-actions {
-        flex-direction: column;
-      }
-
-      .ticket-btn {
-        width: 100%;
-        justify-content: center;
+      .event-artist {
+        font-size: 1.1rem;
       }
     }
   </style>

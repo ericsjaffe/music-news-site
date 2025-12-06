@@ -755,6 +755,12 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50):
         for event in events[:limit]:
             # Extract venue and location info
             venue = event.get('venue', {})
+            offers = event.get('offers', [])
+            
+            # Format ticket status
+            ticket_status = ''
+            if offers:
+                ticket_status = offers[0].get('status', '')
             
             tour_date = {
                 'id': event.get('id', ''),
@@ -765,8 +771,10 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50):
                 'region': venue.get('region', ''),
                 'country': venue.get('country', ''),
                 'ticket_url': event.get('url', ''),
+                'ticket_status': ticket_status,
                 'description': event.get('description', ''),
                 'lineup': event.get('lineup', []),
+                'artist_image': event.get('artist', {}).get('image_url', '') if isinstance(event.get('artist'), dict) else '',
             }
             
             tour_dates.append(tour_date)
@@ -1260,10 +1268,13 @@ def touring():
     """Touring page with concert tour data from Bandsintown API."""
     artist_query = request.args.get('artist', '').strip()
     
-    # Popular artists to show recent tours by default
+    # Expanded list of popular artists to show featured tours by default
     default_artists = [
-        "Pearl Jam", "Taylor Swift", "The Weeknd", "Coldplay", "Ed Sheeran",
-        "Imagine Dragons", "Billie Eilish", "Drake", "Metallica", "Red Hot Chili Peppers"
+        "Taylor Swift", "The Weeknd", "Coldplay", "Ed Sheeran", "Billie Eilish",
+        "Imagine Dragons", "Metallica", "Red Hot Chili Peppers", "Green Day",
+        "Foo Fighters", "Twenty One Pilots", "Arctic Monkeys", "Muse",
+        "Kings of Leon", "The Killers", "Paramore", "Fall Out Boy",
+        "Panic! At The Disco", "My Chemical Romance", "Blink-182"
     ]
     
     tours = []
@@ -1276,14 +1287,15 @@ def touring():
             if not tours:
                 error = f"No upcoming tour dates found for '{artist_query}'"
         else:
-            # Show recent announcements from popular artists
+            # Show featured events from popular artists
             for artist in default_artists:
-                artist_tours = get_artist_tour_dates(artist, limit=3)
+                artist_tours = get_artist_tour_dates(artist, limit=5)
                 if artist_tours:
-                    tours.extend(artist_tours[:3])  # Limit to 3 per artist
-                time.sleep(0.2)  # Be polite to API
+                    # Add up to 5 shows per artist
+                    tours.extend(artist_tours[:5])
+                time.sleep(0.15)  # Be polite to API
                 
-                if len(tours) >= 30:  # Limit total results
+                if len(tours) >= 50:  # Show more results by default
                     break
             
             # Sort by date

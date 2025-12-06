@@ -32,17 +32,54 @@
   </header>
 
   <main class="container">
+    <!-- Market/Region Tabs -->
+    <div class="market-tabs">
+      <a href="/touring" class="market-tab {% if view_mode == 'local' or not view_mode %}active{% endif %}">
+        📍 Near You
+      </a>
+      <a href="/touring?view=nationwide" class="market-tab {% if view_mode == 'nationwide' %}active{% endif %}">
+        🌎 Nationwide
+      </a>
+      <a href="/touring?location=New York, NY" class="market-tab">
+        🗽 New York
+      </a>
+      <a href="/touring?location=Los Angeles, CA" class="market-tab">
+        🌴 Los Angeles
+      </a>
+      <a href="/touring?location=Chicago, IL" class="market-tab">
+        🏙️ Chicago
+      </a>
+      <a href="/touring?location=Nashville, TN" class="market-tab">
+        🎸 Nashville
+      </a>
+      <a href="/touring?location=Austin, TX" class="market-tab">
+        🤠 Austin
+      </a>
+    </div>
+
     <!-- Search Form at Top -->
     <form method="get" action="/touring" class="tour-search-form-top">
-      <div class="search-container">
-        <input 
-          type="text" 
-          name="artist" 
-          placeholder="Search for artists, concerts, venues and festivals" 
-          value="{{ artist_query or '' }}"
-          class="tour-search-input-main"
-        >
-        <button type="submit" class="tour-search-btn-main">
+      <div class="search-container-dual">
+        <div class="search-input-wrapper">
+          <input 
+            type="text" 
+            name="artist" 
+            placeholder="Search artists, concerts, venues..." 
+            value="{{ artist_query or '' }}"
+            class="tour-search-input"
+          >
+        </div>
+        <div class="search-input-wrapper search-location">
+          <input 
+            type="text" 
+            name="location" 
+            placeholder="City or ZIP code" 
+            value="{{ location_query or '' }}"
+            class="tour-search-input location-input"
+          >
+          <span class="location-icon">📍</span>
+        </div>
+        <button type="submit" class="tour-search-btn">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M9 17A8 8 0 1 0 9 1a8 8 0 0 0 0 16zM18 18l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -79,7 +116,15 @@
       <!-- Multiple Carousels -->
       <div class="tours-header">
         <h2>Discover Live Music</h2>
-        <p class="tours-subtitle">Concerts and events near you</p>
+        <p class="tours-subtitle">
+          {% if view_mode == 'nationwide' %}
+            Events across the United States
+          {% elif location_query %}
+            Events in {{ location_query }}
+          {% else %}
+            Concerts and events near you
+          {% endif %}
+        </p>
       </div>
 
       {% if error %}
@@ -239,12 +284,137 @@
   </main>
 
   <style>
-    /* Search Bar at Top */
-    .tour-search-form-top {
-      max-width: 650px;
-      margin: 2rem auto 2.5rem;
+    /* Market Tabs */
+    .market-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
     }
 
+    .market-tab {
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .market-tab:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    .market-tab.active {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+    }
+
+    /* Search Bar at Top */
+    .tour-search-form-top {
+      max-width: 800px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .search-container-dual {
+      position: relative;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      background: var(--bg-card);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      padding: 0.5rem;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .search-container-dual:focus-within {
+      border-color: var(--accent-primary);
+      box-shadow: 0 6px 24px rgba(236, 72, 153, 0.25);
+    }
+
+    .search-input-wrapper {
+      flex: 1;
+      position: relative;
+      min-width: 0;
+    }
+
+    .search-location {
+      flex: 0 0 200px;
+    }
+
+    .tour-search-input {
+      width: 100%;
+      padding: 0.9rem 1.25rem;
+      border: none;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      outline: none;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .tour-search-input:focus {
+      background: var(--bg-primary);
+    }
+
+    .location-input {
+      padding-left: 2.5rem;
+    }
+
+    .location-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    .tour-search-input::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.7;
+    }
+
+    .tour-search-btn {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border: none;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .tour-search-btn:hover {
+      background: var(--accent-hover);
+      transform: scale(1.05);
+    }
+
+    .tour-search-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Old search styles for backwards compatibility */
     .search-container {
       position: relative;
       display: flex;
@@ -735,6 +905,32 @@
 
     /* Mobile Responsive */
     @media (max-width: 768px) {
+      .market-tabs {
+        gap: 0.4rem;
+        padding: 0.4rem;
+      }
+
+      .market-tab {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+      }
+
+      .search-container-dual {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .search-input-wrapper,
+      .search-location {
+        flex: 1;
+        width: 100%;
+      }
+
+      .tour-search-btn {
+        width: 100%;
+        height: 44px;
+      }
+
       .tours-grid-bandsintown {
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 1.25rem;
@@ -755,12 +951,30 @@
     }
 
     @media (max-width: 640px) {
+      .market-tabs {
+        margin-bottom: 1rem;
+      }
+
+      .market-tab {
+        padding: 0.55rem 0.85rem;
+        font-size: 0.8rem;
+      }
+
       .tours-header h2 {
         font-size: 2rem;
       }
 
       .tours-subtitle {
         font-size: 1rem;
+      }
+
+      .tour-search-input {
+        font-size: 0.9rem;
+        padding: 0.8rem 1rem;
+      }
+
+      .location-input {
+        padding-left: 2.25rem;
       }
 
       .tour-search-input-main {
@@ -834,13 +1048,14 @@
   <script>
     // Geolocation functionality to show concerts near user
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if we already have location or if user searched for specific artist
+      // Check if we already have location or if user searched for specific location
       const urlParams = new URLSearchParams(window.location.search);
-      const hasLocation = urlParams.has('latlong');
+      const hasLocation = urlParams.has('latlong') || urlParams.has('location');
       const hasArtist = urlParams.has('artist');
+      const viewMode = urlParams.get('view');
       
-      // Only get location if we don't have it and user hasn't searched for specific artist
-      if (!hasLocation && !hasArtist) {
+      // Only get location if in 'local' mode (or no view specified) and no location set
+      if (!hasLocation && !hasArtist && viewMode !== 'nationwide') {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             function(position) {

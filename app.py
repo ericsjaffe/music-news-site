@@ -1341,8 +1341,10 @@ def artist_page(artist_name):
 def touring():
     """Touring page with concert tour data from Ticketmaster API."""
     artist_query = request.args.get('artist', '').strip()
+    location_query = request.args.get('location', '').strip()
     latlong = request.args.get('latlong', '').strip()
     radius = request.args.get('radius', '50')
+    view_mode = request.args.get('view', 'local')  # 'local' or 'nationwide' or market code
     
     tours = []
     trending_now = []
@@ -1360,6 +1362,35 @@ def touring():
             radius = int(radius)
         except:
             radius = 50
+        
+        # Handle location query (city name or ZIP code)
+        if location_query and not latlong:
+            # Use Nominatim API to geocode location
+            geocode_url = "https://nominatim.openstreetmap.org/search"
+            geocode_params = {
+                'q': location_query,
+                'format': 'json',
+                'limit': 1,
+                'countrycodes': 'us,ca'  # Limit to US and Canada
+            }
+            geocode_headers = {'User-Agent': USER_AGENT}
+            
+            try:
+                geo_resp = requests.get(geocode_url, params=geocode_params, headers=geocode_headers, timeout=5)
+                geo_resp.raise_for_status()
+                geo_data = geo_resp.json()
+                
+                if geo_data and len(geo_data) > 0:
+                    lat = geo_data[0]['lat']
+                    lon = geo_data[0]['lon']
+                    latlong = f"{lat},{lon}"
+            except Exception as geo_error:
+                print(f"Geocoding error: {geo_error}")
+        
+        # Handle nationwide view (no location filter)
+        if view_mode == 'nationwide':
+            latlong = ''
+            radius = 500  # Large radius for nationwide
             
         if artist_query:
             # Search for specific artist
@@ -1430,6 +1461,8 @@ def touring():
         random_discovery=random_discovery,
         popular_venues=popular_venues,
         artist_query=artist_query,
+        location_query=location_query,
+        view_mode=view_mode,
         error=error
     )
 

@@ -1431,11 +1431,18 @@ def venue_detail(venue_id):
         radius = 100
     
     try:
-        # Get all events in the area
-        all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius)
+        # Search directly for the venue name to get all its events
+        # Use the actual venue name instead of generic "concert" search
+        venue_events = get_artist_tour_dates(venue_name, limit=200, latlong=latlong, radius=radius)
         
-        # Filter events for this specific venue
-        events = [event for event in all_events if event['venue_name'].lower().replace(' ', '-').replace("'", '') == venue_id]
+        # Filter to ensure we only show events at this exact venue
+        # (in case the search returns events from similarly named venues)
+        events = [event for event in venue_events if event['venue_name'].lower().replace(' ', '-').replace("'", '').replace('.', '') == venue_id.replace('.', '')]
+        
+        # If no events found with venue name search, try broader area search as fallback
+        if not events:
+            all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius)
+            events = [event for event in all_events if event['venue_name'].lower().replace(' ', '-').replace("'", '').replace('.', '') == venue_id.replace('.', '')]
         
         if not events:
             error = f"No upcoming events found at {venue_name}"

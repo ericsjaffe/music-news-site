@@ -14,6 +14,7 @@
   <header class="site-header">
     <div class="container header-inner">
       <h1>Music Hub</h1>
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle search and filters">☰</button>
       <nav class="nav-links">
         <a href="/">News</a>
         <a href="/releases">Releases</a>
@@ -22,15 +23,21 @@
         <a href="/merch">Merch</a>
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
       </nav>
-      <form method="get" action="/" class="search-form">
-        <input
-          type="text"
-          name="q"
-          placeholder="Search by artist, genre, album…"
-          value=""
-        >
-        <button type="submit">Search</button>
-      </form>
+    </div>
+    
+    <!-- Collapsible Search Form -->
+    <div id="search-filters-wrapper" class="search-filters-wrapper collapsed">
+      <div class="container">
+        <form method="get" action="/" class="search-form">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by artist, genre, album…"
+            value=""
+          >
+          <button type="submit">Search</button>
+        </form>
+      </div>
     </div>
   </header>
 

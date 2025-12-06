@@ -686,25 +686,6 @@ body {
     order: 2;
   }
   
-  .header-inner {
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  /* Collapse search and filters by default on mobile */
-  .search-filters-wrapper.collapsed {
-    max-height: 0 !important;
-    opacity: 0;
-    padding: 0;
-  }
-  
-  .search-filters-wrapper.expanded {
-    max-height: 1200px !important;
-    opacity: 1;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-  }
-  
   /* Mobile search form */
   .search-form {
     flex-direction: column;
@@ -1041,7 +1022,7 @@ body {
 
 /* Mobile Menu Toggle */
 .mobile-menu-toggle {
-  display: none;
+  display: block;
   padding: 0.5rem 0.75rem;
   border: none;
   background: var(--bg-card);
@@ -1063,6 +1044,20 @@ body {
 .search-filters-wrapper {
   transition: max-height 0.4s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
   overflow: hidden;
+}
+
+/* Collapsed by default on all screen sizes */
+.search-filters-wrapper.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+}
+
+.search-filters-wrapper.expanded {
+  max-height: 1200px;
+  opacity: 1;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 
 /* Filter Bar */

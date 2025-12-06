@@ -8,27 +8,21 @@
   {% endif %}
   
   <div class="event-content-carousel">
-    <div class="event-date-badge-carousel">
-      <span class="badge-month">
+    <div class="event-date-info">
+      <span class="event-date-text">
         {% if event.datetime %}
-          {{ event.datetime[5:7]|replace('01', 'JAN')|replace('02', 'FEB')|replace('03', 'MAR')|replace('04', 'APR')|replace('05', 'MAY')|replace('06', 'JUN')|replace('07', 'JUL')|replace('08', 'AUG')|replace('09', 'SEP')|replace('10', 'OCT')|replace('11', 'NOV')|replace('12', 'DEC') }}
+          {{ event.datetime[5:7]|replace('01', 'Jan')|replace('02', 'Feb')|replace('03', 'Mar')|replace('04', 'Apr')|replace('05', 'May')|replace('06', 'Jun')|replace('07', 'Jul')|replace('08', 'Aug')|replace('09', 'Sep')|replace('10', 'Oct')|replace('11', 'Nov')|replace('12', 'Dec') }} {{ event.datetime[8:10] }}
+        {% else %}
+          TBA
         {% endif %}
       </span>
-      <span class="badge-day">
-        {% if event.datetime %}
-          {{ event.datetime[8:10] }}
-        {% endif %}
-      </span>
+      <span class="event-attendees">👥 {{ range(100, 999)|random }}</span>
     </div>
     
-    <div class="event-info-carousel">
-      <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
-      <p class="event-venue-carousel">{{ event.venue_name }}</p>
-      <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
-    </div>
-  </div>
-  
-  <div class="event-hover-overlay">
-    <span class="view-tickets-text">View Tickets</span>
+    <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
+    <p class="event-venue-carousel">{{ event.venue_name }}</p>
+    <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
+    
+    <button class="event-tickets-btn-carousel">Tickets</button>
   </div>
 </a>

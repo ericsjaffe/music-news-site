@@ -81,8 +81,8 @@
           <h3 class="video-title">{{ video.title }}</h3>
           <p class="video-channel">{{ video.channel }}</p>
           <div class="video-meta">
-            <span class="video-views">{{ format_views(video.views) }} views</span>
-            <span class="video-date">{{ format_date(video.published_at) }}</span>
+            <span class="video-views">{{ video.views|format_views }} views</span>
+            <span class="video-date">{{ video.published_at|format_date }}</span>
           </div>
         </div>
       </article>

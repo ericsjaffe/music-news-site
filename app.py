@@ -276,16 +276,12 @@ If you didn't sign up for this newsletter, you can safely ignore this email.
 
 def send_admin_notification(email: str) -> bool:
     """Send notification to admin when someone subscribes."""
-    # Skip if SMTP not configured
-    if SMTP_USERNAME == "your-email@gmail.com":
-        print(f"Admin notification skipped (SMTP not configured). New subscriber: {email}")
+    if SMTP_USERNAME == "your-email@gmail.com" and not (SENDGRID_AVAILABLE and SENDGRID_API_KEY):
+        print(f"Admin notification skipped (no email service configured). New subscriber: {email}")
         return True
     
     try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = "🎵 New Music Hub Newsletter Subscriber"
-        msg['From'] = FROM_EMAIL
-        msg['To'] = ADMIN_EMAIL
+        subject = "🎵 New Music Hub Newsletter Subscriber"
         
         text = f"""
 New subscriber signed up for the Music Hub Newsletter!
@@ -293,7 +289,7 @@ New subscriber signed up for the Music Hub Newsletter!
 Email: {email}
 Time: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
 
-View all subscribers: http://localhost:5001/newsletter/stats
+View all subscribers: https://music-news-site.onrender.com/admin/subscribers
 """
         
         html = f"""
@@ -332,6 +328,26 @@ View all subscribers: http://localhost:5001/newsletter/stats
 </body>
 </html>
 """
+        
+        # Try SendGrid first (works on Render)
+        if SENDGRID_AVAILABLE and SENDGRID_API_KEY:
+            message = Mail(
+                from_email=Email(SMTP_USERNAME if SMTP_USERNAME != "your-email@gmail.com" else "noreply@musichub.com", "Music Hub"),
+                to_emails=To(ADMIN_EMAIL),
+                subject=subject,
+                plain_text_content=Content("text/plain", text),
+                html_content=Content("text/html", html)
+            )
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            response = sg.send(message)
+            print(f"✅ Admin notification sent via SendGrid (status: {response.status_code})")
+            return True
+        
+        # Fallback to SMTP (for local development)
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = FROM_EMAIL
+        msg['To'] = ADMIN_EMAIL
         
         part1 = MIMEText(text, 'plain')
         part2 = MIMEText(html, 'html')

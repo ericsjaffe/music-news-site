@@ -866,6 +866,125 @@ def releases():
     )
 
 
+@app.route("/release/<mbid>")
+def release_detail(mbid):
+    """Display detailed information about a specific release."""
+    try:
+        # Fetch release details from MusicBrainz API
+        headers = {"User-Agent": USER_AGENT}
+        
+        # Get release info with recordings and artist credits
+        release_url = f"https://musicbrainz.org/ws/2/release/{mbid}"
+        params = {
+            "fmt": "json",
+            "inc": "artists+labels+recordings+release-groups+media"
+        }
+        
+        response = requests.get(release_url, params=params, headers=headers, timeout=30)
+        response.raise_for_status()
+        release_data = response.json()
+        
+        # Extract basic info
+        title = release_data.get("title", "Unknown Title")
+        date = release_data.get("date", "Unknown Date")
+        
+        # Get artist(s)
+        artist_credits = release_data.get("artist-credit", [])
+        artists = []
+        for ac in artist_credits:
+            if isinstance(ac, dict) and "name" in ac:
+                artists.append(ac["name"])
+        artist_name = ", ".join(artists) if artists else "Unknown Artist"
+        
+        # Get label info
+        labels = []
+        label_info = release_data.get("label-info", [])
+        for li in label_info:
+            if isinstance(li, dict) and "label" in li:
+                label = li["label"]
+                if isinstance(label, dict) and "name" in label:
+                    catalog = li.get("catalog-number", "")
+                    label_str = f"{label['name']}"
+                    if catalog:
+                        label_str += f" ({catalog})"
+                    labels.append(label_str)
+        
+        # Get format and track count
+        media = release_data.get("media", [])
+        formats = []
+        total_tracks = 0
+        tracklist = []
+        
+        for medium in media:
+            format_name = medium.get("format", "Digital Media")
+            track_count = medium.get("track-count", 0)
+            formats.append(f"{format_name}")
+            total_tracks += track_count
+            
+            # Get tracks for this medium
+            tracks = medium.get("tracks", [])
+            for track in tracks:
+                track_number = track.get("position", "?")
+                track_title = track.get("title", "Unknown Track")
+                
+                # Get track length if available
+                length_ms = track.get("length")
+                duration = ""
+                if length_ms:
+                    seconds = length_ms // 1000
+                    minutes = seconds // 60
+                    secs = seconds % 60
+                    duration = f"{minutes}:{secs:02d}"
+                
+                tracklist.append({
+                    "number": track_number,
+                    "title": track_title,
+                    "duration": duration
+                })
+        
+        # Get cover art
+        cover_art = f"https://coverartarchive.org/release/{mbid}/front-500"
+        
+        # Get release group ID for genre/type info
+        release_group = release_data.get("release-group", {})
+        primary_type = release_group.get("primary-type", "Album")
+        
+        # Build Spotify and Apple Music search links
+        search_query = f"{artist_name} {title}".replace(" ", "+")
+        spotify_url = f"https://open.spotify.com/search/{search_query}"
+        apple_music_url = f"https://music.apple.com/us/search?term={search_query}"
+        
+        return render_template(
+            "release_detail.html",
+            mbid=mbid,
+            title=title,
+            artist=artist_name,
+            date=date,
+            labels=labels,
+            formats=formats,
+            total_tracks=total_tracks,
+            tracklist=tracklist,
+            cover_art=cover_art,
+            primary_type=primary_type,
+            spotify_url=spotify_url,
+            apple_music_url=apple_music_url,
+            musicbrainz_url=f"https://musicbrainz.org/release/{mbid}"
+        )
+        
+    except requests.HTTPError as e:
+        return render_template(
+            "error.html",
+            error_title="Release Not Found",
+            error_message=f"Could not fetch release information from MusicBrainz: {str(e)}"
+        ), 404
+    except Exception as e:
+        return render_template(
+            "error.html",
+            error_title="Error Loading Release",
+            error_message=f"An error occurred: {str(e)}"
+        ), 500
+
+
 @app.route("/artist/<artist_name>")
 def artist_page(artist_name):
     """Show articles related to a specific artist."""

@@ -170,7 +170,8 @@
                   <td>{{ r.title }}</td>
                   <td>
                     {% if r.url %}
-                      <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">View</a>
+                      {% set mbid = r.url.split('/')[-1] %}
+                      <a href="/release/{{ mbid }}">View</a>
                     {% else %}
                       &mdash;
                     {% endif %}

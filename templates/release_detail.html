@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }} by {{ artist }} - Music Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Listen to {{ title }} by {{ artist }} on Music Hub. Released {{ date }}. {{ total_tracks }} tracks.">
+  <meta name="keywords" content="{{ artist }}, {{ title }}, album, music, {{ primary_type }}">
+  <meta name="author" content="Music Hub">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#ec4899">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="music.album">
+  <meta property="og:url" content="https://music-news-site.onrender.com/release/{{ mbid }}">
+  <meta property="og:title" content="{{ title }} by {{ artist }}">
+  <meta property="og:description" content="Released {{ date }}. {{ total_tracks }} tracks. {{ primary_type }}.">
+  <meta property="og:image" content="{{ cover_art }}">
+  <meta property="music:musician" content="{{ artist }}">
+  <meta property="music:release_date" content="{{ date }}">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ title }} by {{ artist }}">
+  <meta name="twitter:description" content="Released {{ date }}. {{ total_tracks }} tracks.">
+  <meta name="twitter:image" content="{{ cover_art }}">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://music-news-site.onrender.com/release/{{ mbid }}">
+  
+  <!-- PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Music Hub">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icon-192.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icon-512.png') }}">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MusicAlbum",
+    "name": "{{ title }}",
+    "byArtist": {
+      "@type": "MusicGroup",
+      "name": "{{ artist }}"
+    },
+    "datePublished": "{{ date }}",
+    "image": "{{ cover_art }}",
+    "numTracks": {{ total_tracks }},
+    "albumReleaseType": "{{ primary_type }}"
+  }
+  </script>
+  
+  <style>
+    .release-detail {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    
+    .release-header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem;
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .album-cover-large {
+      width: 350px;
+      height: 350px;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .album-cover-large:hover {
+      transform: scale(1.05);
+    }
+    
+    .release-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .release-title {
+      font-size: 3rem;
+      font-weight: 800;
+      margin: 0;
+      background: linear-gradient(135deg, #ec4899, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    
+    .release-artist {
+      font-size: 1.8rem;
+      color: var(--text-secondary);
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    .release-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    
+    .meta-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    
+    .meta-value {
+      font-size: 1rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .btn-stream {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+    }
+    
+    .btn-spotify {
+      background: #1DB954;
+      color: white;
+    }
+    
+    .btn-spotify:hover {
+      background: #1ed760;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(29, 185, 84, 0.4);
+    }
+    
+    .btn-apple {
+      background: linear-gradient(135deg, #FA243C, #FC3C4C);
+      color: white;
+    }
+    
+    .btn-apple:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(250, 36, 60, 0.4);
+    }
+    
+    .btn-share {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border: 2px solid var(--border);
+    }
+    
+    .btn-share:hover {
+      background: var(--border);
+      transform: translateY(-2px);
+    }
+    
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      transition: color 0.3s ease;
+    }
+    
+    .btn-back:hover {
+      color: var(--accent);
+    }
+    
+    .tracklist-section {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+    
+    .tracklist {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .track-item {
+      display: grid;
+      grid-template-columns: 50px 1fr auto;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s ease;
+      align-items: center;
+    }
+    
+    .track-item:last-child {
+      border-bottom: none;
+    }
+    
+    .track-item:hover {
+      background: rgba(236, 72, 153, 0.05);
+      padding-left: 0.5rem;
+      margin-left: -0.5rem;
+      padding-right: 0.5rem;
+      margin-right: -0.5rem;
+      border-radius: 6px;
+    }
+    
+    .track-number {
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+    
+    .track-title {
+      color: var(--text-primary);
+      font-weight: 500;
+      font-size: 1rem;
+    }
+    
+    .track-duration {
+      color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+    
+    .source-link {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+    
+    .source-link a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.3s ease;
+    }
+    
+    .source-link a:hover {
+      color: var(--accent);
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .release-header {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      
+      .album-cover-large {
+        width: 100%;
+        max-width: 350px;
+        height: auto;
+        aspect-ratio: 1;
+        margin: 0 auto;
+      }
+      
+      .release-title {
+        font-size: 2rem;
+      }
+      
+      .release-artist {
+        font-size: 1.4rem;
+      }
+      
+      .release-meta {
+        gap: 1rem;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      .btn-stream {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .tracklist-section {
+        padding: 1.5rem 1rem;
+      }
+      
+      .track-item {
+        grid-template-columns: 40px 1fr auto;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases" class="active">Releases</a>
+        <a href="/touring">Touring</a>
+        <a href="/videos">Videos</a>
+        <a href="/merch">Merch</a>
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container release-detail">
+    <a href="/releases" class="btn-back">← Back to Releases</a>
+    
+    <div class="release-header">
+      <img src="{{ cover_art }}" alt="{{ title }} by {{ artist }}" class="album-cover-large" onerror="this.src='{{ url_for('static', filename='icon-512.png') }}'">
+      
+      <div class="release-info">
+        <h1 class="release-title">{{ title }}</h1>
+        <h2 class="release-artist">{{ artist }}</h2>
+        
+        <div class="release-meta">
+          <div class="meta-item">
+            <span class="meta-label">Release Date</span>
+            <span class="meta-value">{{ date }}</span>
+          </div>
+          
+          <div class="meta-item">
+            <span class="meta-label">Type</span>
+            <span class="meta-value">{{ primary_type }}</span>
+          </div>
+          
+          <div class="meta-item">
+            <span class="meta-label">Tracks</span>
+            <span class="meta-value">{{ total_tracks }}</span>
+          </div>
+          
+          {% if formats %}
+          <div class="meta-item">
+            <span class="meta-label">Format</span>
+            <span class="meta-value">{{ formats|join(', ') }}</span>
+          </div>
+          {% endif %}
+          
+          {% if labels %}
+          <div class="meta-item">
+            <span class="meta-label">Label</span>
+            <span class="meta-value">{{ labels|join(', ') }}</span>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="action-buttons">
+          <a href="{{ spotify_url }}" target="_blank" rel="noopener noreferrer" class="btn-stream btn-spotify">
+            🎵 Listen on Spotify
+          </a>
+          <a href="{{ apple_music_url }}" target="_blank" rel="noopener noreferrer" class="btn-stream btn-apple">
+            🍎 Listen on Apple Music
+          </a>
+          <button class="btn-stream btn-share" onclick="shareRelease()">
+            📤 Share
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    {% if tracklist %}
+    <div class="tracklist-section">
+      <h3 class="section-title">Tracklist</h3>
+      <ul class="tracklist">
+        {% for track in tracklist %}
+        <li class="track-item">
+          <span class="track-number">{{ track.number }}</span>
+          <span class="track-title">{{ track.title }}</span>
+          <span class="track-duration">{{ track.duration }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    
+    <div class="source-link">
+      <a href="{{ musicbrainz_url }}" target="_blank" rel="noopener noreferrer">
+        View on MusicBrainz ↗
+      </a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&nbsp;</p>
+    </div>
+  </footer>
+  
+  <script>
+    function shareRelease() {
+      const url = window.location.href;
+      const title = "{{ title }} by {{ artist }}";
+      const text = "Check out {{ title }} by {{ artist }} on Music Hub!";
+      
+      if (navigator.share) {
+        navigator.share({
+          title: title,
+          text: text,
+          url: url
+        }).catch(err => console.log('Share failed:', err));
+      } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(url).then(() => {
+          alert('Link copied to clipboard!');
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

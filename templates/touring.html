@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Tour Dates - Music Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Discover upcoming tour dates and live shows">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+        <a href="/touring" class="active">Touring</a>
+        <a href="/videos">Videos</a>
+        <a href="/merch">Merch</a>
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="coming-soon-container">
+      <div class="coming-soon-icon">🎸</div>
+      <h2 class="coming-soon-title">Tour Dates Coming Soon</h2>
+      <p class="coming-soon-subtitle">We're working on bringing you the latest tour dates and concert information</p>
+      
+      <div class="coming-soon-features">
+        <div class="feature-item">
+          <span class="feature-icon">📍</span>
+          <span>Find shows near you</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🎟️</span>
+          <span>Get ticket alerts</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">📅</span>
+          <span>Track your favorite artists</span>
+        </div>
+      </div>
+
+      <div class="coming-soon-cta">
+        <p>Want to be notified when this launches?</p>
+        <a href="/#newsletter" class="cta-button">Subscribe to Newsletter</a>
+      </div>
+    </div>
+  </main>
+
+  <style>
+    .coming-soon-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .coming-soon-icon {
+      font-size: 8rem;
+      margin-bottom: 1rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    .coming-soon-title {
+      font-size: 3rem;
+      margin: 0 0 1rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .coming-soon-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 3rem;
+    }
+
+    .coming-soon-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
+
+    .feature-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border-radius: 1rem;
+      border: 1px solid var(--border-color);
+      min-width: 160px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.3);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+    }
+
+    .coming-soon-cta {
+      margin-top: 2rem;
+    }
+
+    .coming-soon-cta p {
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .cta-button {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      text-decoration: none;
+      border-radius: 999px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
+      transition: all 0.3s;
+    }
+
+    .cta-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 12px 32px rgba(236, 72, 153, 0.6);
+    }
+
+    @media (max-width: 640px) {
+      .coming-soon-icon {
+        font-size: 5rem;
+      }
+
+      .coming-soon-title {
+        font-size: 2rem;
+      }
+
+      .coming-soon-subtitle {
+        font-size: 1rem;
+      }
+
+      .coming-soon-features {
+        gap: 1rem;
+      }
+
+      .feature-item {
+        min-width: 120px;
+        padding: 1rem;
+      }
+
+      .feature-icon {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</body>
+</html>

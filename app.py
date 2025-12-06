@@ -922,6 +922,23 @@ def artist_page(artist_name):
     )
 
 
+@app.route("/touring")
+def touring():
+    """Touring page - coming soon."""
+    return render_template("touring.html")
+
+
+@app.route("/videos")
+def videos():
+    """Videos page - coming soon."""
+    return render_template("videos.html")
+
+
+@app.route("/merch")
+def merch():
+    """Merch page - coming soon."""
+    return render_template("merch.html")
+
 
 @app.route("/api/load-more")
 def load_more():

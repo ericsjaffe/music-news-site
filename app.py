@@ -715,7 +715,52 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
-def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None, radius: int = 50, sort: str = "date,asc"):
+def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None, radius: int = 50, sort: str = "date,asc", genre_id: str = None, start_date: str = None, end_date: str = None, price_min: int = None, price_max: int = None):
+    """
+    Fetch upcoming tour dates from Ticketmaster Discovery API.
+    Returns list of tour date dicts.
+    """
+    # Ticketmaster Discovery API endpoint
+    base_url = "https://app.ticketmaster.com/discovery/v2/events.json"
+
+
+def filter_by_price(events, price_min=None, price_max=None):
+    """Filter events by price range."""
+    if not events or (price_min is None and price_max is None):
+        return events
+    
+    filtered = []
+    for event in events:
+        # Skip events without price info
+        if 'price_range' not in event or not event['price_range']:
+            continue
+        
+        price_str = event['price_range']
+        # Parse price range like "$45 - $125"
+        try:
+            if '-' in price_str:
+                parts = price_str.replace('$', '').split('-')
+                min_price = float(parts[0].strip())
+                max_price = float(parts[1].strip())
+            else:
+                # Single price
+                min_price = max_price = float(price_str.replace('$', '').strip())
+            
+            # Check if price range overlaps with filter
+            if price_min is not None and max_price < price_min:
+                continue
+            if price_max is not None and min_price > price_max:
+                continue
+            
+            filtered.append(event)
+        except (ValueError, IndexError):
+            # Skip events with unparseable price
+            continue
+    
+    return filtered
+
+
+def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None, radius: int = 50, sort: str = "date,asc", genre_id: str = None, start_date: str = None, end_date: str = None, price_min: int = None, price_max: int = None):
     """
     Fetch upcoming tour dates from Ticketmaster Discovery API.
     Returns list of tour date dicts.
@@ -742,6 +787,18 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None
         params["latlong"] = latlong
         params["radius"] = radius
         params["unit"] = "miles"
+    
+    # Add genre filter
+    if genre_id:
+        params["genreId"] = genre_id
+    
+    # Add date range filter
+    if start_date:
+        params["startDateTime"] = start_date
+    if end_date:
+        params["endDateTime"] = end_date
+    
+    # Note: Ticketmaster doesn't support price filtering in API, we'll filter results after
     
     headers = {
         "User-Agent": USER_AGENT
@@ -1346,6 +1403,11 @@ def touring():
     radius = request.args.get('radius', '50')
     view_mode = request.args.get('view', 'local')  # 'local' or 'nationwide' or market code
     
+    # Filter parameters
+    genre_filter = request.args.get('genre', '').strip()
+    date_filter = request.args.get('date_range', '').strip()
+    price_filter = request.args.get('price', '').strip()
+    
     tours = []
     trending_now = []
     coming_soon = []
@@ -1391,38 +1453,126 @@ def touring():
         if view_mode == 'nationwide':
             latlong = ''
             radius = 500  # Large radius for nationwide
+        
+        # Process filters
+        genre_id = None
+        start_date = None
+        end_date = None
+        price_min = None
+        price_max = None
+        
+        # Genre filter mapping (Ticketmaster Genre IDs)
+        genre_map = {
+            'rock': 'KnvZfZ7vAeA',
+            'pop': 'KnvZfZ7vAev',
+            'country': 'KnvZfZ7vAv6',
+            'hiphop': 'KnvZfZ7vAv1',
+            'rap': 'KnvZfZ7vAv1',
+            'rb': 'KnvZfZ7vAee',
+            'jazz': 'KnvZfZ7vAvE',
+            'metal': 'KnvZfZ7vAvt',
+            'alternative': 'KnvZfZ7vAvv',
+            'edm': 'KnvZfZ7vAvF',
+            'electronic': 'KnvZfZ7vAvF',
+            'blues': 'KnvZfZ7vAvd'
+        }
+        
+        if genre_filter and genre_filter.lower() in genre_map:
+            genre_id = genre_map[genre_filter.lower()]
+        
+        # Date range filter
+        from datetime import datetime, timedelta
+        today = datetime.now()
+        
+        if date_filter == 'today':
+            start_date = today.strftime('%Y-%m-%dT00:00:00Z')
+            end_date = today.strftime('%Y-%m-%dT23:59:59Z')
+        elif date_filter == 'tomorrow':
+            tomorrow = today + timedelta(days=1)
+            start_date = tomorrow.strftime('%Y-%m-%dT00:00:00Z')
+            end_date = tomorrow.strftime('%Y-%m-%dT23:59:59Z')
+        elif date_filter == 'this_week':
+            start_date = today.strftime('%Y-%m-%dT00:00:00Z')
+            end_week = today + timedelta(days=7)
+            end_date = end_week.strftime('%Y-%m-%dT23:59:59Z')
+        elif date_filter == 'this_weekend':
+            # Find next Friday, Saturday, Sunday
+            days_until_friday = (4 - today.weekday()) % 7
+            if days_until_friday == 0 and today.hour >= 18:
+                days_until_friday = 7
+            friday = today + timedelta(days=days_until_friday)
+            sunday = friday + timedelta(days=2)
+            start_date = friday.strftime('%Y-%m-%dT00:00:00Z')
+            end_date = sunday.strftime('%Y-%m-%dT23:59:59Z')
+        elif date_filter == 'next_30':
+            start_date = today.strftime('%Y-%m-%dT00:00:00Z')
+            end_30 = today + timedelta(days=30)
+            end_date = end_30.strftime('%Y-%m-%dT23:59:59Z')
+        
+        # Price filter
+        if price_filter:
+            if price_filter == 'free':
+                price_min = 0
+                price_max = 0
+            elif price_filter == 'under_50':
+                price_min = 0
+                price_max = 50
+            elif price_filter == '50_100':
+                price_min = 50
+                price_max = 100
+            elif price_filter == '100_200':
+                price_min = 100
+                price_max = 200
+            elif price_filter == 'over_200':
+                price_min = 200
+                price_max = 10000
             
         if artist_query:
             # Search for specific artist
-            tours = get_artist_tour_dates(artist_query, limit=50, latlong=latlong, radius=radius)
+            tours = get_artist_tour_dates(artist_query, limit=50, latlong=latlong, radius=radius, genre_id=genre_id, start_date=start_date, end_date=end_date, price_min=price_min, price_max=price_max)
+            
+            # Filter by price if specified (post-processing since API doesn't support it)
+            if price_min is not None or price_max is not None:
+                tours = filter_by_price(tours, price_min, price_max)
+            
             if not tours:
                 error = f"No upcoming tour dates found for '{artist_query}'"
         else:
             # Fetch different categories for carousels
             
             # 1. Trending Now - relevance sorting for most popular/trending events
-            trending_now = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="relevance,desc")
+            trending_now = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="relevance,desc", genre_id=genre_id, start_date=start_date, end_date=end_date)
             
             # 2. Coming Soon - tickets going on sale soonest
-            coming_soon = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="onSaleStartDate,asc")
+            coming_soon = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="onSaleStartDate,asc", genre_id=genre_id, start_date=start_date, end_date=end_date)
             
             # 3. Last Chance - soonest events (happening this week/soon)
-            last_chance = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="date,asc")
+            last_chance = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="date,asc", genre_id=genre_id, start_date=start_date, end_date=end_date)
             
             # 4. Nearby Events - closest events geographically
             if latlong:
-                nearby_events = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="distance,asc")
+                nearby_events = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="distance,asc", genre_id=genre_id, start_date=start_date, end_date=end_date)
             else:
                 nearby_events = []
             
             # 5. A-Z Artist Guide - alphabetically sorted events
-            az_guide = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="name,asc")
+            az_guide = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="name,asc", genre_id=genre_id, start_date=start_date, end_date=end_date)
             
             # 6. Random Discovery - random events for exploration
-            random_discovery = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="random")
+            random_discovery = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="random", genre_id=genre_id, start_date=start_date, end_date=end_date)
             
             # 7. Popular Venues - sorted by venue name, grouped by venue
-            venue_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius, sort="venueName,asc")
+            venue_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius, sort="venueName,asc", genre_id=genre_id, start_date=start_date, end_date=end_date)
+            
+            # Apply price filter to all carousels if specified
+            if price_min is not None or price_max is not None:
+                trending_now = filter_by_price(trending_now, price_min, price_max)
+                coming_soon = filter_by_price(coming_soon, price_min, price_max)
+                last_chance = filter_by_price(last_chance, price_min, price_max)
+                nearby_events = filter_by_price(nearby_events, price_min, price_max)
+                az_guide = filter_by_price(az_guide, price_min, price_max)
+                random_discovery = filter_by_price(random_discovery, price_min, price_max)
+                venue_events = filter_by_price(venue_events, price_min, price_max)
             if venue_events:
                 # Group by venue and count events
                 venue_dict = {}
@@ -1463,6 +1613,9 @@ def touring():
         artist_query=artist_query,
         location_query=location_query,
         view_mode=view_mode,
+        genre_filter=genre_filter,
+        date_filter=date_filter,
+        price_filter=price_filter,
         error=error
     )
 

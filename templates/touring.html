@@ -57,6 +57,68 @@
       </a>
     </div>
 
+    <!-- Filter Buttons -->
+    <div class="filter-section">
+      <!-- Genre Filters -->
+      <div class="filter-group">
+        <span class="filter-label">🎵 Genre:</span>
+        <div class="filter-buttons">
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'genre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
+             class="filter-btn {% if not genre_filter %}active{% endif %}">All</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'genre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}genre=rock" 
+             class="filter-btn {% if genre_filter == 'rock' %}active{% endif %}">Rock</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'genre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}genre=pop" 
+             class="filter-btn {% if genre_filter == 'pop' %}active{% endif %}">Pop</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'genre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}genre=country" 
+             class="filter-btn {% if genre_filter == 'country' %}active{% endif %}">Country</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'genre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}genre=hiphop" 
+             class="filter-btn {% if genre_filter == 'hiphop' %}active{% endif %}">Hip-Hop</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'genre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}genre=rb" 
+             class="filter-btn {% if genre_filter == 'rb' %}active{% endif %}">R&B</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'genre' %}{{ key }}={{ value }}&{% endif %}{% endfor %}genre=edm" 
+             class="filter-btn {% if genre_filter == 'edm' %}active{% endif %}">EDM</a>
+        </div>
+      </div>
+
+      <!-- Date Range Filters -->
+      <div class="filter-group">
+        <span class="filter-label">📅 When:</span>
+        <div class="filter-buttons">
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
+             class="filter-btn {% if not date_filter %}active{% endif %}">All Dates</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}date_range=today" 
+             class="filter-btn {% if date_filter == 'today' %}active{% endif %}">Today</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}date_range=tomorrow" 
+             class="filter-btn {% if date_filter == 'tomorrow' %}active{% endif %}">Tomorrow</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}date_range=this_weekend" 
+             class="filter-btn {% if date_filter == 'this_weekend' %}active{% endif %}">This Weekend</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}date_range=this_week" 
+             class="filter-btn {% if date_filter == 'this_week' %}active{% endif %}">This Week</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}date_range=next_30" 
+             class="filter-btn {% if date_filter == 'next_30' %}active{% endif %}">Next 30 Days</a>
+        </div>
+      </div>
+
+      <!-- Price Filters -->
+      <div class="filter-group">
+        <span class="filter-label">💰 Price:</span>
+        <div class="filter-buttons">
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'price' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
+             class="filter-btn {% if not price_filter %}active{% endif %}">All Prices</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'price' %}{{ key }}={{ value }}&{% endif %}{% endfor %}price=free" 
+             class="filter-btn {% if price_filter == 'free' %}active{% endif %}">Free</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'price' %}{{ key }}={{ value }}&{% endif %}{% endfor %}price=under_50" 
+             class="filter-btn {% if price_filter == 'under_50' %}active{% endif %}">Under $50</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'price' %}{{ key }}={{ value }}&{% endif %}{% endfor %}price=50_100" 
+             class="filter-btn {% if price_filter == '50_100' %}active{% endif %}">$50-$100</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'price' %}{{ key }}={{ value }}&{% endif %}{% endfor %}price=100_200" 
+             class="filter-btn {% if price_filter == '100_200' %}active{% endif %}">$100-$200</a>
+          <a href="?{% for key, value in request.args.items() %}{% if key != 'price' %}{{ key }}={{ value }}&{% endif %}{% endfor %}price=over_200" 
+             class="filter-btn {% if price_filter == 'over_200' %}active{% endif %}">$200+</a>
+        </div>
+      </div>
+    </div>
+
     <!-- Search Form at Top -->
     <form method="get" action="/touring" class="tour-search-form-top">
       <div class="search-container-dual">
@@ -284,6 +346,62 @@
   </main>
 
   <style>
+    /* Filter Section */
+    .filter-section {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .filter-group {
+      margin-bottom: 1rem;
+    }
+
+    .filter-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-label {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      margin-right: 0.75rem;
+    }
+
+    .filter-buttons {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+
+    .filter-btn.active {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+    }
+
     /* Market Tabs */
     .market-tabs {
       display: flex;
@@ -905,6 +1023,28 @@
 
     /* Mobile Responsive */
     @media (max-width: 768px) {
+      .filter-section {
+        padding: 1rem;
+      }
+
+      .filter-group {
+        margin-bottom: 1rem;
+      }
+
+      .filter-label {
+        display: block;
+        margin-bottom: 0.6rem;
+      }
+
+      .filter-buttons {
+        display: flex;
+      }
+
+      .filter-btn {
+        padding: 0.45rem 0.85rem;
+        font-size: 0.8rem;
+      }
+
       .market-tabs {
         gap: 0.4rem;
         padding: 0.4rem;
@@ -951,6 +1091,16 @@
     }
 
     @media (max-width: 640px) {
+      .filter-section {
+        padding: 0.85rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .filter-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+      }
+
       .market-tabs {
         margin-bottom: 1rem;
       }

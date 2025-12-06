@@ -51,7 +51,7 @@
           <div class="venue-title-section">
             <h1 class="venue-name">{{ venue_name }} <span class="verified-badge">✓</span></h1>
             <p class="venue-location">📍 {{ events[0].city if events else '' }}{% if events and events[0].region %}, {{ events[0].region }}{% endif %}</p>
-            <p class="venue-followers">{{ range(10000, 99999)|random|string|regex_replace('(\\d)(?=(\\d{3})+$)', '\\1,') }} Followers</p>
+            <p class="venue-followers">{{ range(10, 99)|random }},{{ range(100, 999)|random }} Followers</p>
           </div>
           <button class="follow-venue-btn">Follow Venue</button>
         </div>

@@ -377,8 +377,8 @@
         
         <div class="release-meta">
           <div class="meta-item">
-            <span class="meta-label">Release Date</span>
-            <span class="meta-value">{{ date }}</span>
+            <span class="meta-label">📅 Release Date</span>
+            <span class="meta-value">{{ date if date and date != 'Unknown Date' else 'Date not available' }}</span>
           </div>
           
           <div class="meta-item">

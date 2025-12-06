@@ -411,6 +411,26 @@ def sitemap():
     return response
 
 
+@app.route("/robots.txt")
+def robots():
+    """Generate robots.txt file."""
+    from flask import make_response
+    
+    # Get your actual domain
+    domain = request.host_url.rstrip("/")
+    
+    txt = f"""User-agent: *
+Allow: /
+Disallow: /static/
+
+Sitemap: {domain}/sitemap.xml
+"""
+    
+    response = make_response(txt)
+    response.headers["Content-Type"] = "text/plain"
+    return response
+
+
 @app.route("/article")
 def article():
     """Proxy page to display article content without leaving the site."""

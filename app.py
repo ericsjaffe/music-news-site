@@ -1211,7 +1211,11 @@ def offline():
 @app.route("/newsletter/subscribe", methods=["POST"])
 def newsletter_subscribe():
     """Handle newsletter subscription."""
-    email = request.form.get("email", "").strip()
+    # Accept both JSON and form data
+    if request.is_json:
+        email = request.json.get("email", "").strip()
+    else:
+        email = request.form.get("email", "").strip()
     
     if not email:
         return {"error": "Email is required"}, 400
@@ -1302,7 +1306,11 @@ def newsletter_stats():
 @app.route("/sms/subscribe", methods=["POST"])
 def sms_subscribe():
     """Handle SMS subscription."""
-    phone_number = request.form.get("phone", "").strip()
+    # Accept both JSON and form data
+    if request.is_json:
+        phone_number = request.json.get("phone", "").strip()
+    else:
+        phone_number = request.form.get("phone", "").strip()
     
     if not phone_number:
         return {"error": "Phone number is required"}, 400

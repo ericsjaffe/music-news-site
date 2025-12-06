@@ -294,7 +294,7 @@ def search_music_videos(query, max_results=24):
         return []
 
 
-# Template filters for video page
+# Jinja2 template filters for video page formatting
 @app.template_filter('format_views')
 def format_views(views):
     """Format view count with K/M/B suffixes."""

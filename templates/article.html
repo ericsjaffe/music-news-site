@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>{{ title }} - Music Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Read the full article: {{ title }}">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>

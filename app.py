@@ -46,6 +46,65 @@ GENRE_KEYWORDS = {
 # Trending article views (in-memory cache for demo)
 trending_views = {}
 
+# Artist image cache
+artist_image_cache = {}
+
+# LastFM API key (free tier - get from https://www.last.fm/api)
+LASTFM_API_KEY = "YOUR_LASTFM_API_KEY_HERE"  # Users can add their own
+
+
+def get_artist_image(artist_name: str) -> str | None:
+    """Fetch artist image from Last.fm API."""
+    if artist_name in artist_image_cache:
+        return artist_image_cache[artist_name]
+    
+    if LASTFM_API_KEY == "YOUR_LASTFM_API_KEY_HERE":
+        return None  # Skip if no API key configured
+    
+    try:
+        url = f"http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={quote_plus(artist_name)}&api_key={LASTFM_API_KEY}&format=json"
+        response = requests.get(url, timeout=5)
+        data = response.json()
+        
+        if "artist" in data and "image" in data["artist"]:
+            # Get largest image
+            images = data["artist"]["image"]
+            for img in reversed(images):
+                if img.get("#text"):
+                    artist_image_cache[artist_name] = img["#text"]
+                    return img["#text"]
+    except Exception as e:
+        print(f"Error fetching artist image: {e}")
+    
+    return None
+
+
+def extract_youtube_id(text: str) -> str | None:
+    """Extract YouTube video ID from text."""
+    patterns = [
+        r'youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})',
+        r'youtu\.be/([a-zA-Z0-9_-]{11})',
+        r'youtube\.com/embed/([a-zA-Z0-9_-]{11})'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1)
+    return None
+
+
+def get_spotify_search_url(artist: str, track: str = "") -> str:
+    """Generate Spotify search URL."""
+    query = f"{artist} {track}".strip()
+    return f"https://open.spotify.com/search/{quote_plus(query)}"
+
+
+def get_apple_music_search_url(artist: str, track: str = "") -> str:
+    """Generate Apple Music search URL."""
+    query = f"{artist} {track}".strip()
+    return f"https://music.apple.com/us/search?term={quote_plus(query)}"
+
 
 def parse_published(entry: Dict[str, Any]) -> str | None:
     """Normalize published/updated fields into ISO 8601 if possible."""
@@ -477,7 +536,32 @@ def artist_page(artist_name):
         else:
             a["published_at_human"] = ""
     
-    return render_template("artist.html", artist_name=artist_name, articles=articles, error=error)
+    # Get artist image
+    artist_image = get_artist_image(artist_name)
+    
+    # Generate music service links
+    spotify_url = get_spotify_search_url(artist_name)
+    apple_music_url = get_apple_music_search_url(artist_name)
+    
+    # Extract YouTube video if present in any article
+    youtube_id = None
+    for article in articles:
+        combined_text = f"{article.get('title', '')} {article.get('description', '')}"
+        youtube_id = extract_youtube_id(combined_text)
+        if youtube_id:
+            break
+    
+    return render_template(
+        "artist.html", 
+        artist_name=artist_name, 
+        articles=articles, 
+        error=error,
+        artist_image=artist_image,
+        spotify_url=spotify_url,
+        apple_music_url=apple_music_url,
+        youtube_id=youtube_id
+    )
+
 
 
 @app.route("/api/load-more")
@@ -511,6 +595,35 @@ def load_more():
         return {"articles": paginated, "has_more": offset + limit < len(all_articles)}
     except Exception as e:
         return {"error": str(e)}, 500
+
+
+@app.route("/offline")
+def offline():
+    """Offline page for PWA."""
+    return render_template("offline.html")
+
+
+@app.route("/newsletter/subscribe", methods=["POST"])
+def newsletter_subscribe():
+    """Handle newsletter subscription."""
+    email = request.form.get("email", "").strip()
+    
+    if not email:
+        return {"error": "Email is required"}, 400
+    
+    # Basic email validation
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return {"error": "Invalid email address"}, 400
+    
+    # In a real application, you would:
+    # 1. Save to database
+    # 2. Send confirmation email
+    # 3. Integrate with email service (Mailchimp, SendGrid, etc.)
+    
+    # For now, just log it
+    print(f"Newsletter subscription: {email}")
+    
+    return {"success": True, "message": "Thanks for subscribing! Check your email for confirmation."}
 
 
 if __name__ == "__main__":

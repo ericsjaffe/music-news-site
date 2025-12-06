@@ -1,0 +1,18 @@
+# PWA Icon Placeholders
+
+To complete PWA setup, add the following icon files:
+- icon-192.png (192x192px)
+- icon-512.png (512x512px)
+
+You can create these using:
+1. Online tools like https://realfavicongenerator.net/
+2. Image editors like Photoshop, GIMP, or Figma
+3. AI image generators
+
+Recommended icon design:
+- Music note or headphones symbol
+- Gradient from #ec4899 (pink) to #fb7185 (light pink)
+- White or light symbol on dark background
+- Simple, recognizable at small sizes
+
+For now, the app will work without icons, but they enhance the user experience.

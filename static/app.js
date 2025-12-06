@@ -27,6 +27,73 @@ function updateThemeIcon(theme) {
   }
 }
 
+// PWA Installation
+let deferredPrompt;
+
+function initPWA() {
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js')
+      .then(registration => {
+        console.log('Service Worker registered:', registration);
+      })
+      .catch(error => {
+        console.log('Service Worker registration failed:', error);
+      });
+  }
+
+  // Listen for install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallButton();
+  });
+
+  // Handle successful installation
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA installed successfully');
+    deferredPrompt = null;
+    hideInstallButton();
+  });
+}
+
+function showInstallButton() {
+  // Create install button if it doesn't exist
+  let installBtn = document.getElementById('pwa-install-btn');
+  if (!installBtn) {
+    installBtn = document.createElement('button');
+    installBtn.id = 'pwa-install-btn';
+    installBtn.className = 'pwa-install-btn';
+    installBtn.innerHTML = '📱 Install App';
+    installBtn.onclick = installPWA;
+    
+    // Add to header
+    const header = document.querySelector('.header-inner');
+    if (header) {
+      header.appendChild(installBtn);
+    }
+  }
+  installBtn.style.display = 'block';
+}
+
+function hideInstallButton() {
+  const installBtn = document.getElementById('pwa-install-btn');
+  if (installBtn) {
+    installBtn.style.display = 'none';
+  }
+}
+
+async function installPWA() {
+  if (!deferredPrompt) return;
+
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  
+  console.log(`User response: ${outcome}`);
+  deferredPrompt = null;
+  hideInstallButton();
+}
+
 // Bookmark System
 function initBookmarks() {
   // Load bookmarks from localStorage
@@ -494,6 +561,7 @@ function createArticleCard(article) {
 
 // Initialize everything on page load
 document.addEventListener('DOMContentLoaded', () => {
+  initPWA();
   initThemeToggle();
   initBookmarks();
   initRecentSearches();

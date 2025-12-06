@@ -1,0 +1,42 @@
+{
+  "name": "Music Hub - Latest Music News",
+  "short_name": "Music Hub",
+  "description": "Stay updated with the latest music news, releases, and artist updates",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#ec4899",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "news", "entertainment"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Latest News",
+      "short_name": "News",
+      "description": "View latest music news",
+      "url": "/",
+      "icons": []
+    },
+    {
+      "name": "Releases",
+      "short_name": "Releases",
+      "description": "Find music releases by date",
+      "url": "/releases",
+      "icons": []
+    }
+  ]
+}

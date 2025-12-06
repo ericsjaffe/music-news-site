@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>{{ artist_name }} - Music Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Latest news and updates about {{ artist_name }}">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
@@ -31,8 +35,36 @@
   <main class="container">
     <div class="artist-header">
       <a href="/" class="back-link">← Back to News</a>
+      
+      {% if artist_image %}
+      <div class="artist-image">
+        <img src="{{ artist_image }}" alt="{{ artist_name }}" onerror="this.parentElement.style.display='none'">
+      </div>
+      {% endif %}
+      
       <h1 class="artist-title">🎤 {{ artist_name }}</h1>
       <p class="artist-subtitle">Latest news and updates</p>
+      
+      <!-- Music Service Links -->
+      <div class="music-links">
+        <a href="{{ spotify_url }}" target="_blank" rel="noopener" class="music-link-btn spotify">
+          🎵 Listen on Spotify
+        </a>
+        <a href="{{ apple_music_url }}" target="_blank" rel="noopener" class="music-link-btn apple">
+          🎵 Listen on Apple Music
+        </a>
+      </div>
+      
+      <!-- YouTube Video Embed -->
+      {% if youtube_id %}
+      <div class="video-embed">
+        <iframe 
+          src="https://www.youtube.com/embed/{{ youtube_id }}" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen>
+        </iframe>
+      </div>
+      {% endif %}
     </div>
 
     {% if error %}

@@ -1103,8 +1103,20 @@ def sms_stats():
 
 @app.route("/admin/subscribers")
 def admin_subscribers():
-    """Admin page to view all subscribers."""
+    """Admin page to view all subscribers - password protected."""
     import sqlite3
+    from flask import request, Response
+    
+    # Check for basic auth
+    auth = request.authorization
+    admin_password = os.getenv('ADMIN_PASSWORD', 'musichub2025')
+    
+    if not auth or auth.password != admin_password:
+        return Response(
+            'Admin access required. Please enter the admin password.',
+            401,
+            {'WWW-Authenticate': 'Basic realm="Admin Login"'}
+        )
     
     # Get email subscribers
     email_stats = get_subscriber_count()

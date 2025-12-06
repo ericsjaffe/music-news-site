@@ -171,42 +171,53 @@
         {% endif %}
       </div>
       {% if results %}
-        <div class="table-wrapper">
-          <table class="releases-table">
-            <thead>
-              <tr>
-                <th>Cover</th>
-                <th>Year</th>
-                <th>Artist</th>
-                <th>Title</th>
-                <th>Link</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in results %}
-                <tr>
-                  <td class="cover-cell">
-                    {% if r.cover_art %}
-                      <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="album-cover" onerror="this.style.display='none'">
-                    {% else %}
-                      <div class="no-cover">♪</div>
-                    {% endif %}
-                  </td>
-                  <td>{{ r.year }}</td>
-                  <td>{{ r.artist or 'Unknown artist' }}</td>
-                  <td>{{ r.title }}</td>
-                  <td>
-                    {% if r.url %}
-                      {% set mbid = r.url.split('/')[-1] %}
-                      <a href="/release/{{ mbid }}">View</a>
-                    {% else %}
-                      &mdash;
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div class="releases-grid">
+          {% for r in results %}
+            {% if r.url %}
+              {% set mbid = r.url.split('/')[-1] %}
+              <a href="/release/{{ mbid }}" class="release-card">
+                <div class="release-cover">
+                  {% if r.cover_art %}
+                    <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="release-cover-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\"no-cover-large\">♪</div>';">
+                  {% else %}
+                    <div class="no-cover-large">♪</div>
+                  {% endif %}
+                </div>
+                
+                <div class="release-content">
+                  <div class="release-year-info">
+                    <span class="release-year-text">📅 {{ r.year or 'TBA' }}</span>
+                  </div>
+                  
+                  <h4 class="release-title">{{ r.title }}</h4>
+                  <p class="release-artist">{{ r.artist or 'Unknown artist' }}</p>
+                  
+                  <button class="release-view-btn">View Details</button>
+                </div>
+              </a>
+            {% else %}
+              <div class="release-card">
+                <div class="release-cover">
+                  {% if r.cover_art %}
+                    <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="release-cover-img" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\"no-cover-large\">♪</div>';">
+                  {% else %}
+                    <div class="no-cover-large">♪</div>
+                  {% endif %}
+                </div>
+                
+                <div class="release-content">
+                  <div class="release-year-info">
+                    <span class="release-year-text">📅 {{ r.year or 'TBA' }}</span>
+                  </div>
+                  
+                  <h4 class="release-title">{{ r.title }}</h4>
+                  <p class="release-artist">{{ r.artist or 'Unknown artist' }}</p>
+                  
+                  <button class="release-view-btn" disabled>No Details</button>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
         </div>
       {% endif %}
     {% endif %}

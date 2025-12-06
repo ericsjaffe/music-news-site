@@ -81,13 +81,23 @@
               <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
             </svg>
           </a>
+          
+          <div class="video-date-badge">{{ video.published_at|format_date }}</div>
         </div>
         <div class="video-info">
           <h3 class="video-title">{{ video.title }}</h3>
           <p class="video-channel">{{ video.channel }}</p>
           <div class="video-meta">
-            <span class="video-views">{{ video.views|format_views }} views</span>
-            <span class="video-date">{{ video.published_at|format_date }}</span>
+            <span class="video-views">👁️ {{ video.views|format_views }}</span>
+          </div>
+          
+          <div class="video-actions">
+            <button class="video-play-btn" onclick="playVideo('{{ video.id }}', '{{ video.title|e }}')" aria-label="Play video">
+              ▶️ Watch Now
+            </button>
+            <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank" rel="noopener noreferrer" class="video-youtube-btn" aria-label="Open on YouTube">
+              📺 YouTube
+            </a>
           </div>
         </div>
       </article>
@@ -215,23 +225,25 @@
 
     .videos-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.5rem;
       margin: 2rem 0;
     }
 
     .video-card {
-      background: var(--bg-card);
-      border-radius: 1rem;
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(168, 85, 247, 0.1));
+      border-radius: 1.5rem;
       overflow: hidden;
-      border: 1px solid var(--border-color);
-      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid rgba(236, 72, 153, 0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
+      position: relative;
     }
 
     .video-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.3);
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(236, 72, 153, 0.4), 0 0 0 1px rgba(236, 72, 153, 0.4);
+      border-color: rgba(236, 72, 153, 0.6);
     }
 
     .video-thumbnail {
@@ -239,7 +251,7 @@
       width: 100%;
       padding-bottom: 56.25%; /* 16:9 aspect ratio */
       overflow: hidden;
-      background: var(--bg-primary);
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
     }
 
     .video-thumbnail img {
@@ -249,6 +261,25 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .video-card:hover .video-thumbnail img {
+      transform: scale(1.05);
+    }
+
+    .video-date-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: white;
+      z-index: 2;
     }
 
     .play-button {
@@ -256,7 +287,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.7);
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
       border: none;
       border-radius: 50%;
       width: 64px;
@@ -265,15 +296,21 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s;
       opacity: 0;
       z-index: 2;
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
+    }
+
+    .video-card:hover .play-button {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
     }
 
     .youtube-link-button {
       position: absolute;
-      bottom: 10px;
-      right: 10px;
+      bottom: 12px;
+      right: 12px;
       background: #FF0000;
       border: none;
       border-radius: 8px;
@@ -287,6 +324,7 @@
       opacity: 0;
       z-index: 3;
       text-decoration: none;
+      box-shadow: 0 4px 12px rgba(255, 0, 0, 0.4);
     }
 
     .video-card:hover .youtube-link-button {
@@ -298,21 +336,12 @@
       transform: scale(1.1);
     }
 
-    .video-card:hover .play-button {
-      opacity: 1;
-    }
-
-    .play-button:hover {
-      background: rgba(236, 72, 153, 0.9);
-      transform: translate(-50%, -50%) scale(1.1);
-    }
-
     .video-info {
-      padding: 1rem;
+      padding: 1.25rem;
     }
 
     .video-title {
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 700;
       margin: 0 0 0.5rem;
       color: var(--text-primary);
@@ -320,19 +349,75 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      line-height: 1.4;
     }
 
     .video-channel {
       font-size: 0.9rem;
       color: var(--text-secondary);
-      margin: 0 0 0.5rem;
+      margin: 0 0 0.75rem;
+      font-weight: 500;
     }
 
     .video-meta {
       display: flex;
-      gap: 1rem;
+      align-items: center;
+      gap: 0.5rem;
       font-size: 0.85rem;
       color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .video-views {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .video-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .video-play-btn,
+    .video-youtube-btn {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .video-play-btn {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+    }
+
+    .video-play-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(236, 72, 153, 0.5);
+    }
+
+    .video-youtube-btn {
+      background: rgba(255, 0, 0, 0.1);
+      color: #FF0000;
+      border: 2px solid rgba(255, 0, 0, 0.3);
+    }
+
+    .video-youtube-btn:hover {
+      background: rgba(255, 0, 0, 0.2);
+      border-color: rgba(255, 0, 0, 0.6);
+      transform: translateY(-2px);
     }
 
     .video-modal {

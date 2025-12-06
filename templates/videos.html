@@ -2,10 +2,22 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Music Videos - Music Hub</title>
+  <title>{{ page_title }} - Music Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Watch the latest music videos">
+  <meta name="description" content="Watch trending music videos and search for your favorite artists">
   <meta name="theme-color" content="#ec4899">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ page_title }} - Music Hub">
+  <meta property="og:description" content="Watch trending music videos and search for your favorite artists">
+  <meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title }} - Music Hub">
+  <meta name="twitter:description" content="Watch trending music videos and search for your favorite artists">
+  
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
@@ -18,7 +30,7 @@
       <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
     </div>
     
-    <!-- Navigation Links (collapsible on mobile) -->
+    <!-- Navigation Links -->
     <div id="mobile-nav-wrapper" class="mobile-nav-wrapper collapsed">
       <nav class="nav-links">
         <a href="/">News</a>
@@ -29,130 +41,348 @@
         <a href="/subscribe" class="subscribe-link">📧 Subscribe</a>
       </nav>
     </div>
-    
-    <!-- Collapsible Search Form (desktop only) -->
-    <div id="search-filters-wrapper" class="search-filters-wrapper collapsed">
-      <div class="container">
-        <form method="get" action="/" class="search-form">
-          <input
-            type="text"
-            name="q"
-            placeholder="Search by artist, genre, album…"
-            value=""
-          >
-          <button type="submit">Search</button>
-        </form>
-      </div>
-    </div>
   </header>
 
   <main class="container">
-    <div class="coming-soon-container">
-      <div class="coming-soon-icon">🎬</div>
-      <h2 class="coming-soon-title">Music Videos Coming Soon</h2>
-      <p class="coming-soon-subtitle">Get ready to watch the hottest new music videos and live performances</p>
-      
-      <div class="coming-soon-features">
-        <div class="feature-item">
-          <span class="feature-icon">🎵</span>
-          <span>Latest releases</span>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">🔥</span>
-          <span>Trending videos</span>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">🎤</span>
-          <span>Live performances</span>
-        </div>
+    <!-- Video Search Section -->
+    <section class="video-search-section">
+      <div class="video-search-header">
+        <h2>{{ page_title }}</h2>
+        <form method="get" action="/videos" class="video-search-form">
+          <input
+            type="text"
+            name="search"
+            placeholder="Search for artists, songs, or videos..."
+            value="{{ search_query }}"
+            class="video-search-input"
+          >
+          <button type="submit" class="video-search-button">🔍 Search</button>
+          {% if search_query %}
+          <a href="/videos" class="clear-search-button">✕ Clear</a>
+          {% endif %}
+        </form>
       </div>
+    </section>
 
-      <div class="coming-soon-cta">
-        <p>Be the first to know when we launch</p>
-        <a href="/subscribe" class="cta-button">Subscribe to Newsletter</a>
-      </div>
+    <!-- Videos Grid -->
+    {% if videos %}
+    <section class="videos-grid">
+      {% for video in videos %}
+      <article class="video-card" data-video-id="{{ video.id }}">
+        <div class="video-thumbnail">
+          <img src="{{ video.thumbnail }}" alt="{{ video.title }}" loading="lazy">
+          <button class="play-button" onclick="playVideo('{{ video.id }}', '{{ video.title|e }}')" aria-label="Play video">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="video-info">
+          <h3 class="video-title">{{ video.title }}</h3>
+          <p class="video-channel">{{ video.channel }}</p>
+          <div class="video-meta">
+            <span class="video-views">{{ format_views(video.views) }} views</span>
+            <span class="video-date">{{ format_date(video.published_at) }}</span>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+    {% else %}
+    <div class="no-videos-message">
+      <div class="no-videos-icon">🎬</div>
+      <h3>No videos found</h3>
+      {% if search_query %}
+      <p>Try searching for a different artist or song</p>
+      <a href="/videos" class="cta-button">Show Trending Videos</a>
+      {% else %}
+      <p>Unable to load trending videos at this time</p>
+      {% endif %}
     </div>
+    {% endif %}
   </main>
 
+  <!-- Video Player Modal -->
+  <div id="video-modal" class="video-modal" onclick="closeVideo(event)">
+    <div class="video-modal-content">
+      <button class="video-modal-close" onclick="closeVideo(event)" aria-label="Close video">✕</button>
+      <h3 id="video-modal-title" class="video-modal-title"></h3>
+      <div class="video-player-wrapper">
+        <iframe
+          id="video-player"
+          src=""
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>
+  </div>
+
   <style>
-    .coming-soon-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
+    .video-search-section {
+      margin: 2rem 0;
+    }
+
+    .video-search-header {
       text-align: center;
-      padding: 3rem 1rem;
     }
 
-    .coming-soon-icon {
-      font-size: 8rem;
-      margin-bottom: 1rem;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% {
-        transform: translateY(0px);
-      }
-      50% {
-        transform: translateY(-20px);
-      }
-    }
-
-    .coming-soon-title {
-      font-size: 3rem;
-      margin: 0 0 1rem;
+    .video-search-header h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
       background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .coming-soon-subtitle {
-      font-size: 1.25rem;
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 3rem;
-    }
-
-    .coming-soon-features {
+    .video-search-form {
       display: flex;
-      flex-wrap: wrap;
-      gap: 2rem;
-      justify-content: center;
-      margin-bottom: 3rem;
-    }
-
-    .feature-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       gap: 0.5rem;
-      padding: 1.5rem;
+      max-width: 800px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .video-search-input {
+      flex: 1;
+      min-width: 250px;
+      padding: 1rem 1.5rem;
+      border: 2px solid var(--border-color);
+      border-radius: 999px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .video-search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    .video-search-button {
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .video-search-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
+    }
+
+    .clear-search-button {
+      padding: 1rem 1.5rem;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border: 2px solid var(--border-color);
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .clear-search-button:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    .videos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .video-card {
       background: var(--bg-card);
       border-radius: 1rem;
+      overflow: hidden;
       border: 1px solid var(--border-color);
-      min-width: 160px;
       transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
     }
 
-    .feature-item:hover {
+    .video-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(236, 72, 153, 0.3);
     }
 
-    .feature-icon {
-      font-size: 2.5rem;
+    .video-thumbnail {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      overflow: hidden;
+      background: var(--bg-primary);
     }
 
-    .coming-soon-cta {
-      margin-top: 2rem;
+    .video-thumbnail img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
-    .coming-soon-cta p {
-      margin-bottom: 1rem;
+    .play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      opacity: 0;
+    }
+
+    .video-card:hover .play-button {
+      opacity: 1;
+    }
+
+    .play-button:hover {
+      background: rgba(236, 72, 153, 0.9);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .video-info {
+      padding: 1rem;
+    }
+
+    .video-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .video-channel {
+      font-size: 0.9rem;
       color: var(--text-secondary);
+      margin: 0 0 0.5rem;
+    }
+
+    .video-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .video-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 10000;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .video-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-modal-content {
+      background: var(--bg-card);
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 1200px;
+      width: 100%;
+      position: relative;
+    }
+
+    .video-modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.2s;
+      z-index: 10;
+    }
+
+    .video-modal-close:hover {
+      background: var(--accent-primary);
+    }
+
+    .video-modal-title {
+      margin: 0 0 1rem;
+      padding-right: 3rem;
+      color: var(--text-primary);
+    }
+
+    .video-player-wrapper {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      background: #000;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .video-player-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .no-videos-message {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .no-videos-icon {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+    }
+
+    .no-videos-message h3 {
+      font-size: 2rem;
+      margin: 0 0 1rem;
+      color: var(--text-primary);
+    }
+
+    .no-videos-message p {
+      color: var(--text-secondary);
+      margin: 0 0 1.5rem;
     }
 
     .cta-button {
@@ -163,41 +393,71 @@
       text-decoration: none;
       border-radius: 999px;
       font-weight: 700;
-      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
-      transition: all 0.3s;
+      transition: all 0.2s;
     }
 
     .cta-button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 12px 32px rgba(236, 72, 153, 0.6);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
     }
 
     @media (max-width: 640px) {
-      .coming-soon-icon {
-        font-size: 5rem;
+      .video-search-header h2 {
+        font-size: 1.75rem;
       }
 
-      .coming-soon-title {
-        font-size: 2rem;
-      }
-
-      .coming-soon-subtitle {
-        font-size: 1rem;
-      }
-
-      .coming-soon-features {
+      .videos-grid {
+        grid-template-columns: 1fr;
         gap: 1rem;
       }
 
-      .feature-item {
-        min-width: 120px;
+      .video-modal {
         padding: 1rem;
       }
 
-      .feature-icon {
-        font-size: 2rem;
+      .video-modal-content {
+        padding: 1rem;
+      }
+
+      .video-modal-title {
+        font-size: 1rem;
       }
     }
   </style>
+
+  <script>
+    function playVideo(videoId, title) {
+      const modal = document.getElementById('video-modal');
+      const player = document.getElementById('video-player');
+      const modalTitle = document.getElementById('video-modal-title');
+      
+      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      modalTitle.textContent = title;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeVideo(event) {
+      // Only close if clicking the modal background or close button
+      if (event.target.id === 'video-modal' || event.target.classList.contains('video-modal-close')) {
+        const modal = document.getElementById('video-modal');
+        const player = document.getElementById('video-player');
+        
+        player.src = '';
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        const modal = document.getElementById('video-modal');
+        if (modal.classList.contains('active')) {
+          closeVideo({ target: modal });
+        }
+      }
+    });
+  </script>
 </body>
 </html>

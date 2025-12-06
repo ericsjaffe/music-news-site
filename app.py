@@ -79,6 +79,12 @@ TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', 'your-auth-token')
 TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '+1234567890')
 ADMIN_PHONE = os.getenv('ADMIN_PHONE', '+12154319224')
 
+# Ticketmaster API Key
+TICKETMASTER_API_KEY = os.getenv('TICKETMASTER_API_KEY', 'NdaI5iX0vU7ypgYGYkSEo3OJAM4rpfoj')
+
+# YouTube Data API Key
+YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
+
 # Loudwire main RSS feed
 LOUDWIRE_LATEST_FEED = "https://loudwire.com/category/news/feed"
 
@@ -153,6 +159,186 @@ def extract_youtube_id(text: str) -> str | None:
         if match:
             return match.group(1)
     return None
+
+
+def get_trending_music_videos(max_results=24, region_code='US'):
+    """
+    Get trending music videos from YouTube.
+    
+    Args:
+        max_results: Number of videos to return (default 24)
+        region_code: Region code for localized results (default 'US')
+    
+    Returns:
+        List of video dictionaries with id, title, channel, thumbnail, views, duration
+    """
+    if not YOUTUBE_API_KEY:
+        return []
+    
+    try:
+        # YouTube Data API v3 - Most Popular videos in Music category
+        url = "https://www.googleapis.com/youtube/v3/videos"
+        params = {
+            'part': 'snippet,statistics,contentDetails',
+            'chart': 'mostPopular',
+            'videoCategoryId': '10',  # Music category
+            'regionCode': region_code,
+            'maxResults': max_results,
+            'key': YOUTUBE_API_KEY
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        videos = []
+        for item in data.get('items', []):
+            video_id = item['id']
+            snippet = item['snippet']
+            statistics = item.get('statistics', {})
+            content_details = item.get('contentDetails', {})
+            
+            videos.append({
+                'id': video_id,
+                'title': snippet.get('title', ''),
+                'channel': snippet.get('channelTitle', ''),
+                'thumbnail': snippet.get('thumbnails', {}).get('high', {}).get('url', ''),
+                'published_at': snippet.get('publishedAt', ''),
+                'views': statistics.get('viewCount', '0'),
+                'duration': content_details.get('duration', 'PT0S'),
+                'embed_url': f"https://www.youtube.com/embed/{video_id}"
+            })
+        
+        return videos
+        
+    except Exception as e:
+        print(f"Error fetching trending videos: {e}")
+        return []
+
+
+def search_music_videos(query, max_results=24):
+    """
+    Search for music videos on YouTube.
+    
+    Args:
+        query: Search query (artist name, song title, etc.)
+        max_results: Number of videos to return (default 24)
+    
+    Returns:
+        List of video dictionaries with id, title, channel, thumbnail, views, duration
+    """
+    if not YOUTUBE_API_KEY:
+        return []
+    
+    try:
+        # YouTube Data API v3 - Search endpoint
+        url = "https://www.googleapis.com/youtube/v3/search"
+        params = {
+            'part': 'snippet',
+            'q': f"{query} music video",
+            'type': 'video',
+            'videoCategoryId': '10',  # Music category
+            'maxResults': max_results,
+            'order': 'relevance',
+            'key': YOUTUBE_API_KEY
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Get video IDs to fetch statistics
+        video_ids = [item['id']['videoId'] for item in data.get('items', [])]
+        
+        if not video_ids:
+            return []
+        
+        # Fetch video details (statistics and duration)
+        details_url = "https://www.googleapis.com/youtube/v3/videos"
+        details_params = {
+            'part': 'statistics,contentDetails',
+            'id': ','.join(video_ids),
+            'key': YOUTUBE_API_KEY
+        }
+        
+        details_response = requests.get(details_url, params=details_params, timeout=10)
+        details_response.raise_for_status()
+        details_data = details_response.json()
+        
+        # Map details by video ID
+        details_map = {item['id']: item for item in details_data.get('items', [])}
+        
+        videos = []
+        for item in data.get('items', []):
+            video_id = item['id']['videoId']
+            snippet = item['snippet']
+            details = details_map.get(video_id, {})
+            statistics = details.get('statistics', {})
+            content_details = details.get('contentDetails', {})
+            
+            videos.append({
+                'id': video_id,
+                'title': snippet.get('title', ''),
+                'channel': snippet.get('channelTitle', ''),
+                'thumbnail': snippet.get('thumbnails', {}).get('high', {}).get('url', ''),
+                'published_at': snippet.get('publishedAt', ''),
+                'views': statistics.get('viewCount', '0'),
+                'duration': content_details.get('duration', 'PT0S'),
+                'embed_url': f"https://www.youtube.com/embed/{video_id}"
+            })
+        
+        return videos
+        
+    except Exception as e:
+        print(f"Error searching videos: {e}")
+        return []
+
+
+# Template filters for video page
+@app.template_filter('format_views')
+def format_views(views):
+    """Format view count with K/M/B suffixes."""
+    try:
+        views = int(views)
+        if views >= 1_000_000_000:
+            return f"{views / 1_000_000_000:.1f}B"
+        elif views >= 1_000_000:
+            return f"{views / 1_000_000:.1f}M"
+        elif views >= 1_000:
+            return f"{views / 1_000:.1f}K"
+        else:
+            return str(views)
+    except (ValueError, TypeError):
+        return "0"
+
+
+@app.template_filter('format_date')
+def format_date(date_str):
+    """Format ISO date string to human-readable format."""
+    try:
+        from datetime import datetime
+        date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        now = datetime.now(date.tzinfo)
+        delta = now - date
+        
+        if delta.days == 0:
+            return "Today"
+        elif delta.days == 1:
+            return "Yesterday"
+        elif delta.days < 7:
+            return f"{delta.days} days ago"
+        elif delta.days < 30:
+            weeks = delta.days // 7
+            return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+        elif delta.days < 365:
+            months = delta.days // 30
+            return f"{months} month{'s' if months > 1 else ''} ago"
+        else:
+            years = delta.days // 365
+            return f"{years} year{'s' if years > 1 else ''} ago"
+    except Exception:
+        return date_str
+
 
 
 def get_spotify_search_url(artist: str, track: str = "") -> str:
@@ -768,11 +954,8 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None
     # Ticketmaster Discovery API endpoint
     base_url = "https://app.ticketmaster.com/discovery/v2/events.json"
     
-    # Get API key from environment
-    api_key = os.getenv('TICKETMASTER_API_KEY', 'NdaI5iX0vU7ypgYGYkSEo3OJAM4rpfoj')
-    
     params = {
-        "apikey": api_key,
+        "apikey": TICKETMASTER_API_KEY,
         "classificationName": "Music",
         "size": min(limit, 200),
         "sort": sort
@@ -1804,8 +1987,25 @@ def venue_detail(venue_id):
 
 @app.route("/videos")
 def videos():
-    """Videos page - coming soon."""
-    return render_template("videos.html")
+    """Videos page with YouTube integration."""
+    # Get search query from URL
+    search_query = request.args.get('search', '').strip()
+    
+    if search_query:
+        # Search for specific artist/song
+        videos = search_music_videos(search_query, max_results=24)
+        page_title = f"Videos: {search_query}"
+    else:
+        # Show trending music videos
+        videos = get_trending_music_videos(max_results=24)
+        page_title = "Trending Music Videos"
+    
+    return render_template(
+        "videos.html",
+        videos=videos,
+        search_query=search_query,
+        page_title=page_title
+    )
 
 
 @app.route("/merch")

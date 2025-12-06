@@ -836,7 +836,7 @@ def releases():
             # Be polite with MusicBrainz but not too slow
             time.sleep(0.1)
 
-        # Sort nicely
+        # Sort by year (newest first), then by artist, then by title
         if results:
             results.sort(key=lambda x: (-x.year, x.artist or "", x.title or ""))
 

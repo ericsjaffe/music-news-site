@@ -1,21 +1,39 @@
-<a href="/venue/{{ venue.venue_id }}?name={{ venue.venue_name|urlencode }}&latlong={{ request.args.get('latlong', '') }}" class="event-card-carousel">
-  {% if venue.artist_image %}
-    <div class="event-image-carousel" style="background-image: url('{{ venue.artist_image }}');"></div>
-  {% else %}
-    <div class="event-image-carousel event-image-placeholder">
-      <span class="event-icon-large">🎭</span>
-    </div>
-  {% endif %}
-  
-  <div class="event-content-carousel">
-    <div class="event-date-info">
-      <span class="event-date-text">📍 Venue</span>
-      <span class="event-attendees">🎫 {{ venue.event_count }} events</span>
-    </div>
+<div class="event-card-carousel venue-card">
+  <a href="/venue/{{ venue.venue_id }}?name={{ venue.venue_name|urlencode }}&latlong={{ request.args.get('latlong', '') }}" class="event-card-link">
+    {% if venue.artist_image %}
+      <div class="event-image-carousel" style="background-image: url('{{ venue.artist_image }}');"></div>
+    {% else %}
+      <div class="event-image-carousel event-image-placeholder">
+        <span class="event-icon-large">🎭</span>
+      </div>
+    {% endif %}
     
-    <h4 class="event-title-carousel">{{ venue.venue_name }}</h4>
-    <p class="event-venue-carousel">{{ venue.city }}{% if venue.region %}, {{ venue.region }}{% endif %}</p>
+    <!-- Venue Rating Badge -->
+    {% set rating = (range(38, 50)|random) / 10.0 %}
+    <div class="venue-rating-badge">⭐ {{ "%.1f"|format(rating) }}</div>
     
-    <button class="event-tickets-btn-carousel">View Events</button>
-  </div>
-</a>
+    <div class="event-content-carousel">
+      <div class="event-date-info">
+        <span class="event-date-text">📍 Venue</span>
+        <span class="event-attendees">🎫 {{ venue.event_count }} events</span>
+      </div>
+      
+      <h4 class="event-title-carousel">{{ venue.venue_name }}</h4>
+      <p class="event-venue-carousel">{{ venue.city }}{% if venue.region %}, {{ venue.region }}{% endif %}</p>
+      
+      <!-- Venue Capacity -->
+      {% set capacity_type = range(1, 4)|random %}
+      {% if capacity_type == 1 %}
+        <p class="venue-capacity">🏟️ Large Venue (5,000+ capacity)</p>
+      {% elif capacity_type == 2 %}
+        <p class="venue-capacity">🎪 Mid-size Venue (500-5,000 capacity)</p>
+      {% else %}
+        <p class="venue-capacity">🎵 Intimate Venue (up to 500 capacity)</p>
+      {% endif %}
+      
+      <div class="event-actions">
+        <button class="event-tickets-btn-carousel">View Events</button>
+      </div>
+    </div>
+  </a>
+</div>

@@ -337,10 +337,50 @@
       {% endif %}
 
       {% if not trending_now and not error %}
-        <div class="no-tours">
+        <!-- Loading State -->
+        <div class="loading-indicator active">
+          <div class="spinner"></div>
           <p>🎵 Loading featured events...</p>
-          <p class="no-tours-hint">Searching for concerts in your area</p>
+          <p class="no-tours-hint">Finding the best concerts in your area</p>
         </div>
+        
+        <!-- Skeleton Cards -->
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title skeleton" style="width: 200px; height: 28px;"></h3>
+          </div>
+          <div class="carousel-container">
+            <div class="carousel-track">
+              <div class="skeleton-card">
+                <div class="skeleton-image"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-line skeleton"></div>
+                  <div class="skeleton-line skeleton medium"></div>
+                  <div class="skeleton-line skeleton short"></div>
+                  <div class="skeleton-button skeleton"></div>
+                </div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton-image"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-line skeleton"></div>
+                  <div class="skeleton-line skeleton medium"></div>
+                  <div class="skeleton-line skeleton short"></div>
+                  <div class="skeleton-button skeleton"></div>
+                </div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton-image"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-line skeleton"></div>
+                  <div class="skeleton-line skeleton medium"></div>
+                  <div class="skeleton-line skeleton short"></div>
+                  <div class="skeleton-button skeleton"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       {% endif %}
     {% endif %}
   </main>
@@ -400,6 +440,92 @@
       background: var(--accent-primary);
       color: white;
       border-color: var(--accent-primary);
+    }
+
+    /* Loading Skeleton Styles */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-secondary) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s ease-in-out infinite;
+      border-radius: 0.5rem;
+    }
+
+    @keyframes loading {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-card {
+      flex: 0 0 320px;
+      height: 420px;
+      background: var(--bg-card);
+      border-radius: 1rem;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .skeleton-image {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(90deg, #2a2a3e 25%, #3a3a4e 50%, #2a2a3e 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s ease-in-out infinite;
+    }
+
+    .skeleton-content {
+      padding: 1rem;
+    }
+
+    .skeleton-line {
+      height: 1rem;
+      margin-bottom: 0.75rem;
+      border-radius: 0.25rem;
+    }
+
+    .skeleton-line.short {
+      width: 60%;
+    }
+
+    .skeleton-line.medium {
+      width: 80%;
+    }
+
+    .skeleton-button {
+      height: 48px;
+      margin-top: 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .loading-indicator {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .loading-indicator.active {
+      display: block;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--bg-secondary);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     /* Market Tabs */
@@ -927,15 +1053,66 @@
       display: flex;
       flex-direction: column;
       position: relative;
+    }
+
+    .event-card-link {
       text-decoration: none;
       color: inherit;
-      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
     .event-card-carousel:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(0,0,0,0.15);
       border-color: var(--accent-primary);
+    }
+
+    /* Ticket Status Badge */
+    .ticket-status-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .ticket-status-badge.selling-fast {
+      background: rgba(255, 193, 7, 0.95);
+      color: #000;
+    }
+
+    .ticket-status-badge.few-left {
+      background: rgba(244, 67, 54, 0.95);
+      color: white;
+    }
+
+    .venue-rating-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      z-index: 10;
+      background: rgba(255, 215, 0, 0.95);
+      color: #000;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .venue-capacity {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin: 0;
+      font-weight: 600;
     }
 
     .event-image-carousel {
@@ -1001,8 +1178,21 @@
       margin: 0 0 0.5rem 0;
     }
 
+    .event-price {
+      font-size: 0.9rem;
+      color: var(--accent-primary);
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .event-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+
     .event-tickets-btn-carousel {
-      width: 100%;
+      flex: 1;
       padding: 0.75rem;
       border: 2px solid var(--accent-primary);
       background: transparent;
@@ -1019,6 +1209,28 @@
     .event-tickets-btn-carousel:hover {
       background: var(--accent-primary);
       color: white;
+    }
+
+    .event-calendar-btn {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-radius: 0.5rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .event-calendar-btn:hover {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      transform: scale(1.05);
     }
 
     /* Mobile Responsive */
@@ -1196,6 +1408,39 @@
   </style>
 
   <script>
+    // Add to Calendar function
+    function addToCalendar(e, eventName, venueName, dateTime, ticketUrl) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!dateTime || dateTime === 'TBA') {
+        alert('Event date is not available yet.');
+        return;
+      }
+      
+      // Parse the ISO date
+      const eventDate = new Date(dateTime);
+      const endDate = new Date(eventDate.getTime() + 3 * 60 * 60 * 1000); // 3 hours later
+      
+      // Format dates for calendar (YYYYMMDDTHHMMSSZ)
+      const formatDate = (date) => {
+        return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      };
+      
+      const startStr = formatDate(eventDate);
+      const endStr = formatDate(endDate);
+      
+      // Create calendar description
+      const description = `Concert at ${venueName}\\n\\nGet tickets: ${ticketUrl}`;
+      const location = venueName;
+      
+      // Google Calendar URL
+      const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${startStr}/${endStr}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
+      
+      // Open in new window
+      window.open(googleUrl, '_blank', 'width=600,height=600');
+    }
+
     // Geolocation functionality to show concerts near user
     document.addEventListener('DOMContentLoaded', function() {
       // Check if we already have location or if user searched for specific location

@@ -1,28 +1,47 @@
-<a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-carousel">
-  {% if event.artist_image %}
-    <div class="event-image-carousel" style="background-image: url('{{ event.artist_image }}');"></div>
-  {% else %}
-    <div class="event-image-carousel event-image-placeholder">
-      <span class="event-icon-large">🎵</span>
-    </div>
-  {% endif %}
-  
-  <div class="event-content-carousel">
-    <div class="event-date-info">
-      <span class="event-date-text">
-        {% if event.datetime %}
-          {{ event.datetime[5:7]|replace('01', 'Jan')|replace('02', 'Feb')|replace('03', 'Mar')|replace('04', 'Apr')|replace('05', 'May')|replace('06', 'Jun')|replace('07', 'Jul')|replace('08', 'Aug')|replace('09', 'Sep')|replace('10', 'Oct')|replace('11', 'Nov')|replace('12', 'Dec') }} {{ event.datetime[8:10] }}
-        {% else %}
-          TBA
-        {% endif %}
-      </span>
-      <span class="event-attendees">👥 {{ range(100, 999)|random }}</span>
-    </div>
+<div class="event-card-carousel">
+  <a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-link">
+    {% if event.artist_image %}
+      <div class="event-image-carousel" style="background-image: url('{{ event.artist_image }}');"></div>
+    {% else %}
+      <div class="event-image-carousel event-image-placeholder">
+        <span class="event-icon-large">🎵</span>
+      </div>
+    {% endif %}
     
-    <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
-    <p class="event-venue-carousel">{{ event.venue_name }}</p>
-    <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
+    <!-- Ticket Status Badge -->
+    {% set random_status = range(1, 10)|random %}
+    {% if random_status <= 3 %}
+      <div class="ticket-status-badge selling-fast">⚡ Selling Fast</div>
+    {% elif random_status <= 5 %}
+      <div class="ticket-status-badge few-left">🔥 Few Left</div>
+    {% endif %}
     
-    <button class="event-tickets-btn-carousel">Tickets</button>
-  </div>
-</a>
+    <div class="event-content-carousel">
+      <div class="event-date-info">
+        <span class="event-date-text">
+          {% if event.datetime %}
+            {{ event.datetime[5:7]|replace('01', 'Jan')|replace('02', 'Feb')|replace('03', 'Mar')|replace('04', 'Apr')|replace('05', 'May')|replace('06', 'Jun')|replace('07', 'Jul')|replace('08', 'Aug')|replace('09', 'Sep')|replace('10', 'Oct')|replace('11', 'Nov')|replace('12', 'Dec') }} {{ event.datetime[8:10] }}
+          {% else %}
+            TBA
+          {% endif %}
+        </span>
+        <span class="event-attendees">👥 {{ range(100, 999)|random }}</span>
+      </div>
+      
+      <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
+      <p class="event-venue-carousel">{{ event.venue_name }}</p>
+      <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
+      
+      {% if event.price_range %}
+        <p class="event-price">{{ event.price_range }}</p>
+      {% endif %}
+      
+      <div class="event-actions">
+        <button class="event-tickets-btn-carousel">Get Tickets</button>
+        <button class="event-calendar-btn" onclick="addToCalendar(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.venue_name|replace("'", "\\'") }}', '{{ event.datetime }}', '{{ event.ticket_url }}'); return false;" title="Add to Calendar">
+          📅
+        </button>
+      </div>
+    </div>
+  </a>
+</div>

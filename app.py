@@ -1134,6 +1134,19 @@ def sitemap():
     return response
 
 
+@app.route("/sms/status", methods=["POST"])
+def sms_status_callback():
+    """Handle Twilio SMS status callbacks (delivery confirmations)."""
+    # This endpoint receives delivery status updates from Twilio
+    # Log it but don't do anything else
+    message_sid = request.form.get('MessageSid')
+    message_status = request.form.get('MessageStatus')
+    
+    print(f"SMS Status Update - SID: {message_sid}, Status: {message_status}")
+    
+    return '', 200
+
+
 @app.route("/robots.txt")
 def robots():
     """Generate robots.txt file."""

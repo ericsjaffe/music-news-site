@@ -157,7 +157,7 @@ def get_apple_music_search_url(artist: str, track: str = "") -> str:
     return f"https://music.apple.com/us/search?term={quote_plus(query)}"
 
 
-def send_confirmation_email(email: str, token: str) -> bool:
+def send_confirmation_email(email: str, token: str, base_url: str = None) -> bool:
     """Send confirmation email to subscriber."""
     # Skip if SMTP not configured
     if SMTP_USERNAME == "your-email@gmail.com":
@@ -166,7 +166,9 @@ def send_confirmation_email(email: str, token: str) -> bool:
     
     try:
         # Generate confirmation link
-        confirmation_url = f"{request.host_url}newsletter/confirm/{token}"
+        if base_url is None:
+            base_url = request.host_url
+        confirmation_url = f"{base_url}newsletter/confirm/{token}"
         
         # Create email
         msg = MIMEMultipart('alternative')
@@ -939,9 +941,10 @@ def newsletter_subscribe():
     
     # Send emails in background thread to avoid blocking
     token = result["token"]
+    base_url = request.host_url
     
     def send_emails_async():
-        send_confirmation_email(email, token)
+        send_confirmation_email(email, token, base_url)
         send_admin_notification(email)
     
     email_thread = threading.Thread(target=send_emails_async, daemon=True)

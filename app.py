@@ -723,7 +723,8 @@ def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 1
     Supports pagination with offset parameter.
     Returns list of releases (dicts).
     """
-    query = f"artist:{artist_name}"
+    # Use quotes for exact phrase matching in MusicBrainz
+    query = f'artist:"{artist_name}"'
     if year:
         query += f" AND date:{year}*"
     

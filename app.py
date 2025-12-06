@@ -2270,49 +2270,6 @@ Allow: /
     return response
 
 
-@app.route("/sitemap.xml")
-def sitemap():
-    """Generate XML sitemap for search engines and AI crawlers."""
-    from flask import make_response
-    
-    domain = "https://music-news-site.onrender.com"
-    today = datetime.now().strftime("%Y-%m-%d")
-    
-    # Static pages
-    pages = [
-        {"loc": f"{domain}/", "priority": "1.0", "changefreq": "daily"},
-        {"loc": f"{domain}/touring", "priority": "0.9", "changefreq": "daily"},
-        {"loc": f"{domain}/releases", "priority": "0.8", "changefreq": "daily"},
-        {"loc": f"{domain}/videos", "priority": "0.7", "changefreq": "daily"},
-        {"loc": f"{domain}/merch", "priority": "0.6", "changefreq": "weekly"},
-        {"loc": f"{domain}/subscribe", "priority": "0.5", "changefreq": "monthly"},
-    ]
-    
-    sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    
-    for page in pages:
-        sitemap_xml += f'  <url>\n'
-        sitemap_xml += f'    <loc>{page["loc"]}</loc>\n'
-        sitemap_xml += f'    <lastmod>{today}</lastmod>\n'
-        sitemap_xml += f'    <changefreq>{page["changefreq"]}</changefreq>\n'
-        sitemap_xml += f'    <priority>{page["priority"]}</priority>\n'
-        sitemap_xml += f'  </url>\n'
-    
-    sitemap_xml += '</urlset>'
-    
-    response = make_response(sitemap_xml)
-    response.headers["Content-Type"] = "application/xml"
-    return response
-
-
-@app.route("/robots.txt")
-def robots():
-    """Serve robots.txt file."""
-    from flask import send_from_directory
-    return send_from_directory('static', 'robots.txt', mimetype='text/plain')
-
-
 @app.route("/rss")
 @app.route("/feed")
 def rss_feed():

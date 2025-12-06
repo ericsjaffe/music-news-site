@@ -48,7 +48,6 @@
               type="email" 
               name="email" 
               placeholder="Enter your email address" 
-              required
               id="newsletter-email"
             >
             <button type="submit">Subscribe</button>
@@ -65,9 +64,7 @@
               type="tel" 
               name="phone" 
               placeholder="Enter phone number (e.g. +1234567890)" 
-              required
               id="sms-phone"
-              pattern="^\+?[1-9]\d{1,14}$"
             >
             <button type="submit">Subscribe</button>
           </form>
@@ -113,13 +110,33 @@
     async function subscribeNewsletter(event) {
       event.preventDefault();
       
-      const email = document.getElementById('newsletter-email').value;
+      const email = document.getElementById('newsletter-email').value.trim();
       const messageDiv = document.getElementById('newsletter-message');
       const submitBtn = event.target.querySelector('button[type="submit"]');
+
+      // Validate email
+      if (!email) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        messageDiv.style.color = '#ef4444';
+        messageDiv.textContent = '✗ Please enter your email address';
+        return false;
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        messageDiv.style.color = '#ef4444';
+        messageDiv.textContent = '✗ Please enter a valid email address';
+        return false;
+      }
 
       // Disable the button temporarily
       submitBtn.disabled = true;
       submitBtn.textContent = 'Subscribing...';
+      messageDiv.style.display = 'none';
 
       try {
         const response = await fetch('/newsletter/subscribe', {
@@ -158,13 +175,33 @@
     async function subscribeSMS(event) {
       event.preventDefault();
       
-      const phone = document.getElementById('sms-phone').value;
+      const phone = document.getElementById('sms-phone').value.trim();
       const messageDiv = document.getElementById('sms-message');
       const submitBtn = event.target.querySelector('button[type="submit"]');
+
+      // Validate phone
+      if (!phone) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        messageDiv.style.color = '#ef4444';
+        messageDiv.textContent = '✗ Please enter your phone number';
+        return false;
+      }
+
+      // Basic phone validation - must start with + and contain digits
+      const phoneRegex = /^\+?[1-9]\d{7,14}$/;
+      if (!phoneRegex.test(phone.replace(/[\s-]/g, ''))) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        messageDiv.style.color = '#ef4444';
+        messageDiv.textContent = '✗ Please enter a valid phone number with country code (e.g., +12154319224)';
+        return false;
+      }
 
       // Disable the button temporarily
       submitBtn.disabled = true;
       submitBtn.textContent = 'Subscribing...';
+      messageDiv.style.display = 'none';
 
       try {
         const response = await fetch('/sms/subscribe', {

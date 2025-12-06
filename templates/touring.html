@@ -126,8 +126,15 @@
       </a>
     </div>
 
-    <!-- Filter Buttons -->
-    <div class="filter-section">
+    <!-- Advanced Search Toggle Button -->
+    <div class="advanced-search-toggle-wrapper">
+      <button id="advanced-search-toggle" class="advanced-search-toggle-btn" aria-expanded="false" aria-controls="advanced-filters">
+        🔍 Advanced Search
+      </button>
+    </div>
+
+    <!-- Collapsible Filter Buttons -->
+    <div id="advanced-filters" class="filter-section" style="display: none;">
       <!-- Genre Filters -->
       <div class="filter-group">
         <span class="filter-label">🎵 Genre:</span>
@@ -556,12 +563,46 @@
   </main>
 
   <style>
+    /* Advanced Search Toggle */
+    .advanced-search-toggle-wrapper {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .advanced-search-toggle-btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      border: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+    }
+
+    .advanced-search-toggle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(236, 72, 153, 0.5);
+    }
+
+    .advanced-search-toggle-btn[aria-expanded="true"]::after {
+      content: " ▲";
+    }
+
+    .advanced-search-toggle-btn[aria-expanded="false"]::after {
+      content: " ▼";
+    }
+
     /* Filter Section */
     .filter-section {
       background: var(--bg-secondary);
       border-radius: 12px;
       padding: 1.25rem;
       margin-bottom: 2rem;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
     }
 
     .filter-group {
@@ -701,6 +742,7 @@
     /* Market Tabs */
     .market-tabs {
       display: flex;
+      justify-content: center;
       gap: 0.5rem;
       padding: 0.5rem;
       background: var(--bg-secondary);
@@ -1071,9 +1113,12 @@
     }
 
     .tours-header h2 {
-      font-size: 2.75rem;
+      font-size: 2.5rem;
       margin-bottom: 0.5rem;
-      color: var(--text-primary);
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       font-weight: 800;
     }
 
@@ -1786,7 +1831,7 @@
       }
 
       .tours-header h2 {
-        font-size: 2rem;
+        font-size: 1.75rem;
       }
 
       .tours-subtitle {
@@ -1871,6 +1916,26 @@
   </style>
 
   <script>
+    // Advanced Search Toggle
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggleBtn = document.getElementById('advanced-search-toggle');
+      const filtersSection = document.getElementById('advanced-filters');
+      
+      if (toggleBtn && filtersSection) {
+        toggleBtn.addEventListener('click', function() {
+          const isExpanded = this.getAttribute('aria-expanded') === 'true';
+          
+          if (isExpanded) {
+            filtersSection.style.display = 'none';
+            this.setAttribute('aria-expanded', 'false');
+          } else {
+            filtersSection.style.display = 'block';
+            this.setAttribute('aria-expanded', 'true');
+          }
+        });
+      }
+    });
+
     // Artist Following System with localStorage
     function getFollowedArtists() {
       const stored = localStorage.getItem('followedArtists');

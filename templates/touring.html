@@ -102,9 +102,9 @@
 
   <main class="container tours-page" role="main" itemprop="mainContentOfPage">
     <!-- Page Title -->
-    <div class="tours-header">
-      <h2>Discover Live Music</h2>
-      <p class="tours-subtitle">
+    <div class="page-title-section">
+      <h2 class="page-title">Discover Live Music</h2>
+      <p class="page-subtitle">
         {% if view_mode == 'nationwide' %}
           Events across the United States
         {% elif location_query %}
@@ -1113,19 +1113,11 @@
       max-width: 800px;
     }
 
-    .tours-header h2 {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 800;
-    }
-
-    .tours-subtitle {
+    /* Subtitle for all pages */
+    .page-subtitle {
       font-size: 1.15rem;
       color: var(--text-secondary);
+      margin-top: 0.5rem;
     }
 
     .clear-search-link-header {
@@ -1841,11 +1833,7 @@
         margin-bottom: 1.5rem;
       }
 
-      .tours-header h2 {
-        font-size: 1.75rem;
-      }
-
-      .tours-subtitle {
+      .page-subtitle {
         font-size: 1rem;
       }
 

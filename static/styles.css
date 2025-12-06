@@ -81,6 +81,13 @@ body {
   background-clip: text;
 }
 
+.page-subtitle {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
 /* Header */
 .site-header {
   position: sticky;
@@ -582,7 +589,7 @@ body {
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;
-  background: linear-gradient(135deg, #ec4899, #f59e0b);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: white;
   box-shadow: 0 6px 18px rgba(236, 72, 153, 0.35);
   transition: all 0.2s;
@@ -822,6 +829,10 @@ body {
   /* Page title responsive */
   .page-title {
     font-size: 1.75rem;
+  }
+
+  .page-subtitle {
+    font-size: 1rem;
   }
   
   /* Form compact rows stack on mobile */

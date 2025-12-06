@@ -44,10 +44,13 @@
   </header>
 
   <main class="container">
+    <!-- Page Title -->
+    <div class="page-title-section">
+      <h2 class="page-title">{{ page_title }}</h2>
+    </div>
+
     <!-- Video Search Section -->
     <section class="video-search-section">
-      <div class="video-search-header">
-        <h2>{{ page_title }}</h2>
         <form method="get" action="/videos" class="video-search-form">
           <input
             type="text"
@@ -557,10 +560,6 @@
     }
 
     @media (max-width: 640px) {
-      .video-search-header h2 {
-        font-size: 1.75rem;
-      }
-
       .videos-grid {
         grid-template-columns: 1fr;
         gap: 1rem;

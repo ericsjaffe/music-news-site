@@ -89,19 +89,19 @@
         </div>
       {% endif %}
 
-      <!-- Popular Events Carousel -->
-      {% if popular_events %}
+      <!-- 1. Trending Now Carousel -->
+      {% if trending_now %}
         <section class="carousel-section">
           <div class="carousel-header">
-            <h3 class="carousel-title">🔥 Popular in Your Area</h3>
+            <h3 class="carousel-title">🔥 Trending Now</h3>
             <div class="carousel-controls">
-              <button class="carousel-btn carousel-prev" data-carousel="popular">‹</button>
-              <button class="carousel-btn carousel-next" data-carousel="popular">›</button>
+              <button class="carousel-btn carousel-prev" data-carousel="trending">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="trending">›</button>
             </div>
           </div>
-          <div class="carousel-container" id="carousel-popular">
+          <div class="carousel-container" id="carousel-trending">
             <div class="carousel-track">
-              {% for event in popular_events %}
+              {% for event in trending_now %}
                 {% include 'event_card.html' %}
               {% endfor %}
             </div>
@@ -109,27 +109,7 @@
         </section>
       {% endif %}
 
-      <!-- Just Announced Carousel -->
-      {% if just_announced %}
-        <section class="carousel-section">
-          <div class="carousel-header">
-            <h3 class="carousel-title">✨ Just Announced</h3>
-            <div class="carousel-controls">
-              <button class="carousel-btn carousel-prev" data-carousel="announced">‹</button>
-              <button class="carousel-btn carousel-next" data-carousel="announced">›</button>
-            </div>
-          </div>
-          <div class="carousel-container" id="carousel-announced">
-            <div class="carousel-track">
-              {% for event in just_announced %}
-                {% include 'event_card.html' %}
-              {% endfor %}
-            </div>
-          </div>
-        </section>
-      {% endif %}
-
-      <!-- Coming Soon Carousel -->
+      <!-- 2. Coming Soon Carousel -->
       {% if coming_soon %}
         <section class="carousel-section">
           <div class="carousel-header">
@@ -149,19 +129,19 @@
         </section>
       {% endif %}
 
-      <!-- Selling Fast Carousel -->
-      {% if selling_fast %}
+      <!-- 3. Last Chance Carousel -->
+      {% if last_chance %}
         <section class="carousel-section">
           <div class="carousel-header">
-            <h3 class="carousel-title">⚡ Selling Fast</h3>
+            <h3 class="carousel-title">⏰ Last Chance</h3>
             <div class="carousel-controls">
-              <button class="carousel-btn carousel-prev" data-carousel="selling">‹</button>
-              <button class="carousel-btn carousel-next" data-carousel="selling">›</button>
+              <button class="carousel-btn carousel-prev" data-carousel="lastchance">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="lastchance">›</button>
             </div>
           </div>
-          <div class="carousel-container" id="carousel-selling">
+          <div class="carousel-container" id="carousel-lastchance">
             <div class="carousel-track">
-              {% for event in selling_fast %}
+              {% for event in last_chance %}
                 {% include 'event_card.html' %}
               {% endfor %}
             </div>
@@ -169,11 +149,71 @@
         </section>
       {% endif %}
 
-      <!-- Nearby Venues Carousel -->
-      {% if nearby_venues %}
+      <!-- 4. Nearby Events Carousel -->
+      {% if nearby_events %}
         <section class="carousel-section">
           <div class="carousel-header">
-            <h3 class="carousel-title">📍 Venues Near You</h3>
+            <h3 class="carousel-title">📍 Nearby Events</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="nearby">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="nearby">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-nearby">
+            <div class="carousel-track">
+              {% for event in nearby_events %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- 5. A-Z Artist Guide Carousel -->
+      {% if az_guide %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">🔤 A-Z Artist Guide</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="azguide">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="azguide">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-azguide">
+            <div class="carousel-track">
+              {% for event in az_guide %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- 6. Random Discovery Carousel -->
+      {% if random_discovery %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">🎲 Random Discovery</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="random">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="random">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-random">
+            <div class="carousel-track">
+              {% for event in random_discovery %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- 7. Popular Venues Carousel -->
+      {% if popular_venues %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">🏟️ Popular Venues</h3>
             <div class="carousel-controls">
               <button class="carousel-btn carousel-prev" data-carousel="venues">‹</button>
               <button class="carousel-btn carousel-next" data-carousel="venues">›</button>
@@ -181,7 +221,7 @@
           </div>
           <div class="carousel-container" id="carousel-venues">
             <div class="carousel-track">
-              {% for venue in nearby_venues %}
+              {% for venue in popular_venues %}
                 {% include 'venue_card.html' %}
               {% endfor %}
             </div>
@@ -189,7 +229,7 @@
         </section>
       {% endif %}
 
-      {% if not popular_events and not error %}
+      {% if not trending_now and not error %}
         <div class="no-tours">
           <p>🎵 Loading featured events...</p>
           <p class="no-tours-hint">Searching for concerts in your area</p>
@@ -842,7 +882,7 @@
 
       // Carousel functionality
       function initCarousels() {
-        const carouselIds = ['popular', 'announced', 'coming', 'selling', 'venues'];
+        const carouselIds = ['trending', 'coming', 'lastchance', 'nearby', 'azguide', 'random', 'venues'];
         
         carouselIds.forEach(id => {
           const container = document.getElementById('carousel-' + id);

@@ -1345,11 +1345,13 @@ def touring():
     radius = request.args.get('radius', '50')
     
     tours = []
-    popular_events = []
-    just_announced = []
+    trending_now = []
     coming_soon = []
-    selling_fast = []
-    nearby_venues = []
+    last_chance = []
+    nearby_events = []
+    az_guide = []
+    random_discovery = []
+    popular_venues = []
     error = None
     
     try:
@@ -1366,29 +1368,34 @@ def touring():
                 error = f"No upcoming tour dates found for '{artist_query}'"
         else:
             # Fetch different categories for carousels
-            # Popular events - use relevance sorting to get most popular/trending events
-            popular_events = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="relevance,desc")
             
-            # Get all events for other carousels (sorted by date)
-            all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius, sort="date,asc")
+            # 1. Trending Now - relevance sorting for most popular/trending events
+            trending_now = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="relevance,desc")
             
-            if all_events:
-                # Just announced - use date-sorted events (recently added events appear last)
-                just_announced = all_events[-12:] if len(all_events) > 12 else all_events
-                just_announced = list(reversed(just_announced))  # Reverse to show newest first
-                
-                # Coming Soon - tickets going on sale soonest
-                coming_soon = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="onSaleStartDate,asc")
-                
-                # Selling fast - use random sampling from popular events to simulate demand
-                if len(all_events) >= 36:
-                    selling_fast = all_events[12:24]
-                else:
-                    selling_fast = all_events[12:min(24, len(all_events))]
-                
-                # Get nearby venues (unique venues from all events)
+            # 2. Coming Soon - tickets going on sale soonest
+            coming_soon = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="onSaleStartDate,asc")
+            
+            # 3. Last Chance - soonest events (happening this week/soon)
+            last_chance = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="date,asc")
+            
+            # 4. Nearby Events - closest events geographically
+            if latlong:
+                nearby_events = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="distance,asc")
+            else:
+                nearby_events = []
+            
+            # 5. A-Z Artist Guide - alphabetically sorted events
+            az_guide = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="name,asc")
+            
+            # 6. Random Discovery - random events for exploration
+            random_discovery = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="random")
+            
+            # 7. Popular Venues - sorted by venue name, grouped by venue
+            venue_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius, sort="venueName,asc")
+            if venue_events:
+                # Group by venue and count events
                 venue_dict = {}
-                for event in all_events:
+                for event in venue_events:
                     venue_name = event['venue_name']
                     if venue_name != 'Venue TBA':
                         if venue_name not in venue_dict:
@@ -1399,14 +1406,14 @@ def touring():
                                 'region': event['region'],
                                 'artist_image': event.get('artist_image', ''),
                                 'event_count': 1,
-                                'venue_id': venue_name.lower().replace(' ', '-').replace("'", '')
+                                'venue_id': venue_name.lower().replace(' ', '-').replace("'", '').replace('.', '')
                             }
                         else:
                             venue_dict[venue_name]['event_count'] += 1
                             # Use image if current venue entry doesn't have one
                             if not venue_dict[venue_name]['artist_image'] and event.get('artist_image'):
                                 venue_dict[venue_name]['artist_image'] = event['artist_image']
-                nearby_venues = list(venue_dict.values())[:12]
+                popular_venues = list(venue_dict.values())[:12]
             
     except Exception as e:
         error = "Unable to fetch tour data at this time. Please try again later."
@@ -1415,11 +1422,13 @@ def touring():
     return render_template(
         "touring.html",
         tours=tours,
-        popular_events=popular_events,
-        just_announced=just_announced,
+        trending_now=trending_now,
         coming_soon=coming_soon,
-        selling_fast=selling_fast,
-        nearby_venues=nearby_venues,
+        last_chance=last_chance,
+        nearby_events=nearby_events,
+        az_guide=az_guide,
+        random_discovery=random_discovery,
+        popular_venues=popular_venues,
         artist_query=artist_query,
         error=error
     )

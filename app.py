@@ -1101,6 +1101,42 @@ def sms_stats():
     }
 
 
+@app.route("/admin/subscribers")
+def admin_subscribers():
+    """Admin page to view all subscribers."""
+    import sqlite3
+    
+    # Get email subscribers
+    email_stats = get_subscriber_count()
+    conn = sqlite3.connect('newsletter_subscribers.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT email, confirmed, subscribed_at, confirmed_at, ip_address
+        FROM subscribers
+        ORDER BY subscribed_at DESC
+    """)
+    email_subs = cursor.fetchall()
+    conn.close()
+    
+    # Get SMS subscribers
+    sms_stats = get_sms_subscriber_count()
+    conn = sqlite3.connect('sms_subscribers.db')
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT phone_number, confirmed, subscribed_at, confirmed_at, ip_address
+        FROM sms_subscribers
+        ORDER BY subscribed_at DESC
+    """)
+    sms_subs = cursor.fetchall()
+    conn.close()
+    
+    return render_template('admin_subscribers.html',
+                         email_stats=email_stats,
+                         email_subs=email_subs,
+                         sms_stats=sms_stats,
+                         sms_subs=sms_subs)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
 

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscribers - Admin - Music Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #1f2937;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section h2 {
+            color: #374151;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-box .number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-box .label {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #6b7280;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge.confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #9ca3af;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Music Hub</a>
+        
+        <h1>📊 Subscriber Dashboard</h1>
+        
+        <!-- Email Subscribers -->
+        <div class="section">
+            <h2>📧 Email Newsletter Subscribers</h2>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="number">{{ email_stats.get('confirmed', email_stats.get('confirmed_subscribers', 0)) }}</div>
+                    <div class="label">Confirmed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number">{{ email_stats.get('pending', email_stats.get('pending_confirmations', 0)) }}</div>
+                    <div class="label">Pending</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number">{{ email_stats.get('total', 0) }}</div>
+                    <div class="label">Total</div>
+                </div>
+            </div>
+            
+            {% if email_subs %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Subscribed</th>
+                        <th>Confirmed</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for email, confirmed, subscribed_at, confirmed_at, ip in email_subs %}
+                    <tr>
+                        <td><strong>{{ email }}</strong></td>
+                        <td>
+                            {% if confirmed %}
+                            <span class="badge confirmed">✓ Confirmed</span>
+                            {% else %}
+                            <span class="badge pending">⏳ Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ subscribed_at[:19] if subscribed_at else '-' }}</td>
+                        <td>{{ confirmed_at[:19] if confirmed_at else '-' }}</td>
+                        <td>{{ ip or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">No email subscribers yet</div>
+            {% endif %}
+        </div>
+        
+        <!-- SMS Subscribers -->
+        <div class="section">
+            <h2>📱 SMS Alert Subscribers</h2>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="number">{{ sms_stats['confirmed_subscribers'] }}</div>
+                    <div class="label">Confirmed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number">{{ sms_stats['pending_confirmations'] }}</div>
+                    <div class="label">Pending</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number">{{ sms_stats['total'] }}</div>
+                    <div class="label">Total</div>
+                </div>
+            </div>
+            
+            {% if sms_subs %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Phone Number</th>
+                        <th>Status</th>
+                        <th>Subscribed</th>
+                        <th>Confirmed</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for phone, confirmed, subscribed_at, confirmed_at, ip in sms_subs %}
+                    <tr>
+                        <td><strong>{{ phone }}</strong></td>
+                        <td>
+                            {% if confirmed %}
+                            <span class="badge confirmed">✓ Confirmed</span>
+                            {% else %}
+                            <span class="badge pending">⏳ Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ subscribed_at[:19] if subscribed_at else '-' }}</td>
+                        <td>{{ confirmed_at[:19] if confirmed_at else '-' }}</td>
+                        <td>{{ ip or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">No SMS subscribers yet</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

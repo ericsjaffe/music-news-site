@@ -1082,12 +1082,15 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None
         
         return tour_dates
         
+    except requests.HTTPError as e:
+        if e.response.status_code == 429:
+            print(f"Ticketmaster rate limit exceeded. Using fallback empty results.")
+            # Rate limit hit - return empty gracefully
+            return []
+        print(f"Ticketmaster API HTTP error for {artist_name}: {e}")
+        return []
     except Exception as e:
         print(f"Ticketmaster API error for {artist_name}: {e}")
-        return []
-        
-    except Exception as e:
-        print(f"SeatGeek API error for {artist_name}: {e}")
         return []
 
 

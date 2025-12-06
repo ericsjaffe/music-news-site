@@ -9,9 +9,14 @@ import feedparser
 import requests
 from flask import Flask, render_template, request
 
-from dedupe import dedupe_articles_fuzzy  # reuse your existing dedupe helper
+from dedupe import dedupe_articles_fuzzy
+from cache_db import init_db, get_cached_results, save_cached_results, cleanup_old_cache
+  # reuse your existing dedupe helper
 
 app = Flask(__name__)
+
+# Initialize cache database
+init_db()
 
 # Loudwire main RSS feed
 LOUDWIRE_LATEST_FEED = "http://loudwire.com/category/news/feed"
@@ -258,7 +263,26 @@ def releases():
         
         should_fetch = True
 
-    # Clamp the range so we don't time out
+    # Check cache first
+    if should_fetch and not error and mm_dd:
+        cached = get_cached_results(mm_dd, start_year, end_year)
+        if cached:
+            # Convert cached dicts back to Release objects
+            results = []
+            for r in cached:
+                results.append(
+                    type("Release", (object,), {
+                        "year": r["year"],
+                        "title": r["title"],
+                        "artist": r["artist"],
+                        "date": r["date"],
+                        "url": r["url"],
+                    })
+                )
+            # Skip the API calls, we have cached data
+            should_fetch = False
+    
+        # Clamp the range so we don't time out
     if should_fetch and not error and mm_dd:
         year_span = end_year - start_year + 1
         if year_span > MAX_YEARS_PER_REQUEST:
@@ -310,6 +334,19 @@ def releases():
         # Sort nicely
         if results:
             results.sort(key=lambda x: (-x.year, x.artist or "", x.title or ""))
+
+            # Save to cache for future requests
+            cache_data = [
+                {
+                    "year": r.year,
+                    "title": r.title,
+                    "artist": r.artist,
+                    "date": r.date,
+                    "url": r.url
+                }
+                for r in results
+            ]
+            save_cached_results(mm_dd, start_year, end_year, cache_data)
 
     return render_template(
         "releases.html",

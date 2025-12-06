@@ -934,19 +934,20 @@ def releases():
         if results:
             results.sort(key=lambda x: (-x.year, x.artist or "", x.title or ""))
 
-            # Save to cache for future requests
-            cache_data = [
-                {
-                    "year": r.year,
-                    "title": r.title,
-                    "artist": r.artist,
-                    "date": r.date,
-                    "url": r.url,
-                    "cover_art": r.cover_art
-                }
-                for r in results
-            ]
-            save_cached_results(mm_dd, start_year, end_year, cache_data)
+            # Save to cache for future requests (only for date searches, not artist searches)
+            if mm_dd:
+                cache_data = [
+                    {
+                        "year": r.year,
+                        "title": r.title,
+                        "artist": r.artist,
+                        "date": r.date,
+                        "url": r.url,
+                        "cover_art": r.cover_art
+                    }
+                    for r in results
+                ]
+                save_cached_results(mm_dd, start_year, end_year, cache_data)
 
     return render_template(
         "releases.html",

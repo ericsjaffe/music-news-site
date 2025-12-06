@@ -400,3 +400,65 @@ def sitemap():
     response = make_response(xml)
     response.headers["Content-Type"] = "application/xml"
     return response
+
+
+@app.route("/article")
+def article():
+    """Proxy page to display article content without leaving the site."""
+    from urllib.parse import unquote
+    from bs4 import BeautifulSoup
+    
+    url = request.args.get("url")
+    if not url:
+        return "No article URL provided", 400
+    
+    try:
+        # Fetch the article page
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        # Parse with BeautifulSoup
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Extract title
+        title_tag = soup.find('h1', class_='entry-title') or soup.find('h1') or soup.find('title')
+        title = title_tag.get_text(strip=True) if title_tag else "Article"
+        
+        # Extract published date
+        time_tag = soup.find('time') or soup.find('span', class_='date')
+        published_at = time_tag.get_text(strip=True) if time_tag else None
+        
+        # Extract main image
+        img_tag = soup.find('meta', property='og:image')
+        if not img_tag:
+            img_tag = soup.find('img', class_='wp-post-image') or soup.find('article').find('img') if soup.find('article') else None
+        image = img_tag.get('content') if img_tag and img_tag.has_attr('content') else (img_tag.get('src') if img_tag else None)
+        
+        # Extract article content
+        article_body = soup.find('div', class_='entry-content') or soup.find('article') or soup.find('main')
+        
+        if article_body:
+            # Remove unwanted elements
+            for element in article_body.find_all(['script', 'style', 'iframe', 'nav', 'aside', 'footer']):
+                element.decompose()
+            
+            # Get clean HTML
+            content = str(article_body)
+        else:
+            content = "<p>Could not extract article content.</p>"
+        
+        return render_template(
+            "article.html",
+            title=title,
+            content=content,
+            image=image,
+            published_at=published_at,
+            source="Loudwire",
+            source_url=url
+        )
+        
+    except Exception as e:
+        return f"Error loading article: {str(e)}", 500

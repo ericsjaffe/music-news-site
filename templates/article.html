@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }} - Music Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <article class="article-content">
+      <div class="article-header">
+        <a href="/" class="back-link">← Back to News</a>
+        <h1 class="article-title">{{ title }}</h1>
+        {% if published_at %}
+          <p class="article-meta">Published: {{ published_at }}</p>
+        {% endif %}
+        {% if source_url %}
+          <p class="article-source">
+            Source: <a href="{{ source_url }}" target="_blank" rel="noopener noreferrer">{{ source }}</a>
+          </p>
+        {% endif %}
+      </div>
+
+      {% if image and image != '/static/default-music.png' %}
+        <div class="article-image">
+          <img src="{{ image }}" alt="{{ title }}" onerror="this.style.display='none'">
+        </div>
+      {% endif %}
+
+      <div class="article-body">
+        {{ content|safe }}
+      </div>
+
+      {% if source_url %}
+        <div class="article-footer">
+          <a href="{{ source_url }}" target="_blank" rel="noopener noreferrer" class="read-original-btn">
+            Read Original Article at {{ source }}
+          </a>
+        </div>
+      {% endif %}
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Data from <a href="https://musicbrainz.org" target="_blank">MusicBrainz</a></p>
+    </div>
+  </footer>
+</body>
+</html>

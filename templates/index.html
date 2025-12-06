@@ -50,7 +50,7 @@
 
             <div class="card-body">
               <h2 class="card-title">
-                <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">
+                <a href="{{ url_for('article') }}?url={{ article.url|urlencode }}">
                   {{ article.title }}
                 </a>
               </h2>

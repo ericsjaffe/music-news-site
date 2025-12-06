@@ -392,3 +392,126 @@ body {
     font-size: 0.8rem;
   }
 }
+
+/* Article page styles */
+.article-content {
+  max-width: 800px;
+  margin: 40px auto;
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.back-link {
+  display: inline-block;
+  color: #2563eb;
+  text-decoration: none;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.article-title {
+  font-size: 2.2rem;
+  line-height: 1.3;
+  margin: 0 0 16px 0;
+  color: #0f172a;
+}
+
+.article-meta {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+
+.article-source {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 8px 0 24px 0;
+}
+
+.article-source a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.article-source a:hover {
+  text-decoration: underline;
+}
+
+.article-image {
+  margin: 24px 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.article-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.article-body {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.article-body p {
+  margin: 16px 0;
+}
+
+.article-body h2, .article-body h3 {
+  margin: 32px 0 16px 0;
+  color: #0f172a;
+}
+
+.article-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.article-body a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.article-footer {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.read-original-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: transform 0.2s;
+}
+
+.read-original-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+@media (max-width: 768px) {
+  .article-content {
+    padding: 24px;
+    margin: 20px;
+  }
+  
+  .article-title {
+    font-size: 1.8rem;
+  }
+}

@@ -232,14 +232,18 @@ If you didn't sign up for this newsletter, you can safely ignore this email.
         msg.attach(part2)
         
         # Send email with timeout
+        print(f"Attempting to send confirmation email to {email} via {SMTP_SERVER}:{SMTP_PORT}")
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
             server.starttls()
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg)
         
+        print(f"✅ Confirmation email sent successfully to {email}")
         return True
     except Exception as e:
-        print(f"Error sending confirmation email: {e}")
+        print(f"❌ Error sending confirmation email to {email}: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 

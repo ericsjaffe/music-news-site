@@ -723,9 +723,9 @@ def releases():
     current_year = datetime.now().year
     today = datetime.now()
 
-    # Defaults for first load / GET - use today's date and last 10 years
+    # Defaults for first load / GET - use today's date and last 15 years
     date_value = today.strftime("%Y-%m-%d")
-    start_year = current_year - 10  # Last 10 years for faster loading
+    start_year = current_year - 15  # Last 15 years
     end_year = current_year
     pretty_date = today.strftime("%B %d")
     mm_dd = today.strftime("%m-%d")

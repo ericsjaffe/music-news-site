@@ -30,19 +30,19 @@ function updateThemeIcon(theme) {
 // Mobile Menu Toggle
 function initMobileMenu() {
   const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-  const searchFiltersWrapper = document.getElementById('search-filters-wrapper');
+  const mobileNavWrapper = document.getElementById('mobile-nav-wrapper');
   
-  if (mobileMenuToggle && searchFiltersWrapper) {
+  if (mobileMenuToggle && mobileNavWrapper) {
     mobileMenuToggle.addEventListener('click', () => {
-      const isCollapsed = searchFiltersWrapper.classList.contains('collapsed');
+      const isCollapsed = mobileNavWrapper.classList.contains('collapsed');
       
       if (isCollapsed) {
-        searchFiltersWrapper.classList.remove('collapsed');
-        searchFiltersWrapper.classList.add('expanded');
+        mobileNavWrapper.classList.remove('collapsed');
+        mobileNavWrapper.classList.add('expanded');
         mobileMenuToggle.textContent = '✕'; // X icon
       } else {
-        searchFiltersWrapper.classList.remove('expanded');
-        searchFiltersWrapper.classList.add('collapsed');
+        mobileNavWrapper.classList.remove('expanded');
+        mobileNavWrapper.classList.add('collapsed');
         mobileMenuToggle.textContent = '☰'; // Hamburger icon
       }
     });

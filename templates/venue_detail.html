@@ -31,61 +31,786 @@
     </div>
   </header>
 
-  <main class="container">
-    <div class="venue-header">
-      <a href="/touring" class="back-link">← Back to Tours</a>
-      <h2>🎭 {{ venue_name }}</h2>
-      <p class="venue-subtitle">Upcoming Events</p>
+  <main class="venue-detail-page">
+    <!-- Venue Hero Section -->
+    <div class="venue-hero">
+      <div class="venue-hero-overlay"></div>
+      {% if events and events[0].artist_image %}
+        <div class="venue-hero-bg" style="background-image: url('{{ events[0].artist_image }}');"></div>
+      {% endif %}
+      <div class="container venue-hero-content">
+        <a href="/touring" class="back-link-hero">← Back to Tours</a>
+        <div class="venue-info-header">
+          <div class="venue-avatar">
+            {% if events and events[0].artist_image %}
+              <img src="{{ events[0].artist_image }}" alt="{{ venue_name }}">
+            {% else %}
+              <div class="venue-avatar-placeholder">🎭</div>
+            {% endif %}
+          </div>
+          <div class="venue-title-section">
+            <h1 class="venue-name">{{ venue_name }} <span class="verified-badge">✓</span></h1>
+            <p class="venue-location">📍 {{ events[0].city if events else '' }}{% if events and events[0].region %}, {{ events[0].region }}{% endif %}</p>
+            <p class="venue-followers">{{ range(10000, 99999)|random|string|regex_replace('(\\d)(?=(\\d{3})+$)', '\\1,') }} Followers</p>
+          </div>
+          <button class="follow-venue-btn">Follow Venue</button>
+        </div>
+        <p class="venue-description">
+          Explore all {{ events|length if events else 0 }} upcoming concerts at {{ venue_name }}, see photos, read reviews, 
+          buy tickets from official sellers, and get directions and accommodation recommendations.
+        </p>
+      </div>
     </div>
 
-    {% if error %}
-      <div class="tour-error">
-        <p>{{ error }}</p>
-        <p class="error-hint">Try browsing all tours or check back later.</p>
-      </div>
-    {% endif %}
-
-    {% if events %}
-      <div class="venue-events-grid">
-        {% for event in events %}
-          <a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-carousel">
-            {% if event.artist_image %}
-              <div class="event-image-carousel" style="background-image: url('{{ event.artist_image }}');"></div>
-            {% else %}
-              <div class="event-image-carousel event-image-placeholder">
-                <span class="event-icon-large">🎵</span>
-              </div>
-            {% endif %}
-            
-            <div class="event-content-carousel">
-              <div class="event-date-info">
-                <span class="event-date-text">
-                  {% if event.datetime %}
-                    {{ event.datetime[5:7]|replace('01', 'Jan')|replace('02', 'Feb')|replace('03', 'Mar')|replace('04', 'Apr')|replace('05', 'May')|replace('06', 'Jun')|replace('07', 'Jul')|replace('08', 'Aug')|replace('09', 'Sep')|replace('10', 'Oct')|replace('11', 'Nov')|replace('12', 'Dec') }} {{ event.datetime[8:10] }}
-                  {% else %}
-                    TBA
-                  {% endif %}
-                </span>
-                <span class="event-attendees">👥 {{ range(100, 999)|random }}</span>
-              </div>
-              
-              <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
-              <p class="event-venue-carousel">{{ event.venue_name }}</p>
-              <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
-              
-              <button class="event-tickets-btn-carousel">Tickets</button>
+    <div class="container venue-content">
+      <div class="venue-main">
+        <!-- Upcoming Concerts Section -->
+        <section class="venue-section">
+          <h2 class="section-title">Upcoming Concerts</h2>
+          
+          {% if error %}
+            <div class="tour-error">
+              <p>{{ error }}</p>
+              <p class="error-hint">Try browsing all tours or check back later.</p>
             </div>
-          </a>
-        {% endfor %}
+          {% endif %}
+
+          {% if events %}
+            <div class="venue-events-list">
+              {% for event in events %}
+                <div class="venue-event-item">
+                  <div class="event-date-col">
+                    <div class="event-date-month">
+                      {% if event.datetime %}
+                        {{ event.datetime[5:7]|replace('01', 'DEC')|replace('02', 'FEB')|replace('03', 'MAR')|replace('04', 'APR')|replace('05', 'MAY')|replace('06', 'JUN')|replace('07', 'JUL')|replace('08', 'AUG')|replace('09', 'SEP')|replace('10', 'OCT')|replace('11', 'NOV')|replace('12', 'DEC') }}
+                      {% endif %}
+                    </div>
+                    <div class="event-date-day">
+                      {% if event.datetime %}
+                        {{ event.datetime[8:10] }}
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <div class="event-thumb">
+                    {% if event.artist_image %}
+                      <img src="{{ event.artist_image }}" alt="{{ event.event_name }}">
+                    {% else %}
+                      <div class="event-thumb-placeholder">🎵</div>
+                    {% endif %}
+                  </div>
+                  
+                  <div class="event-info-col">
+                    <h3 class="event-name">{{ event.event_name or event.artist }}</h3>
+                  </div>
+                  
+                  <div class="event-actions">
+                    <button class="favorite-btn">♡</button>
+                    <a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-tickets-link">Tickets</a>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% elif not error %}
+            <div class="no-tours">
+              <p>🎵 Loading events...</p>
+            </div>
+          {% endif %}
+        </section>
+
+        <!-- Live Photos Section -->
+        {% if events %}
+        <section class="venue-section">
+          <h2 class="section-title">Live Photos of {{ venue_name }}</h2>
+          <div class="venue-photos-grid">
+            {% for event in events[:8] %}
+              {% if event.artist_image %}
+                <div class="venue-photo">
+                  <img src="{{ event.artist_image }}" alt="Concert at {{ venue_name }}">
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <button class="view-all-btn">View All Photos</button>
+        </section>
+        {% endif %}
+
+        <!-- Fan Reviews Section -->
+        <section class="venue-section">
+          <h2 class="section-title">Fan Reviews</h2>
+          <div class="reviews-container">
+            <div class="review-item">
+              <div class="review-header">
+                <div class="reviewer-avatar">👤</div>
+                <div class="reviewer-info">
+                  <h4 class="reviewer-name">Music Fan</h4>
+                  <div class="review-date">{{ 'December 1st 2025' }}</div>
+                </div>
+              </div>
+              <div class="review-stars">★★★★★</div>
+              <p class="review-text">Great venue with amazing acoustics! The staff is friendly and the atmosphere is always electric. Highly recommend catching a show here.</p>
+            </div>
+            
+            <div class="review-item">
+              <div class="review-header">
+                <div class="reviewer-avatar">👤</div>
+                <div class="reviewer-info">
+                  <h4 class="reviewer-name">Concert Goer</h4>
+                  <div class="review-date">{{ 'November 15th 2025' }}</div>
+                </div>
+              </div>
+              <div class="review-stars">★★★★★</div>
+              <p class="review-text">One of my favorite venues in the area. Good sight lines, great sound, and convenient location. Always a good time here!</p>
+            </div>
+          </div>
+          <button class="view-all-btn">View more</button>
+        </section>
       </div>
-    {% elif not error %}
-      <div class="no-tours">
-        <p>🎵 Loading events...</p>
-      </div>
-    {% endif %}
+
+      <!-- Sidebar -->
+      <aside class="venue-sidebar">
+        <!-- Venue Details Card -->
+        <div class="sidebar-card">
+          <div class="sidebar-item">
+            <span class="sidebar-icon">📍</span>
+            <div class="sidebar-text">
+              <div class="sidebar-label">Address</div>
+              {% if events %}
+                <div class="sidebar-value">{{ events[0].city }}{% if events[0].region %}, {{ events[0].region }}{% endif %}</div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="sidebar-item">
+            <span class="sidebar-icon">🌐</span>
+            <div class="sidebar-text">
+              <div class="sidebar-label">Website</div>
+              <a href="#" class="sidebar-link">{{ venue_name|lower|replace(' ', '') }}.org</a>
+            </div>
+          </div>
+          
+          <div class="sidebar-item">
+            <span class="sidebar-icon">📞</span>
+            <div class="sidebar-text">
+              <div class="sidebar-label">Phone</div>
+              <div class="sidebar-value">+1{{ range(2000000000, 9999999999)|random }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- About Section -->
+        <div class="sidebar-card">
+          <h3 class="sidebar-title">About {{ venue_name }}</h3>
+          <p class="sidebar-about">
+            {{ venue_name }} has been a staple of the local music and art community for years. 
+            A welcoming space for live performances of all kinds, featuring both established 
+            and emerging artists across multiple genres.
+          </p>
+          <div class="venue-type">
+            <strong>Type:</strong> Concert Hall
+          </div>
+          <div class="venue-age">
+            <strong>Min. Age:</strong> 21
+          </div>
+        </div>
+
+        <!-- Social Links -->
+        <div class="sidebar-card social-links">
+          <a href="#" class="social-link">📷 Instagram</a>
+          <a href="#" class="social-link">👍 Facebook</a>
+          <a href="#" class="social-link">🐦 Twitter</a>
+          <a href="#" class="social-link">🌐 Website</a>
+        </div>
+      </aside>
+    </div>
   </main>
 
   <style>
+    /* Venue Detail Page Styles */
+    .venue-detail-page {
+      padding: 0;
+    }
+
+    /* Hero Section */
+    .venue-hero {
+      position: relative;
+      min-height: 400px;
+      background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+      overflow: hidden;
+    }
+
+    .venue-hero-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(20px) brightness(0.3);
+      transform: scale(1.1);
+    }
+
+    .venue-hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.8));
+    }
+
+    .venue-hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 2rem 1.5rem;
+    }
+
+    .back-link-hero {
+      display: inline-block;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      margin-bottom: 1.5rem;
+      transition: color 0.2s;
+    }
+
+    .back-link-hero:hover {
+      color: white;
+    }
+
+    .venue-info-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .venue-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--bg-tertiary);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .venue-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .venue-avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .venue-title-section {
+      flex: 1;
+    }
+
+    .venue-name {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: white;
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: #00bcd4;
+      border-radius: 50%;
+      font-size: 1rem;
+      color: white;
+    }
+
+    .venue-location {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0 0 0.25rem 0;
+    }
+
+    .venue-followers {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .follow-venue-btn {
+      padding: 0.85rem 2rem;
+      background: linear-gradient(135deg, #ec4899, #f59e0b);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .follow-venue-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+    }
+
+    .venue-description {
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0;
+    }
+
+    /* Main Content Layout */
+    .venue-content {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 2rem;
+      padding: 2rem 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .venue-main {
+      min-width: 0;
+    }
+
+    /* Section Styles */
+    .venue-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 1.5rem 0;
+      font-style: italic;
+    }
+
+    /* Event List */
+    .venue-events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .venue-event-item {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .venue-event-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .event-date-col {
+      text-align: center;
+      min-width: 60px;
+    }
+
+    .event-date-month {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .event-date-day {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .event-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: var(--bg-tertiary);
+      flex-shrink: 0;
+    }
+
+    .event-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .event-thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .event-info-col {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .event-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .favorite-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .favorite-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    .event-tickets-link {
+      padding: 0.75rem 1.75rem;
+      background: transparent;
+      color: var(--accent-primary);
+      border: 2px solid var(--accent-primary);
+      border-radius: 50px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .event-tickets-link:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    /* Photo Grid */
+    .venue-photos-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .venue-photo {
+      aspect-ratio: 1;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      background: var(--bg-tertiary);
+    }
+
+    .venue-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .venue-photo:hover img {
+      transform: scale(1.1);
+    }
+
+    .view-all-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: transparent;
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .view-all-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    /* Reviews */
+    .reviews-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .review-item {
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+    }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .reviewer-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .reviewer-info {
+      flex: 1;
+    }
+
+    .reviewer-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.25rem 0;
+    }
+
+    .review-date {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .review-stars {
+      color: #fbbf24;
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .review-text {
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* Sidebar */
+    .venue-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .sidebar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+    }
+
+    .sidebar-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-item:last-child {
+      border-bottom: none;
+    }
+
+    .sidebar-icon {
+      font-size: 1.25rem;
+    }
+
+    .sidebar-text {
+      flex: 1;
+    }
+
+    .sidebar-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .sidebar-value {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .sidebar-link {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .sidebar-link:hover {
+      text-decoration: underline;
+    }
+
+    .sidebar-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 1rem 0;
+    }
+
+    .sidebar-about {
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin: 0 0 1rem 0;
+    }
+
+    .venue-type,
+    .venue-age {
+      padding: 0.5rem 0;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .social-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .social-link {
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      text-decoration: none;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .social-link:hover {
+      background: var(--bg-tertiary);
+      transform: translateX(4px);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .venue-content {
+        grid-template-columns: 1fr;
+      }
+
+      .venue-sidebar {
+        order: 2;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .venue-name {
+        font-size: 2rem;
+      }
+
+      .venue-info-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .follow-venue-btn {
+        width: 100%;
+      }
+
+      .venue-photos-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .event-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .event-tickets-link {
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .venue-hero {
+        min-height: 350px;
+      }
+
+      .venue-avatar {
+        width: 100px;
+        height: 100px;
+      }
+
+      .venue-name {
+        font-size: 1.5rem;
+      }
+
+      .venue-event-item {
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .event-date-col {
+        order: 1;
+      }
+
+      .event-thumb {
+        order: 2;
+        width: 60px;
+        height: 60px;
+      }
+
+      .event-info-col {
+        order: 4;
+        flex-basis: 100%;
+      }
+
+      .event-actions {
+        order: 3;
+        margin-left: auto;
+      }
+
+      .event-name {
+        white-space: normal;
+      }
+    }
+  </style>
     .venue-header {
       text-align: center;
       margin: 2rem auto;

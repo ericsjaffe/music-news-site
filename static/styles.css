@@ -476,7 +476,7 @@ body {
   flex-direction: column;
   gap: 0.4rem;
   flex: 1;
-  min-width: 200px;
+  min-width: 150px;
 }
 
 .form-field label {

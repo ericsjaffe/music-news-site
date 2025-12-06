@@ -222,7 +222,7 @@ def releases():
 
     # Defaults for first load / GET - use today's date
     date_value = today.strftime("%Y-%m-%d")
-    start_year = 1950
+    start_year = 2000
     end_year = current_year
     pretty_date = today.strftime("%B %d")
     mm_dd = today.strftime("%m-%d")

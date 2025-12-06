@@ -1,0 +1,34 @@
+<a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-carousel">
+  {% if event.artist_image %}
+    <div class="event-image-carousel" style="background-image: url('{{ event.artist_image }}');"></div>
+  {% else %}
+    <div class="event-image-carousel event-image-placeholder">
+      <span class="event-icon-large">🎵</span>
+    </div>
+  {% endif %}
+  
+  <div class="event-content-carousel">
+    <div class="event-date-badge-carousel">
+      <span class="badge-month">
+        {% if event.datetime %}
+          {{ event.datetime[5:7]|replace('01', 'JAN')|replace('02', 'FEB')|replace('03', 'MAR')|replace('04', 'APR')|replace('05', 'MAY')|replace('06', 'JUN')|replace('07', 'JUL')|replace('08', 'AUG')|replace('09', 'SEP')|replace('10', 'OCT')|replace('11', 'NOV')|replace('12', 'DEC') }}
+        {% endif %}
+      </span>
+      <span class="badge-day">
+        {% if event.datetime %}
+          {{ event.datetime[8:10] }}
+        {% endif %}
+      </span>
+    </div>
+    
+    <div class="event-info-carousel">
+      <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
+      <p class="event-venue-carousel">{{ event.venue_name }}</p>
+      <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
+    </div>
+  </div>
+  
+  <div class="event-hover-overlay">
+    <span class="view-tickets-text">View Tickets</span>
+  </div>
+</a>

@@ -50,76 +50,169 @@
       </div>
     </form>
 
-    <div class="tours-header">
-      {% if artist_query %}
+    {% if artist_query %}
+      <!-- Artist Search Results -->
+      <div class="tours-header">
         <h2>{{ artist_query }}</h2>
         <a href="/touring" class="clear-search-link-header">← View all events</a>
-      {% else %}
-        <h2>Featured Events</h2>
-        <p class="tours-subtitle">Discover concerts near you</p>
-      {% endif %}
-    </div>
-
-    {% if error %}
-      <div class="tour-error">
-        <p>{{ error }}</p>
-        <p class="error-hint">Try searching for another artist or browse featured events.</p>
       </div>
-    {% endif %}
 
-    {% if tours %}
-      <div class="tours-grid-bandsintown">
-        {% for tour in tours %}
-          <a href="{{ tour.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-bandsintown">
-            {% if tour.artist_image %}
-              <div class="event-image-bandsintown" style="background-image: url('{{ tour.artist_image }}');"></div>
-            {% else %}
-              <div class="event-image-bandsintown event-image-placeholder">
-                <span class="event-icon-large">🎵</span>
-              </div>
-            {% endif %}
-            
-            <div class="event-content">
-              <div class="event-date-badge">
-                <span class="badge-month">
-                  {% if tour.datetime %}
-                    {{ tour.datetime[5:7]|replace('01', 'JAN')|replace('02', 'FEB')|replace('03', 'MAR')|replace('04', 'APR')|replace('05', 'MAY')|replace('06', 'JUN')|replace('07', 'JUL')|replace('08', 'AUG')|replace('09', 'SEP')|replace('10', 'OCT')|replace('11', 'NOV')|replace('12', 'DEC') }}
-                  {% endif %}
-                </span>
-                <span class="badge-day">
-                  {% if tour.datetime %}
-                    {{ tour.datetime[8:10] }}
-                  {% endif %}
-                </span>
-              </div>
+      {% if error %}
+        <div class="tour-error">
+          <p>{{ error }}</p>
+          <p class="error-hint">Try searching for another artist or browse featured events.</p>
+        </div>
+      {% endif %}
+
+      {% if tours %}
+        <div class="tours-grid-bandsintown">
+          {% for tour in tours %}
+            <a href="{{ tour.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-bandsintown">
+              {% if tour.artist_image %}
+                <div class="event-image-bandsintown" style="background-image: url('{{ tour.artist_image }}');"></div>
+              {% else %}
+                <div class="event-image-bandsintown event-image-placeholder">
+                  <span class="event-icon-large">🎵</span>
+                </div>
+              {% endif %}
               
-              <div class="event-info-content">
-                <h3 class="event-title">{{ tour.event_name or tour.artist }}</h3>
-                <p class="event-venue-name">{{ tour.venue_name }}</p>
-                <p class="event-location-text">{{ tour.city }}{% if tour.region %}, {{ tour.region }}{% endif %}</p>
+              <div class="event-content">
+                <div class="event-date-badge">
+                  <span class="badge-month">
+                    {% if tour.datetime %}
+                      {{ tour.datetime[5:7]|replace('01', 'JAN')|replace('02', 'FEB')|replace('03', 'MAR')|replace('04', 'APR')|replace('05', 'MAY')|replace('06', 'JUN')|replace('07', 'JUL')|replace('08', 'AUG')|replace('09', 'SEP')|replace('10', 'OCT')|replace('11', 'NOV')|replace('12', 'DEC') }}
+                    {% endif %}
+                  </span>
+                  <span class="badge-day">
+                    {% if tour.datetime %}
+                      {{ tour.datetime[8:10] }}
+                    {% endif %}
+                  </span>
+                </div>
                 
-                <div class="event-meta">
-                  {% if tour.ticket_status %}
-                    <span class="event-status">{{ tour.ticket_status }}</span>
-                  {% endif %}
-                  {% if tour.price_info %}
-                    <span class="event-price">{{ tour.price_info }}</span>
-                  {% endif %}
+                <div class="event-info-content">
+                  <h3 class="event-title">{{ tour.event_name or tour.artist }}</h3>
+                  <p class="event-venue-name">{{ tour.venue_name }}</p>
+                  <p class="event-location-text">{{ tour.city }}{% if tour.region %}, {{ tour.region }}{% endif %}</p>
+                  
+                  <div class="event-meta">
+                    {% if tour.ticket_status %}
+                      <span class="event-status">{{ tour.ticket_status }}</span>
+                    {% endif %}
+                    {% if tour.price_info %}
+                      <span class="event-price">{{ tour.price_info }}</span>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div class="event-hover-overlay">
-              <span class="view-tickets-text">View Tickets</span>
-            </div>
-          </a>
-        {% endfor %}
+              
+              <div class="event-hover-overlay">
+                <span class="view-tickets-text">View Tickets</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% else %}
+      <!-- Multiple Carousels -->
+      <div class="tours-header">
+        <h2>Discover Live Music</h2>
+        <p class="tours-subtitle">Concerts and events near you</p>
       </div>
-    {% elif not error %}
-      <div class="no-tours">
-        <p>🎵 Loading featured events...</p>
-        <p class="no-tours-hint">Searching for concerts in your area</p>
-      </div>
+
+      {% if error %}
+        <div class="tour-error">
+          <p>{{ error }}</p>
+          <p class="error-hint">Try again or check your connection.</p>
+        </div>
+      {% endif %}
+
+      <!-- Popular Events Carousel -->
+      {% if popular_events %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">🔥 Popular in Your Area</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="popular">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="popular">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-popular">
+            <div class="carousel-track">
+              {% for event in popular_events %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- Just Announced Carousel -->
+      {% if just_announced %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">✨ Just Announced</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="announced">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="announced">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-announced">
+            <div class="carousel-track">
+              {% for event in just_announced %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- Selling Fast Carousel -->
+      {% if selling_fast %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">⚡ Selling Fast</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="selling">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="selling">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-selling">
+            <div class="carousel-track">
+              {% for event in selling_fast %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      <!-- Nearby Venues Carousel -->
+      {% if nearby_venues %}
+        <section class="carousel-section">
+          <div class="carousel-header">
+            <h3 class="carousel-title">📍 Venues Near You</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn carousel-prev" data-carousel="venues">‹</button>
+              <button class="carousel-btn carousel-next" data-carousel="venues">›</button>
+            </div>
+          </div>
+          <div class="carousel-container" id="carousel-venues">
+            <div class="carousel-track">
+              {% for event in nearby_venues %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
+
+      {% if not popular_events and not error %}
+        <div class="no-tours">
+          <p>🎵 Loading featured events...</p>
+          <p class="no-tours-hint">Searching for concerts in your area</p>
+        </div>
+      {% endif %}
     {% endif %}
   </main>
 
@@ -436,6 +529,153 @@
       text-decoration: underline;
     }
 
+    /* Carousel Sections */
+    .carousel-section {
+      margin: 3rem 0;
+    }
+
+    .carousel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .carousel-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .carousel-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .carousel-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .carousel-btn:hover {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+      transform: scale(1.1);
+    }
+
+    .carousel-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .carousel-container {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .carousel-track {
+      display: flex;
+      gap: 1.5rem;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 0.5rem 0;
+    }
+
+    /* Carousel Event Cards */
+    .event-card-carousel {
+      flex: 0 0 320px;
+      background: var(--bg-card);
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .event-card-carousel:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+      border-color: var(--accent-primary);
+    }
+
+    .event-card-carousel:hover .event-hover-overlay {
+      opacity: 1;
+    }
+
+    .event-image-carousel {
+      width: 100%;
+      height: 200px;
+      background-size: cover;
+      background-position: center;
+      background-color: #1a1a2e;
+      position: relative;
+    }
+
+    .event-content-carousel {
+      padding: 1.25rem;
+      position: relative;
+      flex: 1;
+    }
+
+    .event-date-badge-carousel {
+      position: absolute;
+      top: -20px;
+      left: 1.25rem;
+      background: linear-gradient(135deg, #ec4899, #f59e0b);
+      color: white;
+      padding: 0.6rem 0.85rem;
+      border-radius: 0.65rem;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(236, 72, 153, 0.4);
+      min-width: 60px;
+    }
+
+    .event-info-carousel {
+      margin-top: 0.5rem;
+    }
+
+    .event-title-carousel {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.5rem 0;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .event-venue-carousel {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      margin: 0 0 0.25rem 0;
+      font-weight: 600;
+    }
+
+    .event-location-carousel {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
     /* Mobile Responsive */
     @media (max-width: 768px) {
       .tours-grid-bandsintown {
@@ -488,6 +728,24 @@
       .badge-day {
         font-size: 1.5rem;
       }
+
+      .carousel-title {
+        font-size: 1.4rem;
+      }
+
+      .carousel-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1.3rem;
+      }
+
+      .event-card-carousel {
+        flex: 0 0 280px;
+      }
+
+      .event-image-carousel {
+        height: 180px;
+      }
     }
   </style>
 
@@ -539,6 +797,69 @@
           }
         });
       }
+
+      // Carousel functionality
+      function initCarousels() {
+        const carouselIds = ['popular', 'announced', 'selling', 'venues'];
+        
+        carouselIds.forEach(id => {
+          const container = document.getElementById('carousel-' + id);
+          if (!container) return;
+          
+          const track = container.querySelector('.carousel-track');
+          const prevBtn = document.querySelector(`[data-carousel="${id}"].carousel-prev`);
+          const nextBtn = document.querySelector(`[data-carousel="${id}"].carousel-next`);
+          
+          if (!track || !prevBtn || !nextBtn) return;
+          
+          let currentIndex = 0;
+          const cardWidth = 320 + 24; // card width + gap
+          const visibleCards = Math.floor(container.offsetWidth / cardWidth);
+          const totalCards = track.children.length;
+          const maxIndex = Math.max(0, totalCards - visibleCards);
+          
+          function updateCarousel() {
+            const offset = -currentIndex * cardWidth;
+            track.style.transform = `translateX(${offset}px)`;
+            
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex >= maxIndex;
+          }
+          
+          prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+              currentIndex--;
+              updateCarousel();
+            }
+          });
+          
+          nextBtn.addEventListener('click', () => {
+            if (currentIndex < maxIndex) {
+              currentIndex++;
+              updateCarousel();
+            }
+          });
+          
+          // Update on window resize
+          let resizeTimer;
+          window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+              const newVisibleCards = Math.floor(container.offsetWidth / cardWidth);
+              const newMaxIndex = Math.max(0, totalCards - newVisibleCards);
+              if (currentIndex > newMaxIndex) {
+                currentIndex = newMaxIndex;
+              }
+              updateCarousel();
+            }, 250);
+          });
+          
+          updateCarousel();
+        });
+      }
+      
+      // Initialize carousels after DOM is ready
+      initCarousels();
     });
   </script>
 </body>

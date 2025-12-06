@@ -1345,6 +1345,10 @@ def touring():
     radius = request.args.get('radius', '50')
     
     tours = []
+    popular_events = []
+    just_announced = []
+    selling_fast = []
+    nearby_venues = []
     error = None
     
     try:
@@ -1360,8 +1364,26 @@ def touring():
             if not tours:
                 error = f"No upcoming tour dates found for '{artist_query}'"
         else:
-            # Show general music events in user's area
-            tours = get_artist_tour_dates('concert', limit=50, latlong=latlong, radius=radius)
+            # Fetch different categories for carousels
+            all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius)
+            
+            if all_events:
+                # Popular events - first 12
+                popular_events = all_events[:12]
+                
+                # Just announced - events with recent on-sale dates (simulate with first batch)
+                just_announced = all_events[12:24] if len(all_events) > 12 else []
+                
+                # Selling fast - events with higher popularity (simulate with next batch)
+                selling_fast = all_events[24:36] if len(all_events) > 24 else []
+                
+                # Get nearby venues (unique venues from all events)
+                venue_dict = {}
+                for event in all_events:
+                    venue_key = event['venue_name']
+                    if venue_key not in venue_dict and venue_key != 'Venue TBA':
+                        venue_dict[venue_key] = event
+                nearby_venues = list(venue_dict.values())[:12]
             
     except Exception as e:
         error = "Unable to fetch tour data at this time. Please try again later."
@@ -1370,6 +1392,10 @@ def touring():
     return render_template(
         "touring.html",
         tours=tours,
+        popular_events=popular_events,
+        just_announced=just_announced,
+        selling_fast=selling_fast,
+        nearby_venues=nearby_venues,
         artist_query=artist_query,
         error=error
     )

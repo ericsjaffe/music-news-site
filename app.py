@@ -218,12 +218,17 @@ def releases():
     error = None
     results = None
     current_year = datetime.now().year
+    today = datetime.now()
 
-    # Defaults for first load / GET
-    date_value = datetime.now().strftime("%Y-%m-%d")
+    # Defaults for first load / GET - use today's date
+    date_value = today.strftime("%Y-%m-%d")
     start_year = 1990
     end_year = current_year
-    pretty_date = ""
+    pretty_date = today.strftime("%B %d")
+    mm_dd = today.strftime("%m-%d")
+    
+    # Auto-load results on first visit (GET request)
+    should_fetch = request.method == "GET"
 
     if request.method == "POST":
         # Get form values
@@ -250,59 +255,61 @@ def releases():
             error = (error + " | " if error else "") + "Start/end year must be numbers."
             start_year = 1990
             end_year = current_year
+        
+        should_fetch = True
 
-        # Clamp the range so we don't time out
-        if not error and mm_dd:
-            year_span = end_year - start_year + 1
-            if year_span > MAX_YEARS_PER_REQUEST:
-                original_end = end_year
-                end_year = start_year + MAX_YEARS_PER_REQUEST - 1
-                if end_year > current_year:
-                    end_year = current_year
-                error = (error + " | " if error else "") + (
-                    f"Year range too large ({year_span} years). "
-                    f"Showing only {start_year}–{end_year}. "
-                    f"Try smaller chunks like 1990–2010, then 2011–{current_year}."
+    # Clamp the range so we don't time out
+    if should_fetch and not error and mm_dd:
+        year_span = end_year - start_year + 1
+        if year_span > MAX_YEARS_PER_REQUEST:
+            original_end = end_year
+            end_year = start_year + MAX_YEARS_PER_REQUEST - 1
+            if end_year > current_year:
+                end_year = current_year
+            error = (error + " | " if error else "") + (
+                f"Year range too large ({year_span} years). "
+                f"Showing only {start_year}–{end_year}. "
+                f"Try smaller chunks like 1990–2010, then 2011–{current_year}."
+            )
+
+        results = []
+        for year in range(start_year, end_year + 1):
+            try:
+                releases = search_releases_for_date(year, mm_dd, limit=50)
+            except requests.HTTPError as e:
+                error = f"HTTP error for year {year}: {e}"
+                break
+            except Exception as e:
+                error = f"Error for year {year}: {e}"
+                break
+
+            for r in releases:
+                title = r.get("title")
+                date = r.get("date")
+                artist = None
+                ac = r.get("artist-credit") or []
+                if ac and isinstance(ac, list) and "name" in ac[0]:
+                    artist = ac[0]["name"]
+                mbid = r.get("id")
+                url = f"https://musicbrainz.org/release/{mbid}" if mbid else None
+
+                # use a tiny object so template can do r.year, r.title, etc.
+                results.append(
+                    type("Release", (object,), {
+                        "year": year,
+                        "title": title,
+                        "artist": artist,
+                        "date": date,
+                        "url": url,
+                    })
                 )
 
-            results = []
-            for year in range(start_year, end_year + 1):
-                try:
-                    releases = search_releases_for_date(year, mm_dd, limit=50)
-                except requests.HTTPError as e:
-                    error = f"HTTP error for year {year}: {e}"
-                    break
-                except Exception as e:
-                    error = f"Error for year {year}: {e}"
-                    break
+            # Be polite with MusicBrainz but not too slow
+            time.sleep(0.1)
 
-                for r in releases:
-                    title = r.get("title")
-                    date = r.get("date")
-                    artist = None
-                    ac = r.get("artist-credit") or []
-                    if ac and isinstance(ac, list) and "name" in ac[0]:
-                        artist = ac[0]["name"]
-                    mbid = r.get("id")
-                    url = f"https://musicbrainz.org/release/{mbid}" if mbid else None
-
-                    # use a tiny object so template can do r.year, r.title, etc.
-                    results.append(
-                        type("Release", (object,), {
-                            "year": year,
-                            "title": title,
-                            "artist": artist,
-                            "date": date,
-                            "url": url,
-                        })
-                    )
-
-                # Be polite with MusicBrainz but not too slow
-                time.sleep(0.1)
-
-            # Sort nicely
-            if results:
-                results.sort(key=lambda x: (x.year, x.artist or "", x.title or ""))
+        # Sort nicely
+        if results:
+            results.sort(key=lambda x: (x.year, x.artist or "", x.title or ""))
 
     return render_template(
         "releases.html",
@@ -316,8 +323,10 @@ def releases():
     )
 
 
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
 
 
 @app.route("/robots.txt")

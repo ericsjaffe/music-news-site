@@ -796,7 +796,8 @@ def releases():
             )
 
         results = []
-        for year in range(start_year, end_year + 1):
+        # Iterate in reverse to fetch newest years first
+        for year in range(end_year, start_year - 1, -1):
             try:
                 releases = search_releases_for_date(year, mm_dd, limit=50)
             except requests.HTTPError as e:

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>On This Day in Music - Releases</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases" class="active">Releases</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="releases-intro">
+      <h2>On This Day in Music</h2>
+      <p>Pick a date and a year range. We'll ask MusicBrainz what releases came out on that month/day across those years.</p>
+    </div>
+
+    <form method="post" class="releases-form">
+      <div class="form-row">
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date"
+               value="{{ date_value or '' }}" required>
+      </div>
+      <div class="form-row">
+        <label for="start_year">Start year:</label>
+        <input type="number" id="start_year" name="start_year"
+               value="{{ start_year or '' }}" min="1900" max="{{ current_year }}">
+        <label for="end_year" style="margin-left:1rem;">End year:</label>
+        <input type="number" id="end_year" name="end_year"
+               value="{{ end_year or '' }}" min="1900" max="{{ current_year }}">
+        <span class="chip">Tip: keep ranges small (e.g. 1990–2025)</span>
+      </div>
+      <button type="submit" class="submit-btn">Find releases</button>
+      {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+      {% endif %}
+    </form>
+
+    {% if results is not none %}
+      <div class="summary">
+        Found {{ results|length }} releases for {{ pretty_date }} across {{ start_year }}–{{ end_year }}.
+      </div>
+      {% if results %}
+        <div class="table-wrapper">
+          <table class="releases-table">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Artist</th>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in results %}
+                <tr>
+                  <td>{{ r.year }}</td>
+                  <td>{{ r.artist or 'Unknown artist' }}</td>
+                  <td>{{ r.title }}</td>
+                  <td>{{ r.date or 'N/A' }}</td>
+                  <td>
+                    {% if r.url %}
+                      <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">View</a>
+                    {% else %}
+                      &mdash;
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% endif %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Data from <a href="https://musicbrainz.org" target="_blank">MusicBrainz</a></p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,10 +1,12 @@
 import re
+import time
 from html import unescape
 from datetime import datetime
 from typing import List, Dict, Any
 from urllib.parse import quote_plus
 
 import feedparser
+import requests
 from flask import Flask, render_template, request
 
 from dedupe import dedupe_articles_fuzzy  # reuse your existing dedupe helper
@@ -16,6 +18,11 @@ LOUDWIRE_LATEST_FEED = "http://loudwire.com/category/news/feed"
 
 # Default image when a story has no usable image
 DEFAULT_IMAGE_URL = "/static/default-music.png"
+
+# MusicBrainz API settings
+API_BASE = "https://musicbrainz.org/ws/2/release"
+USER_AGENT = "EricMusicDateFinder/1.0 (eric.s.jaffe@gmail.com)"
+MAX_YEARS_PER_REQUEST = 25
 
 
 def parse_published(entry: Dict[str, Any]) -> str | None:
@@ -183,5 +190,167 @@ def index():
     return render_template("index.html", articles=articles, error=error, query=q)
 
 
+def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
+    """
+    Call MusicBrainz search:
+      /ws/2/release/?query=date:YYYY-MM-DD&fmt=json&limit=...
+    Returns list of releases (dicts).
+    """
+    ymd = f"{year}-{mm_dd}"  # e.g. 2019-11-22
+    params = {
+        "query": f"date:{ymd}",
+        "fmt": "json",
+        "limit": str(limit),
+    }
+    headers = {
+        "User-Agent": USER_AGENT,
+    }
+
+    resp = requests.get(API_BASE, params=params, headers=headers, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("releases", [])
+
+
+@app.route("/releases", methods=["GET", "POST"])
+def releases():
+    """Find music releases on a specific date across multiple years."""
+    error = None
+    results = None
+    current_year = datetime.now().year
+
+    # Defaults for first load / GET
+    date_value = datetime.now().strftime("%Y-%m-%d")
+    start_year = 1990
+    end_year = current_year
+    pretty_date = ""
+
+    if request.method == "POST":
+        # Get form values
+        date_value = request.form.get("date", "").strip()
+        start_str = request.form.get("start_year", "").strip()
+        end_str = request.form.get("end_year", "").strip()
+
+        # Parse date
+        try:
+            _dt = datetime.strptime(date_value, "%Y-%m-%d")
+            mm_dd = date_value[5:]  # "YYYY-MM-DD" -> "MM-DD"
+            pretty_date = _dt.strftime("%B %d")  # e.g. "November 22"
+        except ValueError:
+            error = "Invalid date. Please use the date picker."
+            mm_dd = None
+
+        # Parse years with defaults
+        try:
+            start_year = int(start_str) if start_str else 1990
+            end_year = int(end_str) if end_str else current_year
+            if end_year < start_year:
+                start_year, end_year = end_year, start_year
+        except ValueError:
+            error = (error + " | " if error else "") + "Start/end year must be numbers."
+            start_year = 1990
+            end_year = current_year
+
+        # Clamp the range so we don't time out
+        if not error and mm_dd:
+            year_span = end_year - start_year + 1
+            if year_span > MAX_YEARS_PER_REQUEST:
+                original_end = end_year
+                end_year = start_year + MAX_YEARS_PER_REQUEST - 1
+                if end_year > current_year:
+                    end_year = current_year
+                error = (error + " | " if error else "") + (
+                    f"Year range too large ({year_span} years). "
+                    f"Showing only {start_year}–{end_year}. "
+                    f"Try smaller chunks like 1990–2010, then 2011–{current_year}."
+                )
+
+            results = []
+            for year in range(start_year, end_year + 1):
+                try:
+                    releases = search_releases_for_date(year, mm_dd, limit=50)
+                except requests.HTTPError as e:
+                    error = f"HTTP error for year {year}: {e}"
+                    break
+                except Exception as e:
+                    error = f"Error for year {year}: {e}"
+                    break
+
+                for r in releases:
+                    title = r.get("title")
+                    date = r.get("date")
+                    artist = None
+                    ac = r.get("artist-credit") or []
+                    if ac and isinstance(ac, list) and "name" in ac[0]:
+                        artist = ac[0]["name"]
+                    mbid = r.get("id")
+                    url = f"https://musicbrainz.org/release/{mbid}" if mbid else None
+
+                    # use a tiny object so template can do r.year, r.title, etc.
+                    results.append(
+                        type("Release", (object,), {
+                            "year": year,
+                            "title": title,
+                            "artist": artist,
+                            "date": date,
+                            "url": url,
+                        })
+                    )
+
+                # Be polite with MusicBrainz but not too slow
+                time.sleep(0.1)
+
+            # Sort nicely
+            if results:
+                results.sort(key=lambda x: (x.year, x.artist or "", x.title or ""))
+
+    return render_template(
+        "releases.html",
+        error=error,
+        results=results,
+        date_value=date_value,
+        start_year=start_year,
+        end_year=end_year,
+        pretty_date=pretty_date or "",
+        current_year=current_year,
+    )
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
+
+@app.route("/robots.txt")
+def robots():
+    """Serve robots.txt for search engines."""
+    from flask import send_from_directory
+    return send_from_directory("static", "robots.txt", mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    """Generate dynamic sitemap.xml with all pages."""
+    from flask import make_response
+    
+    # Get your actual domain
+    domain = request.host_url.rstrip("/")
+    
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{domain}/</loc>
+    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>{domain}/releases</loc>
+    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>"""
+    
+    response = make_response(xml)
+    response.headers["Content-Type"] = "application/xml"
+    return response

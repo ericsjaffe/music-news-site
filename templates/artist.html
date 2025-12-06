@@ -116,16 +116,16 @@
               {% endif %}
 
               <div class="share-buttons">
-                <button class="share-btn" onclick="shareOnTwitter('{{ article.title|replace('\'', '\\\'') }}', '{{ article.url }}')">
+                <button class="share-btn" onclick="shareOnTwitter('{{ article.title|replace('\'', '\\\'') }}', '{{ request.host_url }}article?url={{ article.url|urlencode }}')">
                   🐦 Twitter
                 </button>
-                <button class="share-btn" onclick="shareOnFacebook('{{ article.url }}')">
+                <button class="share-btn" onclick="shareOnFacebook('{{ request.host_url }}article?url={{ article.url|urlencode }}')">
                   📘 Facebook
                 </button>
-                <button class="share-btn" onclick="shareOnReddit('{{ article.title|replace('\'', '\\\'') }}', '{{ article.url }}')">
+                <button class="share-btn" onclick="shareOnReddit('{{ article.title|replace('\'', '\\\'') }}', '{{ request.host_url }}article?url={{ article.url|urlencode }}')">
                   🔴 Reddit
                 </button>
-                <button class="share-btn" onclick="copyToClipboard('{{ article.url }}')">
+                <button class="share-btn" onclick="copyToClipboard('{{ request.host_url }}article?url={{ article.url|urlencode }}')">
                   🔗 Copy
                 </button>
               </div>

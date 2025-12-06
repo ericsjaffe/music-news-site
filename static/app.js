@@ -532,6 +532,9 @@ function createArticleCard(article) {
   const genres = article.genres?.slice(0, 3).map(g => `<span class="genre-tag">${g}</span>`).join('') || '';
   const artistLink = article.artist ? `<p class="card-artist"><a href="/artist/${encodeURIComponent(article.artist)}" class="artist-link">🎤 ${article.artist}</a></p>` : '';
   
+  // Generate Music Hub article URL
+  const musicHubUrl = `${window.location.origin}/article?url=${encodeURIComponent(article.url)}`;
+  
   return `
     <article class="card">
       <button class="bookmark-btn" data-url="${article.url}" title="Bookmark this article">☆</button>
@@ -549,10 +552,10 @@ function createArticleCard(article) {
         </p>
         <p class="card-description">${(article.description || '').substring(0, 150)}${article.description?.length > 150 ? '...' : ''}</p>
         <div class="share-buttons">
-          <button class="share-btn" onclick="shareOnTwitter('${article.title.replace(/'/g, "\\'")}', '${article.url}')">🐦 Twitter</button>
-          <button class="share-btn" onclick="shareOnFacebook('${article.url}')">📘 Facebook</button>
-          <button class="share-btn" onclick="shareOnReddit('${article.title.replace(/'/g, "\\'")}', '${article.url}')">🔴 Reddit</button>
-          <button class="share-btn" onclick="copyToClipboard('${article.url}')">🔗 Copy</button>
+          <button class="share-btn" onclick="shareOnTwitter('${article.title.replace(/'/g, "\\'")}', '${musicHubUrl}')">🐦 Twitter</button>
+          <button class="share-btn" onclick="shareOnFacebook('${musicHubUrl}')">📘 Facebook</button>
+          <button class="share-btn" onclick="shareOnReddit('${article.title.replace(/'/g, "\\'")}', '${musicHubUrl}')">🔴 Reddit</button>
+          <button class="share-btn" onclick="copyToClipboard('${musicHubUrl}')">🔗 Copy</button>
         </div>
       </div>
     </article>

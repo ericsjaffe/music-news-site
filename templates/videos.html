@@ -238,6 +238,8 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
     .video-card:hover {
@@ -338,6 +340,9 @@
 
     .video-info {
       padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
     }
 
     .video-title {
@@ -350,6 +355,7 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
       line-height: 1.4;
+      min-height: 2.8rem;
     }
 
     .video-channel {
@@ -376,7 +382,8 @@
 
     .video-actions {
       display: flex;
-      margin-top: 1rem;
+      margin-top: auto;
+      padding-top: 0.5rem;
     }
 
     .video-play-btn {

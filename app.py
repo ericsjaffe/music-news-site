@@ -715,6 +715,32 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
+def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 100):
+    """
+    Call MusicBrainz search by artist name:
+      /ws/2/release/?query=artist:ARTIST&fmt=json&limit=...
+    Optionally filter by year if provided.
+    Returns list of releases (dicts).
+    """
+    query = f"artist:{artist_name}"
+    if year:
+        query += f" AND date:{year}*"
+    
+    params = {
+        "query": query,
+        "fmt": "json",
+        "limit": str(limit),
+    }
+    headers = {
+        "User-Agent": USER_AGENT,
+    }
+
+    resp = requests.get(API_BASE, params=params, headers=headers, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("releases", [])
+
+
 @app.route("/releases", methods=["GET", "POST"])
 def releases():
     """Find music releases on a specific date across multiple years."""
@@ -731,7 +757,7 @@ def releases():
     mm_dd = today.strftime("%m-%d")
     artist_filter = ""
     
-    # Auto-load results on first visit (GET request)
+    # Auto-load results on first visit (GET request) - only if no artist filter
     should_fetch = request.method == "GET"
 
     if request.method == "POST":
@@ -741,14 +767,30 @@ def releases():
         end_str = request.form.get("end_year", "").strip()
         artist_filter = request.form.get("artist_filter", "").strip()
 
-        # Parse date
-        try:
-            _dt = datetime.strptime(date_value, "%Y-%m-%d")
-            mm_dd = date_value[5:]  # "YYYY-MM-DD" -> "MM-DD"
-            pretty_date = _dt.strftime("%B %d")  # e.g. "November 22"
-        except ValueError:
-            error = "Invalid date. Please use the date picker."
-            mm_dd = None
+        # If artist is provided, date is optional
+        if artist_filter:
+            # Parse date only if provided
+            if date_value:
+                try:
+                    _dt = datetime.strptime(date_value, "%Y-%m-%d")
+                    mm_dd = date_value[5:]  # "YYYY-MM-DD" -> "MM-DD"
+                    pretty_date = _dt.strftime("%B %d")  # e.g. "November 22"
+                except ValueError:
+                    error = "Invalid date. Please use the date picker."
+                    mm_dd = None
+            else:
+                # No date required when searching by artist
+                mm_dd = None
+                pretty_date = ""
+        else:
+            # Date is required when not searching by artist
+            try:
+                _dt = datetime.strptime(date_value, "%Y-%m-%d")
+                mm_dd = date_value[5:]  # "YYYY-MM-DD" -> "MM-DD"
+                pretty_date = _dt.strftime("%B %d")  # e.g. "November 22"
+            except ValueError:
+                error = "Invalid date. Please use the date picker."
+                mm_dd = None
 
         # Parse years with defaults
         try:
@@ -784,68 +826,107 @@ def releases():
             should_fetch = False
     
         # Clamp the range so we don't time out
-    if should_fetch and not error and mm_dd:
-        year_span = end_year - start_year + 1
-        if year_span > MAX_YEARS_PER_REQUEST:
-            original_end = end_year
-            end_year = start_year + MAX_YEARS_PER_REQUEST - 1
-            if end_year > current_year:
-                end_year = current_year
-            error = (error + " | " if error else "") + (
-                f"Year range too large ({year_span} years). "
-                f"Showing only {start_year}–{end_year}. "
-                f"Try smaller chunks like 1990–2010, then 2011–{current_year}."
-            )
+    if should_fetch and not error:
+        # If artist filter is provided, search by artist instead of date
+        if artist_filter:
+            results = []
+            # Search by artist across the year range
+            for year in range(end_year, start_year - 1, -1):
+                try:
+                    releases = search_releases_by_artist(artist_filter, year=year, limit=100)
+                except (requests.HTTPError, requests.ConnectionError, ConnectionResetError) as e:
+                    print(f"Skipping year {year} due to connection issue: {e}")
+                    continue
+                except Exception as e:
+                    print(f"Skipping year {year} due to error: {e}")
+                    continue
 
-        results = []
-        # Iterate in reverse to fetch newest years first
-        for year in range(end_year, start_year - 1, -1):
-            try:
-                releases = search_releases_for_date(year, mm_dd, limit=50)
-            except (requests.HTTPError, requests.ConnectionError, ConnectionResetError) as e:
-                # Skip this year and continue with others
-                print(f"Skipping year {year} due to connection issue: {e}")
-                continue
-            except Exception as e:
-                # For other errors, skip and continue
-                print(f"Skipping year {year} due to error: {e}")
-                continue
+                for r in releases:
+                    title = r.get("title")
+                    date = r.get("date")
+                    artist = None
+                    ac = r.get("artist-credit") or []
+                    if ac and isinstance(ac, list) and "name" in ac[0]:
+                        artist = ac[0]["name"]
+                    mbid = r.get("id")
+                    url = f"/release/{mbid}" if mbid else None
+                    
+                    # Try to get cover art from Cover Art Archive
+                    cover_art = None
+                    if mbid:
+                        cover_art = f"https://coverartarchive.org/release/{mbid}/front-250"
 
-            for r in releases:
-                title = r.get("title")
-                date = r.get("date")
-                artist = None
-                ac = r.get("artist-credit") or []
-                if ac and isinstance(ac, list) and "name" in ac[0]:
-                    artist = ac[0]["name"]
-                mbid = r.get("id")
-                url = f"https://musicbrainz.org/release/{mbid}" if mbid else None
-                
-                # Try to get cover art from Cover Art Archive
-                cover_art = None
-                if mbid:
-                    cover_art = f"https://coverartarchive.org/release/{mbid}/front-250"
+                    results.append(
+                        type("Release", (object,), {
+                            "year": year,
+                            "title": title,
+                            "artist": artist,
+                            "date": date,
+                            "url": url,
+                            "cover_art": cover_art,
+                        })
+                    )
 
-                # use a tiny object so template can do r.year, r.title, etc.
-                results.append(
-                    type("Release", (object,), {
-                        "year": year,
-                        "title": title,
-                        "artist": artist,
-                        "date": date,
-                        "url": url,
-                        "cover_art": cover_art,
-                    })
+                time.sleep(0.1)
+        
+        # Search by date if provided and no artist filter
+        elif mm_dd:
+            year_span = end_year - start_year + 1
+            if year_span > MAX_YEARS_PER_REQUEST:
+                original_end = end_year
+                end_year = start_year + MAX_YEARS_PER_REQUEST - 1
+                if end_year > current_year:
+                    end_year = current_year
+                error = (error + " | " if error else "") + (
+                    f"Year range too large ({year_span} years). "
+                    f"Showing only {start_year}–{end_year}. "
+                    f"Try smaller chunks like 1990–2010, then 2011–{current_year}."
                 )
 
-            # Be polite with MusicBrainz but not too slow
-            time.sleep(0.1)
+            results = []
+            # Iterate in reverse to fetch newest years first
+            for year in range(end_year, start_year - 1, -1):
+                try:
+                    releases = search_releases_for_date(year, mm_dd, limit=50)
+                except (requests.HTTPError, requests.ConnectionError, ConnectionResetError) as e:
+                    # Skip this year and continue with others
+                    print(f"Skipping year {year} due to connection issue: {e}")
+                    continue
+                except Exception as e:
+                    # For other errors, skip and continue
+                    print(f"Skipping year {year} due to error: {e}")
+                    continue
 
-        # Filter by artist if specified
-        if artist_filter and results:
-            artist_lower = artist_filter.lower()
-            results = [r for r in results if r.artist and artist_lower in r.artist.lower()]
-        
+                for r in releases:
+                    title = r.get("title")
+                    date = r.get("date")
+                    artist = None
+                    ac = r.get("artist-credit") or []
+                    if ac and isinstance(ac, list) and "name" in ac[0]:
+                        artist = ac[0]["name"]
+                    mbid = r.get("id")
+                    url = f"/release/{mbid}" if mbid else None
+                    
+                    # Try to get cover art from Cover Art Archive
+                    cover_art = None
+                    if mbid:
+                        cover_art = f"https://coverartarchive.org/release/{mbid}/front-250"
+
+                    # use a tiny object so template can do r.year, r.title, etc.
+                    results.append(
+                        type("Release", (object,), {
+                            "year": year,
+                            "title": title,
+                            "artist": artist,
+                            "date": date,
+                            "url": url,
+                            "cover_art": cover_art,
+                        })
+                    )
+
+                # Be polite with MusicBrainz but not too slow
+                time.sleep(0.1)
+
         # Sort by year (newest first), then by artist, then by title
         if results:
             results.sort(key=lambda x: (-x.year, x.artist or "", x.title or ""))

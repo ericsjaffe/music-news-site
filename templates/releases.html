@@ -91,19 +91,19 @@
   <main class="container">
     <div class="releases-intro">
       <h2>On This Day in Music</h2>
-      <p>Pick a date and a year range. We'll ask MusicBrainz what releases came out on that month/day across those years.</p>
+      <p>Search by <strong>date</strong> to find releases on a specific day across multiple years, or search by <strong>artist name</strong> to find all their releases in a year range.</p>
     </div>
 
     <form method="post" class="releases-form">
       <div class="form-row">
-        <label for="date">Date:</label>
-        <input type="date" id="date" name="date"
-               value="{{ date_value or '' }}" required>
+        <label for="artist_filter">Artist name:</label>
+        <input type="text" id="artist_filter" name="artist_filter"
+               value="{{ artist_filter or '' }}" placeholder="e.g., Pearl Jam, Beatles, etc.">
       </div>
       <div class="form-row">
-        <label for="artist_filter">Artist (optional):</label>
-        <input type="text" id="artist_filter" name="artist_filter"
-               value="{{ artist_filter or '' }}" placeholder="Filter by artist name">
+        <label for="date">Date (optional with artist):</label>
+        <input type="date" id="date" name="date"
+               value="{{ date_value or '' }}">
       </div>
       <div class="form-row">
         <label for="start_year">Start year:</label>
@@ -157,7 +157,11 @@
 
     {% if results is not none %}
       <div class="summary">
-        Found {{ results|length }} releases for {{ pretty_date }} across {{ start_year }}–{{ end_year }}{% if artist_filter %} by artists matching "{{ artist_filter }}"{% endif %}.
+        {% if artist_filter %}
+          Found {{ results|length }} releases by "{{ artist_filter }}" across {{ start_year }}–{{ end_year }}{% if pretty_date %} on {{ pretty_date }}{% endif %}.
+        {% else %}
+          Found {{ results|length }} releases for {{ pretty_date }} across {{ start_year }}–{{ end_year }}.
+        {% endif %}
       </div>
       {% if results %}
         <div class="table-wrapper">

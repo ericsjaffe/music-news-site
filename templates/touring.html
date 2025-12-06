@@ -65,53 +65,15 @@
       {% endif %}
 
       {% if tours %}
-        <div class="tours-grid-bandsintown">
-          {% for tour in tours %}
-            <a href="{{ tour.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-bandsintown">
-              {% if tour.artist_image %}
-                <div class="event-image-bandsintown" style="background-image: url('{{ tour.artist_image }}');"></div>
-              {% else %}
-                <div class="event-image-bandsintown event-image-placeholder">
-                  <span class="event-icon-large">🎵</span>
-                </div>
-              {% endif %}
-              
-              <div class="event-content">
-                <div class="event-date-badge">
-                  <span class="badge-month">
-                    {% if tour.datetime %}
-                      {{ tour.datetime[5:7]|replace('01', 'JAN')|replace('02', 'FEB')|replace('03', 'MAR')|replace('04', 'APR')|replace('05', 'MAY')|replace('06', 'JUN')|replace('07', 'JUL')|replace('08', 'AUG')|replace('09', 'SEP')|replace('10', 'OCT')|replace('11', 'NOV')|replace('12', 'DEC') }}
-                    {% endif %}
-                  </span>
-                  <span class="badge-day">
-                    {% if tour.datetime %}
-                      {{ tour.datetime[8:10] }}
-                    {% endif %}
-                  </span>
-                </div>
-                
-                <div class="event-info-content">
-                  <h3 class="event-title">{{ tour.event_name or tour.artist }}</h3>
-                  <p class="event-venue-name">{{ tour.venue_name }}</p>
-                  <p class="event-location-text">{{ tour.city }}{% if tour.region %}, {{ tour.region }}{% endif %}</p>
-                  
-                  <div class="event-meta">
-                    {% if tour.ticket_status %}
-                      <span class="event-status">{{ tour.ticket_status }}</span>
-                    {% endif %}
-                    {% if tour.price_info %}
-                      <span class="event-price">{{ tour.price_info }}</span>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-              
-              <div class="event-hover-overlay">
-                <span class="view-tickets-text">View Tickets</span>
-              </div>
-            </a>
-          {% endfor %}
-        </div>
+        <section class="carousel-section">
+          <div class="carousel-container-search">
+            <div class="carousel-track-search">
+              {% for event in tours %}
+                {% include 'event_card.html' %}
+              {% endfor %}
+            </div>
+          </div>
+        </section>
       {% endif %}
     {% else %}
       <!-- Multiple Carousels -->
@@ -592,6 +554,19 @@
       padding: 0.5rem 0;
     }
 
+    /* Search Results Grid (uses carousel cards) */
+    .carousel-container-search {
+      overflow: visible;
+      position: relative;
+    }
+
+    .carousel-track-search {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      padding: 0.5rem 0;
+    }
+
     /* Carousel Event Cards */
     .event-card-carousel {
       flex: 0 0 320px;
@@ -712,6 +687,11 @@
       .event-title {
         font-size: 1.2rem;
       }
+
+      .carousel-track-search {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+      }
     }
 
     @media (max-width: 640px) {
@@ -782,6 +762,11 @@
       .event-tickets-btn-carousel {
         padding: 0.65rem;
         font-size: 0.85rem;
+      }
+
+      .carousel-track-search {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
       }
     }
   </style>

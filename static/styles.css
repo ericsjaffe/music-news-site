@@ -446,6 +446,31 @@ body {
   gap: 0.75rem;
 }
 
+.form-row-compact {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-field input {
+  width: 100%;
+}
+
 .releases-form label {
   display: inline-block;
   min-width: 80px;
@@ -724,6 +749,16 @@ body {
   .site-header h1 {
     font-size: 1.25rem;
     flex: 0 1 auto;
+  }
+  
+  /* Form compact rows stack on mobile */
+  .form-row-compact {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .form-field {
+    min-width: 100%;
   }
   
   /* Show mobile menu toggle button */

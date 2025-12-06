@@ -95,24 +95,32 @@
     </div>
 
     <form method="post" class="releases-form">
-      <div class="form-row">
-        <label for="artist_filter">Artist name:</label>
-        <input type="text" id="artist_filter" name="artist_filter"
-               value="{{ artist_filter or '' }}" placeholder="e.g., Pearl Jam, Beatles, etc.">
+      <div class="form-row form-row-compact">
+        <div class="form-field">
+          <label for="artist_filter">Artist:</label>
+          <input type="text" id="artist_filter" name="artist_filter"
+                 value="{{ artist_filter or '' }}" placeholder="e.g., Pearl Jam">
+        </div>
+        <div class="form-field">
+          <label for="date">Date:</label>
+          <input type="date" id="date" name="date"
+                 value="{{ date_value or '' }}">
+        </div>
+      </div>
+      <div class="form-row form-row-compact">
+        <div class="form-field">
+          <label for="start_year">Start year:</label>
+          <input type="number" id="start_year" name="start_year"
+                 value="{{ start_year or '' }}" min="1900" max="{{ current_year }}">
+        </div>
+        <div class="form-field">
+          <label for="end_year">End year:</label>
+          <input type="number" id="end_year" name="end_year"
+                 value="{{ end_year or '' }}" min="1900" max="{{ current_year }}">
+        </div>
       </div>
       <div class="form-row">
-        <label for="date">Date (optional with artist):</label>
-        <input type="date" id="date" name="date"
-               value="{{ date_value or '' }}">
-      </div>
-      <div class="form-row">
-        <label for="start_year">Start year:</label>
-        <input type="number" id="start_year" name="start_year"
-               value="{{ start_year or '' }}" min="1900" max="{{ current_year }}">
-        <label for="end_year" style="margin-left:1rem;">End year:</label>
-        <input type="number" id="end_year" name="end_year"
-               value="{{ end_year or '' }}" min="1900" max="{{ current_year }}">
-        <span class="chip">Tip: keep ranges small (e.g. 1990–2025)</span>
+        <span class="chip">Tip: Search by artist OR date. Keep year ranges small (e.g. 1990–2025)</span>
       </div>
       
       <!-- Advanced Filters (UI ready for backend implementation) -->

@@ -717,133 +717,125 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
 
 def get_artist_tour_dates(artist_name: str, limit: int = 50):
     """
-    Fetch upcoming tour dates for an artist.
-    For now, returns curated sample data.
-    TODO: Integrate with a proper concerts API when you have valid credentials.
+    Fetch upcoming tour dates from Ticketmaster Discovery API.
+    Returns list of tour date dicts.
     """
-    # Sample curated concert data
-    sample_concerts = [
-        {
-            'id': '1',
-            'artist': 'Taylor Swift',
-            'event_name': 'The Eras Tour',
-            'datetime': '2025-12-15T19:30:00',
-            'venue_name': 'Mercedes-Benz Stadium',
-            'city': 'Atlanta',
-            'region': 'GA',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'High Demand',
-            'artist_image': 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-            'price_info': '$49-$449',
-        },
-        {
-            'id': '2',
-            'artist': 'The Weeknd',
-            'event_name': 'After Hours Til Dawn Tour',
-            'datetime': '2025-12-20T20:00:00',
-            'venue_name': 'Madison Square Garden',
-            'city': 'New York',
-            'region': 'NY',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'Selling Fast',
-            'artist_image': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800',
-            'price_info': '$75-$350',
-        },
-        {
-            'id': '3',
-            'artist': 'Coldplay',
-            'event_name': 'Music Of The Spheres World Tour',
-            'datetime': '2025-12-28T19:00:00',
-            'venue_name': 'Rose Bowl Stadium',
-            'city': 'Pasadena',
-            'region': 'CA',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'Available',
-            'artist_image': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800',
-            'price_info': '$60-$300',
-        },
-        {
-            'id': '4',
-            'artist': 'Ed Sheeran',
-            'event_name': 'Mathematics Tour',
-            'datetime': '2026-01-05T19:30:00',
-            'venue_name': 'Soldier Field',
-            'city': 'Chicago',
-            'region': 'IL',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'Available',
-            'artist_image': 'https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=800',
-            'price_info': '$55-$275',
-        },
-        {
-            'id': '5',
-            'artist': 'Billie Eilish',
-            'event_name': 'Happier Than Ever Tour',
-            'datetime': '2026-01-10T20:00:00',
-            'venue_name': 'The Forum',
-            'city': 'Los Angeles',
-            'region': 'CA',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'High Demand',
-            'artist_image': 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800',
-            'price_info': '$65-$325',
-        },
-        {
-            'id': '6',
-            'artist': 'Metallica',
-            'event_name': 'M72 World Tour',
-            'datetime': '2026-01-18T19:00:00',
-            'venue_name': 'MetLife Stadium',
-            'city': 'East Rutherford',
-            'region': 'NJ',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'Selling Fast',
-            'artist_image': 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=800',
-            'price_info': '$70-$450',
-        },
-        {
-            'id': '7',
-            'artist': 'Imagine Dragons',
-            'event_name': 'Mercury World Tour',
-            'datetime': '2026-01-25T19:30:00',
-            'venue_name': 'TD Garden',
-            'city': 'Boston',
-            'region': 'MA',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'Available',
-            'artist_image': 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800',
-            'price_info': '$50-$225',
-        },
-        {
-            'id': '8',
-            'artist': 'Red Hot Chili Peppers',
-            'event_name': 'Global Stadium Tour',
-            'datetime': '2026-02-01T19:00:00',
-            'venue_name': 'Levi\'s Stadium',
-            'city': 'Santa Clara',
-            'region': 'CA',
-            'country': 'US',
-            'ticket_url': 'https://www.ticketmaster.com',
-            'ticket_status': 'Available',
-            'artist_image': 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=800',
-            'price_info': '$65-$375',
-        },
-    ]
+    # Ticketmaster Discovery API endpoint
+    base_url = "https://app.ticketmaster.com/discovery/v2/events.json"
     
-    # Filter by artist if searching
-    if artist_name and artist_name.lower() not in ['all', 'featured']:
-        filtered = [c for c in sample_concerts if artist_name.lower() in c['artist'].lower()]
-        return filtered[:limit]
+    # Get API key from environment
+    api_key = os.getenv('TICKETMASTER_API_KEY', 'NdaI5iX0vU7ypgYGYkSEo3OJAM4rpfoj')
     
-    # Return all sample concerts
-    return sample_concerts[:limit]
+    params = {
+        "apikey": api_key,
+        "keyword": artist_name,
+        "classificationName": "Music",
+        "size": min(limit, 200),
+        "sort": "date,asc"
+    }
+    
+    headers = {
+        "User-Agent": USER_AGENT
+    }
+    
+    try:
+        resp = requests.get(base_url, params=params, headers=headers, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        # Extract events from response
+        embedded = data.get('_embedded', {})
+        events = embedded.get('events', [])
+        
+        if not events:
+            return []
+        
+        # Process and return events
+        tour_dates = []
+        for event in events:
+            # Get event details
+            event_name = event.get('name', '')
+            event_url = event.get('url', '')
+            
+            # Get date/time
+            dates = event.get('dates', {})
+            start = dates.get('start', {})
+            date_str = start.get('localDate', '')
+            time_str = start.get('localTime', '')
+            datetime_str = f"{date_str}T{time_str}" if date_str and time_str else date_str
+            
+            # Get venue info
+            embedded_venue = event.get('_embedded', {})
+            venues = embedded_venue.get('venues', [])
+            
+            venue_name = 'Venue TBA'
+            city = ''
+            region = ''
+            country = ''
+            
+            if venues:
+                venue = venues[0]
+                venue_name = venue.get('name', 'Venue TBA')
+                city_obj = venue.get('city', {})
+                city = city_obj.get('name', '') if isinstance(city_obj, dict) else ''
+                state_obj = venue.get('state', {})
+                region = state_obj.get('stateCode', '') if isinstance(state_obj, dict) else ''
+                country_obj = venue.get('country', {})
+                country = country_obj.get('countryCode', '') if isinstance(country_obj, dict) else ''
+            
+            # Get ticket status
+            sales = event.get('sales', {})
+            public_sales = sales.get('public', {})
+            ticket_status = 'Available'
+            if public_sales.get('startDateTime'):
+                ticket_status = 'On Sale'
+            
+            # Get image
+            images = event.get('images', [])
+            artist_image = ''
+            if images:
+                # Get the best quality image
+                for img in images:
+                    if img.get('ratio') == '16_9' and img.get('width', 0) > 1000:
+                        artist_image = img.get('url', '')
+                        break
+                if not artist_image and images:
+                    artist_image = images[0].get('url', '')
+            
+            # Get price range
+            price_ranges = event.get('priceRanges', [])
+            price_info = ''
+            if price_ranges:
+                min_price = price_ranges[0].get('min', '')
+                max_price = price_ranges[0].get('max', '')
+                currency = price_ranges[0].get('currency', 'USD')
+                if min_price and max_price:
+                    price_info = f"${min_price}-${max_price}"
+            
+            tour_date = {
+                'id': event.get('id', ''),
+                'artist': artist_name,
+                'event_name': event_name,
+                'datetime': datetime_str,
+                'venue_name': venue_name,
+                'city': city,
+                'region': region,
+                'country': country,
+                'ticket_url': event_url,
+                'ticket_status': ticket_status,
+                'description': '',
+                'lineup': [],
+                'artist_image': artist_image,
+                'price_info': price_info,
+            }
+            
+            tour_dates.append(tour_date)
+        
+        return tour_dates
+        
+    except Exception as e:
+        print(f"Ticketmaster API error for {artist_name}: {e}")
+        return []
         
     except Exception as e:
         print(f"SeatGeek API error for {artist_name}: {e}")
@@ -1329,7 +1321,7 @@ def artist_page(artist_name):
 
 @app.route("/touring")
 def touring():
-    """Touring page with concert tour data."""
+    """Touring page with concert tour data from Ticketmaster API."""
     artist_query = request.args.get('artist', '').strip()
     
     tours = []
@@ -1338,12 +1330,12 @@ def touring():
     try:
         if artist_query:
             # Search for specific artist
-            tours = get_artist_tour_dates(artist_query)
+            tours = get_artist_tour_dates(artist_query, limit=50)
             if not tours:
                 error = f"No upcoming tour dates found for '{artist_query}'"
         else:
-            # Show all featured events
-            tours = get_artist_tour_dates('all', limit=50)
+            # Show general music events
+            tours = get_artist_tour_dates('concert', limit=50)
             
     except Exception as e:
         error = "Unable to fetch tour data at this time. Please try again later."

@@ -901,15 +901,6 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
-def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None, radius: int = 50, sort: str = "date,asc", genre_id: str = None, start_date: str = None, end_date: str = None, price_min: int = None, price_max: int = None):
-    """
-    Fetch upcoming tour dates from Ticketmaster Discovery API.
-    Returns list of tour date dicts.
-    """
-    # Ticketmaster Discovery API endpoint
-    base_url = "https://app.ticketmaster.com/discovery/v2/events.json"
-
-
 def filter_by_price(events, price_min=None, price_max=None):
     """Filter events by price range."""
     if not events or (price_min is None and price_max is None):

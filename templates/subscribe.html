@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Subscribe - Music Hub | Never Miss a Beat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Subscribe to Music Hub for instant alerts on new music news, releases, and artist updates.">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+      <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    
+    <!-- Navigation Links (collapsible on mobile) -->
+    <div id="mobile-nav-wrapper" class="mobile-nav-wrapper collapsed">
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+        <a href="/touring">Tours</a>
+        <a href="/videos">Videos</a>
+        <a href="/merch">Merch</a>
+        <a href="/subscribe" class="active subscribe-link">📧 Subscribe</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="subscribe-page-container">
+      <div class="subscribe-hero">
+        <h1 class="subscribe-hero-title">🎵 Never Miss a Beat</h1>
+        <p class="subscribe-hero-subtitle">Get instant alerts for new music articles, releases, and artist updates delivered straight to your inbox or phone.</p>
+      </div>
+
+      <div class="signup-container">
+        <!-- Email Signup -->
+        <div class="signup-box">
+          <h3>📧 Email Updates</h3>
+          <p class="signup-description">Get daily digests of the latest music news</p>
+          <form class="newsletter-form" id="newsletter-form" onsubmit="return subscribeNewsletter(event)">
+            <input 
+              type="email" 
+              name="email" 
+              placeholder="Enter your email address" 
+              required
+              id="newsletter-email"
+            >
+            <button type="submit">Subscribe</button>
+          </form>
+          <div id="newsletter-message" class="newsletter-message" style="display: none;"></div>
+        </div>
+        
+        <!-- SMS Signup -->
+        <div class="signup-box">
+          <h3>📱 SMS Alerts</h3>
+          <p class="signup-description">Get breaking news alerts sent to your phone</p>
+          <form class="newsletter-form" id="sms-form" onsubmit="return subscribeSMS(event)">
+            <input 
+              type="tel" 
+              name="phone" 
+              placeholder="Enter phone number (e.g. +1234567890)" 
+              required
+              id="sms-phone"
+              pattern="^\+?[1-9]\d{1,14}$"
+            >
+            <button type="submit">Subscribe</button>
+          </form>
+          <div id="sms-message" class="newsletter-message" style="display: none;"></div>
+          <p class="sms-disclaimer">Standard message rates apply. Reply STOP to opt out.</p>
+        </div>
+      </div>
+
+      <div class="subscribe-benefits">
+        <h3>Why Subscribe?</h3>
+        <div class="benefits-grid">
+          <div class="benefit-item">
+            <span class="benefit-icon">⚡</span>
+            <h4>Instant Notifications</h4>
+            <p>Be the first to know about breaking music news</p>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🎸</span>
+            <h4>Artist Updates</h4>
+            <p>Follow your favorite artists and get updates on new releases</p>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🎟️</span>
+            <h4>Tour Announcements</h4>
+            <p>Never miss a show with tour date alerts</p>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">💿</span>
+            <h4>New Releases</h4>
+            <p>Stay updated on album drops and singles</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="subscribe-footer">
+        <p>Join thousands of music fans staying connected. Unsubscribe anytime.</p>
+        <p class="privacy-note">We respect your privacy. Your information is never shared with third parties.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function subscribeNewsletter(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('newsletter-email').value;
+      const messageDiv = document.getElementById('newsletter-message');
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+
+      // Disable the button temporarily
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Subscribing...';
+
+      try {
+        const response = await fetch('/newsletter/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          messageDiv.style.display = 'block';
+          messageDiv.style.background = 'rgba(34, 197, 94, 0.2)';
+          messageDiv.style.color = 'var(--success)';
+          messageDiv.textContent = '✓ ' + (data.message || 'Subscribed successfully!');
+          document.getElementById('newsletter-email').value = '';
+        } else {
+          messageDiv.style.display = 'block';
+          messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+          messageDiv.style.color = '#ef4444';
+          messageDiv.textContent = '✗ ' + (data.error || 'Subscription failed');
+        }
+      } catch (error) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        messageDiv.style.color = '#ef4444';
+        messageDiv.textContent = '✗ Network error. Please try again.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subscribe';
+      }
+    }
+
+    async function subscribeSMS(event) {
+      event.preventDefault();
+      
+      const phone = document.getElementById('sms-phone').value;
+      const messageDiv = document.getElementById('sms-message');
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+
+      // Disable the button temporarily
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Subscribing...';
+
+      try {
+        const response = await fetch('/sms/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phone }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          messageDiv.style.display = 'block';
+          messageDiv.style.background = 'rgba(34, 197, 94, 0.2)';
+          messageDiv.style.color = 'var(--success)';
+          messageDiv.textContent = '✓ ' + (data.message || 'Subscribed successfully!');
+          document.getElementById('sms-phone').value = '';
+        } else {
+          messageDiv.style.display = 'block';
+          messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+          messageDiv.style.color = '#ef4444';
+          messageDiv.textContent = '✗ ' + (data.error || 'Subscription failed');
+        }
+      } catch (error) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+        messageDiv.style.color = '#ef4444';
+        messageDiv.textContent = '✗ Network error. Please try again.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Subscribe';
+      }
+    }
+  </script>
+
+  <style>
+    .subscribe-page-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .subscribe-hero {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding: 2rem 1rem;
+    }
+
+    .subscribe-hero-title {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subscribe-hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .subscribe-benefits {
+      margin: 4rem 0;
+      text-align: center;
+    }
+
+    .subscribe-benefits h3 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .benefit-item {
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border-radius: 1rem;
+      border: 1px solid var(--border-color);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .benefit-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(236, 72, 153, 0.2);
+    }
+
+    .benefit-icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 1rem;
+    }
+
+    .benefit-item h4 {
+      margin: 0.5rem 0;
+      color: var(--text-primary);
+    }
+
+    .benefit-item p {
+      color: var(--text-secondary);
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    .subscribe-footer {
+      text-align: center;
+      margin-top: 4rem;
+      padding: 2rem 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .subscribe-footer p {
+      color: var(--text-secondary);
+      margin: 0.5rem 0;
+    }
+
+    .privacy-note {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .subscribe-hero-title {
+        font-size: 2rem;
+      }
+
+      .subscribe-hero-subtitle {
+        font-size: 1rem;
+      }
+
+      .benefits-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</body>
+</html>

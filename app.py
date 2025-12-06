@@ -1151,6 +1151,12 @@ def merch():
     return render_template("merch.html")
 
 
+@app.route("/subscribe")
+def subscribe():
+    """Subscribe page for newsletter and SMS signups."""
+    return render_template("subscribe.html")
+
+
 @app.route("/api/load-more")
 def load_more():
     """API endpoint for infinite scroll - returns JSON of articles."""

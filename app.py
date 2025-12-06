@@ -767,21 +767,11 @@ def releases():
         end_str = request.form.get("end_year", "").strip()
         artist_filter = request.form.get("artist_filter", "").strip()
 
-        # If artist is provided, date is optional
+        # If artist is provided, ignore the date completely
         if artist_filter:
-            # Parse date only if provided
-            if date_value:
-                try:
-                    _dt = datetime.strptime(date_value, "%Y-%m-%d")
-                    mm_dd = date_value[5:]  # "YYYY-MM-DD" -> "MM-DD"
-                    pretty_date = _dt.strftime("%B %d")  # e.g. "November 22"
-                except ValueError:
-                    error = "Invalid date. Please use the date picker."
-                    mm_dd = None
-            else:
-                # No date required when searching by artist
-                mm_dd = None
-                pretty_date = ""
+            # Clear date-related variables when searching by artist
+            mm_dd = None
+            pretty_date = ""
         else:
             # Date is required when not searching by artist
             try:

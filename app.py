@@ -729,6 +729,7 @@ def releases():
     end_year = current_year
     pretty_date = today.strftime("%B %d")
     mm_dd = today.strftime("%m-%d")
+    artist_filter = ""
     
     # Auto-load results on first visit (GET request)
     should_fetch = request.method == "GET"
@@ -738,6 +739,7 @@ def releases():
         date_value = request.form.get("date", "").strip()
         start_str = request.form.get("start_year", "").strip()
         end_str = request.form.get("end_year", "").strip()
+        artist_filter = request.form.get("artist_filter", "").strip()
 
         # Parse date
         try:
@@ -839,6 +841,11 @@ def releases():
             # Be polite with MusicBrainz but not too slow
             time.sleep(0.1)
 
+        # Filter by artist if specified
+        if artist_filter and results:
+            artist_lower = artist_filter.lower()
+            results = [r for r in results if r.artist and artist_lower in r.artist.lower()]
+        
         # Sort by year (newest first), then by artist, then by title
         if results:
             results.sort(key=lambda x: (-x.year, x.artist or "", x.title or ""))
@@ -866,6 +873,7 @@ def releases():
         end_year=end_year,
         pretty_date=pretty_date or "",
         current_year=current_year,
+        artist_filter=artist_filter,
     )
 
 

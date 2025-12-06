@@ -101,6 +101,11 @@
                value="{{ date_value or '' }}" required>
       </div>
       <div class="form-row">
+        <label for="artist_filter">Artist (optional):</label>
+        <input type="text" id="artist_filter" name="artist_filter"
+               value="{{ artist_filter or '' }}" placeholder="Filter by artist name">
+      </div>
+      <div class="form-row">
         <label for="start_year">Start year:</label>
         <input type="number" id="start_year" name="start_year"
                value="{{ start_year or '' }}" min="1900" max="{{ current_year }}">
@@ -152,7 +157,7 @@
 
     {% if results is not none %}
       <div class="summary">
-        Found {{ results|length }} releases for {{ pretty_date }} across {{ start_year }}–{{ end_year }}.
+        Found {{ results|length }} releases for {{ pretty_date }} across {{ start_year }}–{{ end_year }}{% if artist_filter %} by artists matching "{{ artist_filter }}"{% endif %}.
       </div>
       {% if results %}
         <div class="table-wrapper">

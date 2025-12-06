@@ -710,15 +710,29 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
+    background: var(--bg-primary);
+  }
+  
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 1rem;
   }
 
   .site-header h1 {
     font-size: 1.25rem;
+    flex: 0 1 auto;
   }
   
   /* Show mobile menu toggle button */
   .mobile-menu-toggle {
-    display: block;
+    display: block !important;
+  }
+  
+  .theme-toggle {
+    display: block !important;
   }
   
   /* Hide search/filters wrapper on mobile */
@@ -1088,18 +1102,19 @@ body {
 /* Mobile Menu Toggle */
 .mobile-menu-toggle {
   display: none;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.85rem;
   border: none;
   background: var(--bg-card);
   color: var(--text-primary);
   border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   transition: all 0.2s;
   line-height: 1;
   border: 1px solid var(--border-color);
   position: absolute;
   left: 0;
+  z-index: 1000;
 }
 
 .mobile-menu-toggle:hover {
@@ -1110,6 +1125,7 @@ body {
 .theme-toggle {
   position: absolute;
   right: 0;
+  z-index: 1000;
 }
 
 /* Mobile Navigation Wrapper */
@@ -1140,6 +1156,11 @@ body {
 
 /* Mobile: Collapsible navigation */
 @media (max-width: 640px) {
+  .mobile-nav-wrapper {
+    position: relative;
+    z-index: 99;
+  }
+  
   .mobile-nav-wrapper.collapsed {
     max-height: 0;
     opacity: 0;

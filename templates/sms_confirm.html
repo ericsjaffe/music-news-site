@@ -1,33 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMS Subscription Confirmation - Music Hub</title>
+    <meta name="theme-color" content="#ec4899">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
+        .confirmation-container {
+            background: var(--bg-card);
             border-radius: 16px;
             padding: 60px 40px;
             max-width: 500px;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin: 4rem auto;
         }
         
         .icon {
@@ -35,25 +24,25 @@
             margin-bottom: 20px;
         }
         
-        .success .icon { color: #10b981; }
+        .success .icon { color: var(--success); }
         .error .icon { color: #ef4444; }
         
-        h1 {
+        .confirmation-container h1 {
             font-size: 28px;
             margin-bottom: 16px;
-            color: #1f2937;
+            color: var(--text-primary);
         }
         
         .message {
             font-size: 18px;
-            color: #6b7280;
+            color: var(--text-secondary);
             margin-bottom: 32px;
             line-height: 1.6;
         }
         
         .btn {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--accent-primary);
             color: white;
             padding: 14px 32px;
             border-radius: 8px;
@@ -64,18 +53,19 @@
         
         .btn:hover {
             transform: translateY(-2px);
+            background: var(--accent-secondary);
         }
         
         .features {
             margin-top: 40px;
             padding-top: 30px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid var(--border-color);
             text-align: left;
         }
         
         .features h3 {
             font-size: 16px;
-            color: #374151;
+            color: var(--text-primary);
             margin-bottom: 16px;
         }
         
@@ -87,6 +77,11 @@
         .features li {
             margin-bottom: 8px;
             padding-left: 24px;
+        
+        .features li {
+            margin-bottom: 12px;
+            padding-left: 28px;
+            color: var(--text-secondary);
             position: relative;
         }
         
@@ -98,7 +93,28 @@
     </style>
 </head>
 <body>
-    <div class="container {{ status }}">
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1>Music Hub</h1>
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+      <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    
+    <!-- Navigation Links (collapsible on mobile) -->
+    <div id="mobile-nav-wrapper" class="mobile-nav-wrapper collapsed">
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+        <a href="/touring">Tours</a>
+        <a href="/videos">Videos</a>
+        <a href="/merch">Merch</a>
+        <a href="/subscribe" class="subscribe-link">📧 Subscribe</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="confirmation-container {{ status }}">
         <div class="icon">
             {% if status == 'success' %}
                 ✓
@@ -131,5 +147,6 @@
         </div>
         {% endif %}
     </div>
+  </main>
 </body>
 </html>

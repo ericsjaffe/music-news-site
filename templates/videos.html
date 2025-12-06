@@ -95,9 +95,6 @@
             <button class="video-play-btn" onclick="playVideo('{{ video.id }}', '{{ video.title|e }}')" aria-label="Play video">
               ▶️ Watch Now
             </button>
-            <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank" rel="noopener noreferrer" class="video-youtube-btn" aria-label="Open on YouTube">
-              📺 YouTube
-            </a>
           </div>
         </div>
       </article>
@@ -376,13 +373,11 @@
 
     .video-actions {
       display: flex;
-      gap: 0.75rem;
       margin-top: 1rem;
     }
 
-    .video-play-btn,
-    .video-youtube-btn {
-      flex: 1;
+    .video-play-btn {
+      width: 100%;
       padding: 0.75rem 1rem;
       border-radius: 999px;
       font-weight: 600;
@@ -395,9 +390,6 @@
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-    }
-
-    .video-play-btn {
       background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
       color: white;
       box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
@@ -406,18 +398,6 @@
     .video-play-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(236, 72, 153, 0.5);
-    }
-
-    .video-youtube-btn {
-      background: rgba(255, 0, 0, 0.1);
-      color: #FF0000;
-      border: 2px solid rgba(255, 0, 0, 0.3);
-    }
-
-    .video-youtube-btn:hover {
-      background: rgba(255, 0, 0, 0.2);
-      border-color: rgba(255, 0, 0, 0.6);
-      transform: translateY(-2px);
     }
 
     .video-modal {

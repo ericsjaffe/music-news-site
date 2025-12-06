@@ -1,0 +1,22 @@
+name: Keep Site Alive
+
+on:
+  schedule:
+    # Run every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping site to keep it alive
+        run: |
+          echo "Pinging site at $(date)"
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://music-news-site.onrender.com)
+          if [ $response -eq 200 ]; then
+            echo "✓ Site is alive - Status: $response"
+          else
+            echo "⚠ Site returned status: $response"
+          fi

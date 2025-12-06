@@ -715,7 +715,7 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
-def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 100):
+def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 100, max_retries: int = 3):
     """
     Call MusicBrainz search by artist name:
       /ws/2/release/?query=artist:ARTIST&fmt=json&limit=...
@@ -735,10 +735,24 @@ def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 1
         "User-Agent": USER_AGENT,
     }
 
-    resp = requests.get(API_BASE, params=params, headers=headers, timeout=30)
-    resp.raise_for_status()
-    data = resp.json()
-    return data.get("releases", [])
+    # Retry logic for connection issues
+    for attempt in range(max_retries):
+        try:
+            resp = requests.get(API_BASE, params=params, headers=headers, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get("releases", [])
+        except (requests.ConnectionError, ConnectionResetError) as e:
+            if attempt < max_retries - 1:
+                # Wait before retrying (exponential backoff)
+                time.sleep(2 ** attempt)
+                continue
+            else:
+                # Last attempt failed, re-raise
+                raise
+        except requests.HTTPError as e:
+            # Don't retry on HTTP errors (404, 500, etc.)
+            raise
 
 
 @app.route("/releases", methods=["GET", "POST"])
@@ -868,9 +882,11 @@ def releases():
                     )
                 
             except (requests.HTTPError, requests.ConnectionError, ConnectionResetError) as e:
-                error = f"Failed to search for artist: {e}"
+                error = "Unable to connect to MusicBrainz. The music database may be experiencing high traffic. Please try again in a moment."
+                print(f"MusicBrainz connection error: {e}")
             except Exception as e:
-                error = f"Error searching for artist: {e}"
+                error = "An error occurred while searching for the artist. Please try again."
+                print(f"Artist search error: {e}")
         
         # Search by date if provided and no artist filter
         elif mm_dd:

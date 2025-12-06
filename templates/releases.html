@@ -53,20 +53,26 @@
           <table class="releases-table">
             <thead>
               <tr>
+                <th>Cover</th>
                 <th>Year</th>
                 <th>Artist</th>
                 <th>Title</th>
-                <th>Date</th>
                 <th>Link</th>
               </tr>
             </thead>
             <tbody>
               {% for r in results %}
                 <tr>
+                  <td class="cover-cell">
+                    {% if r.cover_art %}
+                      <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="album-cover" onerror="this.style.display='none'">
+                    {% else %}
+                      <div class="no-cover">♪</div>
+                    {% endif %}
+                  </td>
                   <td>{{ r.year }}</td>
                   <td>{{ r.artist or 'Unknown artist' }}</td>
                   <td>{{ r.title }}</td>
-                  <td>{{ r.date or 'N/A' }}</td>
                   <td>
                     {% if r.url %}
                       <a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">View</a>
@@ -85,7 +91,7 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>Data from <a href="https://musicbrainz.org" target="_blank">MusicBrainz</a></p>
+      <p>&nbsp;</p>
     </div>
   </footer>
 </body>

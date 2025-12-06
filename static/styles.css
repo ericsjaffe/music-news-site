@@ -348,6 +348,31 @@ body {
   text-decoration: underline;
 }
 
+.cover-cell {
+  width: 60px;
+  padding: 0.5rem !important;
+}
+
+.album-cover {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  display: block;
+}
+
+.no-cover {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1f2937;
+  border-radius: 0.25rem;
+  color: #6b7280;
+  font-size: 1.2rem;
+}
+
 /* Responsive tweaks */
 @media (max-width: 640px) {
   .site-header h1 {

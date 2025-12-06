@@ -277,6 +277,7 @@ def releases():
                         "artist": r["artist"],
                         "date": r["date"],
                         "url": r["url"],
+                        "cover_art": r.get("cover_art"),
                     })
                 )
             # Skip the API calls, we have cached data
@@ -316,6 +317,11 @@ def releases():
                     artist = ac[0]["name"]
                 mbid = r.get("id")
                 url = f"https://musicbrainz.org/release/{mbid}" if mbid else None
+                
+                # Try to get cover art from Cover Art Archive
+                cover_art = None
+                if mbid:
+                    cover_art = f"https://coverartarchive.org/release/{mbid}/front-250"
 
                 # use a tiny object so template can do r.year, r.title, etc.
                 results.append(
@@ -325,6 +331,7 @@ def releases():
                         "artist": artist,
                         "date": date,
                         "url": url,
+                        "cover_art": cover_art,
                     })
                 )
 
@@ -342,7 +349,8 @@ def releases():
                     "title": r.title,
                     "artist": r.artist,
                     "date": r.date,
-                    "url": r.url
+                    "url": r.url,
+                    "cover_art": r.cover_art
                 }
                 for r in results
             ]
@@ -444,6 +452,10 @@ def article():
             # Remove unwanted elements
             for element in article_body.find_all(['script', 'style', 'iframe', 'nav', 'aside', 'footer']):
                 element.decompose()
+            
+            # Remove images from content since we display the featured image separately
+            for img in article_body.find_all('img'):
+                img.decompose()
             
             # Get clean HTML
             content = str(article_body)

@@ -32,29 +32,15 @@
         {% endif %}
       </div>
 
-      {% if image and image != '/static/default-music.png' %}
-        <div class="article-image">
-          <img src="{{ image }}" alt="{{ title }}" onerror="this.style.display='none'">
-        </div>
-      {% endif %}
-
       <div class="article-body">
         {{ content|safe }}
       </div>
-
-      {% if source_url %}
-        <div class="article-footer">
-          <a href="{{ source_url }}" target="_blank" rel="noopener noreferrer" class="read-original-btn">
-            Read Original Article at {{ source }}
-          </a>
-        </div>
-      {% endif %}
     </article>
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      <p>Data from <a href="https://musicbrainz.org" target="_blank">MusicBrainz</a></p>
+      <p>&nbsp;</p>
     </div>
   </footer>
 </body>

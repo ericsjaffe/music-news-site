@@ -724,7 +724,8 @@ def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 1
     Returns list of releases (dicts).
     """
     # Use quotes for exact phrase matching in MusicBrainz
-    query = f'artist:"{artist_name}"'
+    # Filter for albums only (type:album) to exclude singles, EPs, etc.
+    query = f'artist:"{artist_name}" AND type:album AND (status:official OR status:promotion)'
     if year:
         query += f" AND date:{year}*"
     
@@ -845,7 +846,7 @@ def releases():
                 all_releases = []
                 offset = 0
                 limit = 100
-                max_results = 1000  # Get up to 1000 results total
+                max_results = 2000  # Get up to 2000 results total to ensure we get recent releases
                 
                 while offset < max_results:
                     # Fetch releases with pagination

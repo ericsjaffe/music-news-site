@@ -100,26 +100,48 @@
     </div>
 
     <form method="post" class="releases-form">
-      <div class="form-row-inline">
+      <!-- Artist Search Group -->
+      <div class="search-group">
+        <div class="search-group-header">
+          <span class="search-icon">🎤</span>
+          <span class="search-label">Search by Artist</span>
+        </div>
         <div class="form-field-inline">
           <label for="artist_filter">Artist:</label>
           <input type="text" id="artist_filter" name="artist_filter"
                  value="{{ artist_filter or '' }}" placeholder="e.g., Pearl Jam">
         </div>
-        <div class="form-field-inline">
-          <label for="date">Date:</label>
-          <input type="date" id="date" name="date"
-                 value="{{ date_value or '' }}" placeholder="12/06/2025">
+      </div>
+
+      <!-- OR Separator -->
+      <div class="or-separator">
+        <span class="or-line"></span>
+        <span class="or-text">OR</span>
+        <span class="or-line"></span>
+      </div>
+
+      <!-- Date Search Group -->
+      <div class="search-group">
+        <div class="search-group-header">
+          <span class="search-icon">📅</span>
+          <span class="search-label">Search by Date</span>
         </div>
-        <div class="form-field-inline">
-          <label for="start_year">Start year:</label>
-          <input type="number" id="start_year" name="start_year"
-                 value="{{ start_year or '' }}" min="1900" max="{{ current_year }}" placeholder="2010">
-        </div>
-        <div class="form-field-inline">
-          <label for="end_year">End year:</label>
-          <input type="number" id="end_year" name="end_year"
-                 value="{{ end_year or '' }}" min="1900" max="{{ current_year }}" placeholder="2025">
+        <div class="form-row-inline">
+          <div class="form-field-inline">
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date"
+                   value="{{ date_value or '' }}" placeholder="12/06/2025">
+          </div>
+          <div class="form-field-inline">
+            <label for="start_year">Start year:</label>
+            <input type="number" id="start_year" name="start_year"
+                   value="{{ start_year or '' }}" min="1900" max="{{ current_year }}" placeholder="2010">
+          </div>
+          <div class="form-field-inline">
+            <label for="end_year">End year:</label>
+            <input type="number" id="end_year" name="end_year"
+                   value="{{ end_year or '' }}" min="1900" max="{{ current_year }}" placeholder="2025">
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -183,12 +205,12 @@
                 <th>Year</th>
                 <th>Artist</th>
                 <th>Title</th>
-                <th>Link</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for r in results %}
-                <tr>
+                <tr class="release-row">
                   <td class="cover-cell">
                     {% if r.cover_art %}
                       <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="album-cover" onerror="this.style.display='none'">
@@ -196,21 +218,59 @@
                       <div class="no-cover">♪</div>
                     {% endif %}
                   </td>
-                  <td>{{ r.year }}</td>
-                  <td>{{ r.artist or 'Unknown artist' }}</td>
-                  <td>{{ r.title }}</td>
-                  <td>
+                  <td class="year-cell">{{ r.year }}</td>
+                  <td class="artist-cell">{{ r.artist or 'Unknown artist' }}</td>
+                  <td class="title-cell">{{ r.title }}</td>
+                  <td class="actions-cell">
                     {% if r.url %}
                       {% set mbid = r.url.split('/')[-1] %}
-                      <a href="/release/{{ mbid }}">View</a>
-                    {% else %}
-                      &mdash;
+                      <a href="/release/{{ mbid }}" class="action-btn view-btn">View</a>
                     {% endif %}
+                    <a href="https://open.spotify.com/search/{{ (r.artist + ' ' + r.title)|urlencode }}" target="_blank" rel="noopener" class="action-btn streaming-btn spotify-btn" title="Search on Spotify">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                    </a>
+                    <a href="https://music.apple.com/us/search?term={{ (r.artist + ' ' + r.title)|urlencode }}" target="_blank" rel="noopener" class="action-btn streaming-btn apple-btn" title="Search on Apple Music">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.994 6.124c0-.738-.034-1.47-.098-2.198-.065-.717-.207-1.415-.495-2.093-.285-.673-.758-1.233-1.325-1.694-.567-.463-1.261-.758-2.004-.96-.743-.2-1.496-.278-2.25-.322-.753-.043-1.507-.048-2.261-.048L8.44 0c-.754 0-1.508.005-2.261.048-.754.044-1.507.121-2.25.322-.743.202-1.437.497-2.004.96-.567.461-1.04 1.021-1.325 1.694-.288.678-.43 1.376-.495 2.093C.04 4.753 0 5.485 0 6.124v11.713c0 .738.034 1.47.098 2.198.065.717.207 1.415.495 2.093.285.673.758 1.233 1.325 1.694.567.463 1.261.758 2.004.96.743.2 1.496.278 2.25.322.753.043 1.507.048 2.261.048h7.12c.754 0 1.508-.005 2.261-.048.754-.044 1.507-.121 2.25-.322.743-.202 1.437-.497 2.004-.96.567-.461 1.04-1.021 1.325-1.694.288-.678.43-1.376.495-2.093.064-.728.098-1.46.098-2.198V6.124zM12.15 17.692c-.914 0-1.736-.376-2.326-.981-.59-.605-.934-1.437-.934-2.353 0-.916.344-1.748.934-2.353.59-.605 1.412-.981 2.326-.981.914 0 1.736.376 2.326.981.59.605.934 1.437.934 2.353 0 .916-.344 1.748-.934 2.353-.59.605-1.412.981-2.326.981zm5.75-9.115c-.192.191-.447.287-.702.287-.255 0-.51-.096-.702-.287-.383-.383-.383-1.004 0-1.387l2.121-2.121c.383-.383 1.004-.383 1.387 0 .383.383.383 1.004 0 1.387l-2.104 2.121z"/></svg>
+                    </a>
                   </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="releases-cards">
+          {% for r in results %}
+            <div class="release-card">
+              <div class="release-card-cover">
+                {% if r.cover_art %}
+                  <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="card-album-cover" onerror="this.style.display='none'">
+                {% else %}
+                  <div class="card-no-cover">♪</div>
+                {% endif %}
+              </div>
+              <div class="release-card-content">
+                <div class="release-card-year">{{ r.year }}</div>
+                <div class="release-card-artist">{{ r.artist or 'Unknown artist' }}</div>
+                <div class="release-card-title">{{ r.title }}</div>
+                <div class="release-card-actions">
+                  {% if r.url %}
+                    {% set mbid = r.url.split('/')[-1] %}
+                    <a href="/release/{{ mbid }}" class="card-action-btn view-btn">View Details</a>
+                  {% endif %}
+                  <div class="streaming-links">
+                    <a href="https://open.spotify.com/search/{{ (r.artist + ' ' + r.title)|urlencode }}" target="_blank" rel="noopener" class="streaming-icon spotify-icon" title="Search on Spotify">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                    </a>
+                    <a href="https://music.apple.com/us/search?term={{ (r.artist + ' ' + r.title)|urlencode }}" target="_blank" rel="noopener" class="streaming-icon apple-icon" title="Search on Apple Music">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.994 6.124c0-.738-.034-1.47-.098-2.198-.065-.717-.207-1.415-.495-2.093-.285-.673-.758-1.233-1.325-1.694-.567-.463-1.261-.758-2.004-.96-.743-.2-1.496-.278-2.25-.322-.753-.043-1.507-.048-2.261-.048L8.44 0c-.754 0-1.508.005-2.261.048-.754.044-1.507.121-2.25.322-.743.202-1.437.497-2.004.96-.567.461-1.04 1.021-1.325 1.694-.288.678-.43 1.376-.495 2.093C.04 4.753 0 5.485 0 6.124v11.713c0 .738.034 1.47.098 2.198.065.717.207 1.415.495 2.093.285.673.758 1.233 1.325 1.694.567.463 1.261.758 2.004.96.743.2 1.496.278 2.25.322.753.043 1.507.048 2.261.048h7.12c.754 0 1.508-.005 2.261-.048.754-.044 1.507-.121 2.25-.322.743-.202 1.437-.497 2.004-.96.567-.461 1.04-1.021 1.325-1.694.288-.678.43-1.376.495-2.093.064-.728.098-1.46.098-2.198V6.124zM12.15 17.692c-.914 0-1.736-.376-2.326-.981-.59-.605-.934-1.437-.934-2.353 0-.916.344-1.748.934-2.353.59-.605 1.412-.981 2.326-.981.914 0 1.736.376 2.326.981.59.605.934 1.437.934 2.353 0 .916-.344 1.748-.934 2.353-.59.605-1.412.981-2.326.981zm5.75-9.115c-.192.191-.447.287-.702.287-.255 0-.51-.096-.702-.287-.383-.383-.383-1.004 0-1.387l2.121-2.121c.383-.383 1.004-.383 1.387 0 .383.383.383 1.004 0 1.387l-2.104 2.121z"/></svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
         </div>
       {% endif %}
     {% endif %}

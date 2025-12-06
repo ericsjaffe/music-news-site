@@ -27,6 +27,28 @@ function updateThemeIcon(theme) {
   }
 }
 
+// Mobile Menu Toggle
+function initMobileMenu() {
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  const searchFiltersWrapper = document.getElementById('search-filters-wrapper');
+  
+  if (mobileMenuToggle && searchFiltersWrapper) {
+    mobileMenuToggle.addEventListener('click', () => {
+      const isCollapsed = searchFiltersWrapper.classList.contains('collapsed');
+      
+      if (isCollapsed) {
+        searchFiltersWrapper.classList.remove('collapsed');
+        searchFiltersWrapper.classList.add('expanded');
+        mobileMenuToggle.textContent = '✕'; // X icon
+      } else {
+        searchFiltersWrapper.classList.remove('expanded');
+        searchFiltersWrapper.classList.add('collapsed');
+        mobileMenuToggle.textContent = '☰'; // Hamburger icon
+      }
+    });
+  }
+}
+
 // PWA Installation
 let deferredPrompt;
 
@@ -566,6 +588,7 @@ function createArticleCard(article) {
 document.addEventListener('DOMContentLoaded', () => {
   initPWA();
   initThemeToggle();
+  initMobileMenu();
   initBookmarks();
   initRecentSearches();
   initPagination();

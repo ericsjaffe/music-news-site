@@ -74,6 +74,7 @@
   <header class="site-header">
     <div class="container header-inner">
       <h1>Music Hub</h1>
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
       <nav class="nav-links">
         <a href="/" class="active">News</a>
         <a href="/releases">Releases</a>
@@ -82,21 +83,26 @@
         <a href="/merch">Merch</a>
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
       </nav>
-      <form method="get" action="/" class="search-form">
-        <input
-          type="text"
-          name="q"
-          placeholder="Search by artist, genre, album…"
-          value="{{ query or '' }}"
-          autocomplete="off"
-        >
-        <button type="submit">Search</button>
-      </form>
     </div>
     
-    <!-- Genre Filters -->
-    <div class="container">
-      <div class="filter-bar">
+    <!-- Collapsible Search and Filters -->
+    <div id="search-filters-wrapper" class="search-filters-wrapper collapsed">
+      <div class="container">
+        <form method="get" action="/" class="search-form">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by artist, genre, album…"
+            value="{{ query or '' }}"
+            autocomplete="off"
+          >
+          <button type="submit">Search</button>
+        </form>
+      </div>
+      
+      <!-- Genre Filters -->
+      <div class="container">
+        <div class="filter-bar">
         <div class="filter-section">
           <label>View:</label>
           <a href="/?view=all{% if query %}&q={{ query }}{% endif %}{% if genre_filter %}&genre={{ genre_filter }}{% endif %}" 
@@ -120,6 +126,7 @@
           <button id="toggle-infinite-scroll" class="filter-btn">Infinite Scroll</button>
         </div>
       </div>
+    </div>
     </div>
   </header>
 

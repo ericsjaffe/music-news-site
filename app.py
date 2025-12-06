@@ -715,7 +715,7 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     return data.get("releases", [])
 
 
-def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None, radius: int = 50):
+def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None, radius: int = 50, sort: str = "date,asc"):
     """
     Fetch upcoming tour dates from Ticketmaster Discovery API.
     Returns list of tour date dicts.
@@ -730,7 +730,7 @@ def get_artist_tour_dates(artist_name: str, limit: int = 50, latlong: str = None
         "apikey": api_key,
         "classificationName": "Music",
         "size": min(limit, 200),
-        "sort": "date,asc"
+        "sort": sort
     }
     
     # Add keyword if provided
@@ -1365,17 +1365,22 @@ def touring():
                 error = f"No upcoming tour dates found for '{artist_query}'"
         else:
             # Fetch different categories for carousels
-            all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius)
+            # Popular events - use relevance sorting to get most popular/trending events
+            popular_events = get_artist_tour_dates('concert', limit=12, latlong=latlong, radius=radius, sort="relevance,desc")
+            
+            # Get all events for other carousels (sorted by date)
+            all_events = get_artist_tour_dates('concert', limit=200, latlong=latlong, radius=radius, sort="date,asc")
             
             if all_events:
-                # Popular events - first 12
-                popular_events = all_events[:12]
+                # Just announced - events sorted by on-sale date (most recent first)
+                announced_events = get_artist_tour_dates('concert', limit=24, latlong=latlong, radius=radius, sort="onsale,desc")
+                just_announced = announced_events[:12] if announced_events else all_events[:12]
                 
-                # Just announced - events with recent on-sale dates (simulate with first batch)
-                just_announced = all_events[12:24] if len(all_events) > 12 else []
-                
-                # Selling fast - events with higher popularity (simulate with next batch)
-                selling_fast = all_events[24:36] if len(all_events) > 24 else []
+                # Selling fast - use random sampling from popular events to simulate demand
+                if len(all_events) >= 36:
+                    selling_fast = all_events[12:24]
+                else:
+                    selling_fast = all_events[12:min(24, len(all_events))]
                 
                 # Get nearby venues (unique venues from all events)
                 venue_dict = {}

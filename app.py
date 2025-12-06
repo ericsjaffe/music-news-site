@@ -375,13 +375,6 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
 
 
-@app.route("/robots.txt")
-def robots():
-    """Serve robots.txt for search engines."""
-    from flask import send_from_directory
-    return send_from_directory("static", "robots.txt", mimetype="text/plain")
-
-
 @app.route("/sitemap.xml")
 def sitemap():
     """Generate dynamic sitemap.xml with all pages."""

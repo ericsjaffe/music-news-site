@@ -1,39 +1,41 @@
-<div class="event-card-carousel venue-card">
-  <a href="/venue/{{ venue.venue_id }}?name={{ venue.venue_name|urlencode }}&latlong={{ request.args.get('latlong', '') }}" class="event-card-link">
+<article class="event-card-carousel venue-card" itemscope itemtype="https://schema.org/MusicVenue">
+  <a href="/venue/{{ venue.venue_id }}?name={{ venue.venue_name|urlencode }}&latlong={{ request.args.get('latlong', '') }}" class="event-card-link" aria-label="View {{ venue.venue_name }} details">
     {% if venue.artist_image %}
-      <div class="event-image-carousel" style="background-image: url('{{ venue.artist_image }}');"></div>
+      <div class="event-image-carousel" style="background-image: url('{{ venue.artist_image }}');" role="img" aria-label="{{ venue.venue_name }} venue image"></div>
     {% else %}
-      <div class="event-image-carousel event-image-placeholder">
-        <span class="event-icon-large">🎭</span>
+      <div class="event-image-carousel event-image-placeholder" role="img" aria-label="Venue placeholder image">
+        <span class="event-icon-large" aria-hidden="true">🎭</span>
       </div>
     {% endif %}
     
     <!-- Venue Rating Badge -->
     {% set rating = (range(38, 50)|random) / 10.0 %}
-    <div class="venue-rating-badge">⭐ {{ "%.1f"|format(rating) }}</div>
+    <div class="venue-rating-badge" role="status" aria-label="Venue rating {{ '%.1f'|format(rating) }} stars">⭐ {{ "%.1f"|format(rating) }}</div>
     
     <div class="event-content-carousel">
       <div class="event-date-info">
         <span class="event-date-text">📍 Venue</span>
-        <span class="event-attendees">🎫 {{ venue.event_count }} events</span>
+        <span class="event-attendees" aria-label="{{ venue.event_count }} upcoming events">🎫 {{ venue.event_count }} events</span>
       </div>
       
-      <h4 class="event-title-carousel">{{ venue.venue_name }}</h4>
-      <p class="event-venue-carousel">{{ venue.city }}{% if venue.region %}, {{ venue.region }}{% endif %}</p>
+      <h4 class="event-title-carousel" itemprop="name">{{ venue.venue_name }}</h4>
+      <p class="event-venue-carousel" itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">
+        <span itemprop="addressLocality">{{ venue.city }}</span>{% if venue.region %}, <span itemprop="addressRegion">{{ venue.region }}</span>{% endif %}
+      </p>
       
       <!-- Venue Capacity -->
       {% set capacity_type = range(1, 4)|random %}
       {% if capacity_type == 1 %}
-        <p class="venue-capacity">🏟️ Large Venue (5,000+ capacity)</p>
+        <p class="venue-capacity" aria-label="Large venue with over 5000 capacity">🏟️ Large Venue (5,000+ capacity)</p>
       {% elif capacity_type == 2 %}
-        <p class="venue-capacity">🎪 Mid-size Venue (500-5,000 capacity)</p>
+        <p class="venue-capacity" aria-label="Mid-size venue with 500 to 5000 capacity">🎪 Mid-size Venue (500-5,000 capacity)</p>
       {% else %}
-        <p class="venue-capacity">🎵 Intimate Venue (up to 500 capacity)</p>
+        <p class="venue-capacity" aria-label="Intimate venue with up to 500 capacity">🎵 Intimate Venue (up to 500 capacity)</p>
       {% endif %}
       
       <div class="event-actions">
-        <button class="event-tickets-btn-carousel">View Events</button>
+        <button class="event-tickets-btn-carousel" aria-label="View all events at {{ venue.venue_name }}">View Events</button>
       </div>
     </div>
   </a>
-</div>
+</article>

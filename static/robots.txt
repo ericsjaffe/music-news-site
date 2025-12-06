@@ -1,3 +1,42 @@
+# Robots.txt for Music Hub
+# Allow all AI crawlers and search engines
+
 User-agent: *
 Allow: /
-Sitemap: https://peakops.club/sitemap.xml
+
+# Specific AI crawlers and bots
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# Sitemap location
+Sitemap: https://music-news-site.onrender.com/sitemap.xml
+
+# Crawl delay (be nice to servers)
+Crawl-delay: 1

@@ -2,25 +2,94 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Tours - Music Hub</title>
+  <title>{% if artist_query %}{{ artist_query }} Tour Dates & Concert Tickets{% elif venue_query %}{{ venue_query }} Events & Concert Schedule{% elif multi_artist %}Multi-Artist Concert Search Results{% else %}Concert Tour Dates & Live Music Events | Music Hub{% endif %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Discover upcoming tour dates and live concert shows from your favorite artists">
+  <meta name="description" content="{% if artist_query %}Find {{ artist_query }} tour dates, concert tickets, and live show information. Get tickets to upcoming performances near you.{% elif venue_query %}Browse all upcoming events at {{ venue_query }}. Find concert dates, ticket prices, and venue information.{% else %}Discover live music events and concert tour dates from top artists. Browse upcoming shows by genre, location, and date. Get tickets to concerts near you.{% endif %}">
+  <meta name="keywords" content="concert tickets, tour dates, live music, {{ artist_query if artist_query else 'music events' }}, concert venues, ticket prices, music festivals, live shows, upcoming concerts">
+  <meta name="author" content="Music Hub">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="theme-color" content="#ec4899">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://music-news-site.onrender.com/touring{% if artist_query %}?artist={{ artist_query|urlencode }}{% endif %}">
+  <meta property="og:title" content="{% if artist_query %}{{ artist_query }} Tour Dates{% else %}Concert Tours & Live Music Events{% endif %}">
+  <meta property="og:description" content="{% if artist_query %}Get tickets to {{ artist_query }} concerts and find tour dates near you.{% else %}Discover live music events, concert tour dates, and get tickets to upcoming shows.{% endif %}">
+  <meta property="og:image" content="https://music-news-site.onrender.com{{ url_for('static', filename='icon-512.png') }}">
+  <meta property="og:site_name" content="Music Hub">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://music-news-site.onrender.com/touring">
+  <meta name="twitter:title" content="{% if artist_query %}{{ artist_query }} Tour Dates{% else %}Concert Tours & Live Music{% endif %}">
+  <meta name="twitter:description" content="Find concert tickets and tour dates for live music events">
+  <meta name="twitter:image" content="https://music-news-site.onrender.com{{ url_for('static', filename='icon-512.png') }}">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://music-news-site.onrender.com/touring">
+  
+  <!-- PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Music Hub Tours">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icon-192.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icon-512.png') }}">
+  
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  
+  <!-- Structured Data / JSON-LD for Events -->
+  {% if tours and (artist_query or venue_query or multi_artist) %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EventSeries",
+    "name": "{% if artist_query %}{{ artist_query }} Concert Tour{% elif venue_query %}{{ venue_query }} Events{% else %}Music Concerts{% endif %}",
+    "description": "{% if artist_query %}Live concert tour dates and ticket information for {{ artist_query }}{% else %}Upcoming music events and live concerts{% endif %}",
+    "url": "https://music-news-site.onrender.com/touring{% if artist_query %}?artist={{ artist_query|urlencode }}{% endif %}",
+    "organizer": {
+      "@type": "Organization",
+      "name": "Music Hub",
+      "url": "https://music-news-site.onrender.com"
+    }
+  }
+  </script>
+  {% endif %}
+  
+  <!-- Structured Data for Website -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Music Hub Concert Tours",
+    "description": "Find concert tour dates, live music events, and ticket information for artists worldwide",
+    "url": "https://music-news-site.onrender.com/touring",
+    "applicationCategory": "EntertainmentApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": "Concert search, Tour dates, Ticket prices, Venue information, Artist following, Social sharing, Advanced search"
+  }
+  </script>
 </head>
-<body>
-  <header class="site-header">
+<body itemscope itemtype="https://schema.org/WebPage">
+  <header class="site-header" role="banner">
     <div class="container header-inner">
-      <h1>Music Hub</h1>
+      <h1 itemprop="name">Music Hub</h1>
       <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
       <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
     </div>
     
     <!-- Navigation Links (collapsible on mobile) -->
     <div id="mobile-nav-wrapper" class="mobile-nav-wrapper collapsed">
-      <nav class="nav-links">
+      <nav class="nav-links" role="navigation" aria-label="Main navigation">
         <a href="/">News</a>
         <a href="/releases">Releases</a>
         <a href="/touring" class="active">Tours</a>
@@ -31,13 +100,13 @@
     </div>
   </header>
 
-  <main class="container">
+  <main class="container tours-page" role="main" itemprop="mainContentOfPage">
     <!-- Market/Region Tabs -->
-    <div class="market-tabs">
-      <a href="/touring" class="market-tab {% if view_mode == 'local' or not view_mode %}active{% endif %}">
+    <div class="market-tabs" role="tablist" aria-label="Location filters">
+      <a href="/touring" class="market-tab {% if view_mode == 'local' or not view_mode %}active{% endif %}" role="tab" aria-selected="{% if view_mode == 'local' or not view_mode %}true{% else %}false{% endif %}">
         📍 Near You
       </a>
-      <a href="/touring?view=nationwide" class="market-tab {% if view_mode == 'nationwide' %}active{% endif %}">
+      <a href="/touring?view=nationwide" class="market-tab {% if view_mode == 'nationwide' %}active{% endif %}" role="tab" aria-selected="{% if view_mode == 'nationwide' %}true{% else %}false{% endif %}">
         🌎 Nationwide
       </a>
       <a href="/touring?location=New York, NY" class="market-tab">
@@ -120,7 +189,7 @@
     </div>
 
     <!-- Search Form at Top -->
-    <form method="get" action="/touring" class="tour-search-form-top">
+    <form method="get" action="/touring" class="tour-search-form-top" role="search" aria-label="Concert search">
       <div class="search-container-dual">
         <div class="search-input-wrapper">
           <input 
@@ -129,6 +198,7 @@
             placeholder="Search artists, concerts, venues..." 
             value="{{ artist_query or '' }}"
             class="tour-search-input"
+            aria-label="Search for artists, concerts, or venues"
           >
         </div>
         <div class="search-input-wrapper search-location">

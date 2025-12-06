@@ -1,74 +1,81 @@
-<div class="event-card-carousel">
-  <a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-link">
+<article class="event-card-carousel" itemscope itemtype="https://schema.org/MusicEvent">
+  <a href="{{ event.ticket_url }}" target="_blank" rel="noopener noreferrer" class="event-card-link" aria-label="View {{ event.event_name or event.artist }} concert details">
     {% if event.artist_image %}
-      <div class="event-image-carousel" style="background-image: url('{{ event.artist_image }}');"></div>
+      <div class="event-image-carousel" style="background-image: url('{{ event.artist_image }}');" role="img" aria-label="{{ event.artist }} concert image"></div>
     {% else %}
-      <div class="event-image-carousel event-image-placeholder">
-        <span class="event-icon-large">🎵</span>
+      <div class="event-image-carousel event-image-placeholder" role="img" aria-label="Concert placeholder image">
+        <span class="event-icon-large" aria-hidden="true">🎵</span>
       </div>
     {% endif %}
     
     <!-- Ticket Status Badge -->
     {% set random_status = range(1, 10)|random %}
     {% if random_status <= 3 %}
-      <div class="ticket-status-badge selling-fast">⚡ Selling Fast</div>
+      <div class="ticket-status-badge selling-fast" role="status" aria-label="Selling fast">⚡ Selling Fast</div>
     {% elif random_status <= 5 %}
-      <div class="ticket-status-badge few-left">🔥 Few Left</div>
+      <div class="ticket-status-badge few-left" role="status" aria-label="Few tickets left">🔥 Few Left</div>
     {% endif %}
     
     <!-- Follow Artist Button -->
     <button class="follow-artist-btn" 
             onclick="toggleFollowArtist(event, '{{ event.artist|replace("'", "\\'") }}'); return false;" 
             data-artist="{{ event.artist }}"
-            title="Follow Artist">
-      <span class="follow-icon">♡</span>
+            title="Follow {{ event.artist }}"
+            aria-label="Follow {{ event.artist }}">
+      <span class="follow-icon" aria-hidden="true">♡</span>
     </button>
     
     <div class="event-content-carousel">
       <div class="event-date-info">
-        <span class="event-date-text">
+        <time class="event-date-text" datetime="{{ event.datetime }}" itemprop="startDate">
           {% if event.datetime %}
             {{ event.datetime[5:7]|replace('01', 'Jan')|replace('02', 'Feb')|replace('03', 'Mar')|replace('04', 'Apr')|replace('05', 'May')|replace('06', 'Jun')|replace('07', 'Jul')|replace('08', 'Aug')|replace('09', 'Sep')|replace('10', 'Oct')|replace('11', 'Nov')|replace('12', 'Dec') }} {{ event.datetime[8:10] }}
           {% else %}
             TBA
           {% endif %}
-        </span>
-        <span class="event-attendees">👥 {{ range(100, 999)|random }}</span>
+        </time>
+        <span class="event-attendees" aria-label="Expected attendees">👥 {{ range(100, 999)|random }}</span>
       </div>
       
-      <h4 class="event-title-carousel">{{ event.event_name or event.artist }}</h4>
-      <p class="event-venue-carousel">{{ event.venue_name }}</p>
-      <p class="event-location-carousel">{{ event.city }}{% if event.region %}, {{ event.region }}{% endif %}</p>
+      <h4 class="event-title-carousel" itemprop="name">{{ event.event_name or event.artist }}</h4>
+      <p class="event-venue-carousel" itemprop="location" itemscope itemtype="https://schema.org/Place">
+        <span itemprop="name">{{ event.venue_name }}</span>
+      </p>
+      <p class="event-location-carousel" itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">
+        <span itemprop="addressLocality">{{ event.city }}</span>{% if event.region %}, <span itemprop="addressRegion">{{ event.region }}</span>{% endif %}
+      </p>
       
       {% if event.price_range %}
-        <p class="event-price">{{ event.price_range }}</p>
+        <p class="event-price" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+          <span itemprop="price">{{ event.price_range }}</span>
+        </p>
       {% endif %}
       
-      <div class="event-actions">
-        <button class="event-tickets-btn-carousel">Get Tickets</button>
-        <button class="event-calendar-btn" onclick="addToCalendar(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.venue_name|replace("'", "\\'") }}', '{{ event.datetime }}', '{{ event.ticket_url }}'); return false;" title="Add to Calendar">
-          📅
+      <div class="event-actions" role="group" aria-label="Event actions">
+        <button class="event-tickets-btn-carousel" aria-label="Get tickets for {{ event.event_name or event.artist }}">Get Tickets</button>
+        <button class="event-calendar-btn" onclick="addToCalendar(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.venue_name|replace("'", "\\'") }}', '{{ event.datetime }}', '{{ event.ticket_url }}'); return false;" title="Add {{ event.event_name or event.artist }} to calendar" aria-label="Add to calendar">
+          <span aria-hidden="true">📅</span>
         </button>
-        <button class="event-share-btn" onclick="toggleShareMenu(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;" title="Share Event">
-          🔗
+        <button class="event-share-btn" onclick="toggleShareMenu(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;" title="Share {{ event.event_name or event.artist }}" aria-label="Share event">
+          <span aria-hidden="true">🔗</span>
         </button>
       </div>
       
       <!-- Share Menu (hidden by default) -->
-      <div class="share-menu" style="display: none;">
-        <button class="share-option" onclick="shareOnFacebook(event, '{{ event.ticket_url }}'); return false;">
-          <span class="share-icon">📘</span> Facebook
+      <div class="share-menu" style="display: none;" role="menu" aria-label="Share options">
+        <button class="share-option" onclick="shareOnFacebook(event, '{{ event.ticket_url }}'); return false;" role="menuitem">
+          <span class="share-icon" aria-hidden="true">📘</span> Facebook
         </button>
-        <button class="share-option" onclick="shareOnTwitter(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;">
-          <span class="share-icon">🐦</span> Twitter
+        <button class="share-option" onclick="shareOnTwitter(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;" role="menuitem">
+          <span class="share-icon" aria-hidden="true">🐦</span> Twitter
         </button>
-        <button class="share-option" onclick="shareOnWhatsApp(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;">
-          <span class="share-icon">💬</span> WhatsApp
+        <button class="share-option" onclick="shareOnWhatsApp(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;" role="menuitem">
+          <span class="share-icon" aria-hidden="true">💬</span> WhatsApp
         </button>
-        <button class="share-option" onclick="copyEventLink(event, '{{ event.ticket_url }}'); return false;">
-          <span class="share-icon">📋</span> Copy Link
+        <button class="share-option" onclick="copyEventLink(event, '{{ event.ticket_url }}'); return false;" role="menuitem">
+          <span class="share-icon" aria-hidden="true">📋</span> Copy Link
         </button>
       </div>
     </div>
   </a>
-</div>
+</article>

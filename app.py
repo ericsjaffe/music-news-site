@@ -757,8 +757,8 @@ def releases():
     mm_dd = today.strftime("%m-%d")
     artist_filter = ""
     
-    # Auto-load results on first visit (GET request) - only if no artist filter
-    should_fetch = request.method == "GET"
+    # Don't auto-load results on first visit - wait for user to submit
+    should_fetch = False
 
     if request.method == "POST":
         # Get form values
@@ -830,24 +830,33 @@ def releases():
         # If artist filter is provided, search by artist instead of date
         if artist_filter:
             results = []
-            # Search by artist across the year range
-            for year in range(end_year, start_year - 1, -1):
-                try:
-                    releases = search_releases_by_artist(artist_filter, year=year, limit=100)
-                except (requests.HTTPError, requests.ConnectionError, ConnectionResetError) as e:
-                    print(f"Skipping year {year} due to connection issue: {e}")
-                    continue
-                except Exception as e:
-                    print(f"Skipping year {year} due to error: {e}")
-                    continue
-
+            # Search by artist - get all releases without year filtering first
+            try:
+                # Get more results for artist search
+                releases = search_releases_by_artist(artist_filter, year=None, limit=500)
+                
                 for r in releases:
                     title = r.get("title")
                     date = r.get("date")
+                    
+                    # Extract year from release date
+                    release_year = None
+                    if date:
+                        try:
+                            if len(date) >= 4:
+                                release_year = int(date[:4])
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Skip if no year or outside the requested range
+                    if not release_year or release_year < start_year or release_year > end_year:
+                        continue
+                    
                     artist = None
                     ac = r.get("artist-credit") or []
                     if ac and isinstance(ac, list) and "name" in ac[0]:
                         artist = ac[0]["name"]
+                    
                     mbid = r.get("id")
                     url = f"/release/{mbid}" if mbid else None
                     
@@ -858,7 +867,7 @@ def releases():
 
                     results.append(
                         type("Release", (object,), {
-                            "year": year,
+                            "year": release_year,
                             "title": title,
                             "artist": artist,
                             "date": date,
@@ -866,8 +875,11 @@ def releases():
                             "cover_art": cover_art,
                         })
                     )
-
-                time.sleep(0.1)
+                
+            except (requests.HTTPError, requests.ConnectionError, ConnectionResetError) as e:
+                error = f"Failed to search for artist: {e}"
+            except Exception as e:
+                error = f"Error searching for artist: {e}"
         
         # Search by date if provided and no artist filter
         elif mm_dd:

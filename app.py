@@ -6,7 +6,7 @@ from html import unescape
 from datetime import datetime
 from typing import List, Dict, Any
 from urllib.parse import quote_plus
-from flask import Flask, render_template, request, make_response
+from flask import Flask, render_template, request, make_response, jsonify
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
@@ -1394,6 +1394,53 @@ def artist_page(artist_name):
     )
 
 
+@app.route("/api/artist-events")
+def api_artist_events():
+    """API endpoint to fetch events for a specific artist."""
+    artist = request.args.get('artist', '').strip()
+    
+    if not artist:
+        return jsonify({'error': 'Artist name required'}), 400
+    
+    try:
+        # Fetch events for this artist (no location filter for followed artists)
+        events = get_artist_tour_dates(
+            artist_name=artist,
+            limit=10,
+            latlong=None,
+            radius=None,
+            sort='date,asc'
+        )
+        
+        return jsonify({'events': events})
+    except Exception as e:
+        print(f"Error fetching artist events: {str(e)}")
+        return jsonify({'error': 'Failed to fetch events'}), 500
+
+
+@app.route("/api/recommended-events")
+def api_recommended_events():
+    """API endpoint to fetch recommended events."""
+    limit = request.args.get('limit', '20')
+    latlong = request.args.get('latlong', '').strip()
+    radius = request.args.get('radius', '50').strip()
+    
+    try:
+        # Fetch trending/popular events
+        events = get_artist_tour_dates(
+            artist_name='',  # Empty to get general events
+            limit=int(limit),
+            latlong=latlong if latlong else None,
+            radius=radius if latlong else None,
+            sort='relevance,desc'
+        )
+        
+        return jsonify({'events': events})
+    except Exception as e:
+        print(f"Error fetching recommended events: {str(e)}")
+        return jsonify({'error': 'Failed to fetch recommendations'}), 500
+
+
 @app.route("/touring")
 def touring():
     """Touring page with concert tour data from Ticketmaster API."""
@@ -1407,6 +1454,11 @@ def touring():
     genre_filter = request.args.get('genre', '').strip()
     date_filter = request.args.get('date_range', '').strip()
     price_filter = request.args.get('price', '').strip()
+    
+    # Advanced search parameters
+    multi_artist = request.args.get('multi_artist', '').strip()
+    venue_query = request.args.get('venue', '').strip()
+    festival_only = request.args.get('festival_only', '').strip() == 'true'
     
     tours = []
     trending_now = []
@@ -1527,7 +1579,91 @@ def touring():
                 price_min = 200
                 price_max = 10000
             
-        if artist_query:
+        if multi_artist:
+            # Multi-artist search
+            artists = [a.strip() for a in multi_artist.split('\n') if a.strip()]
+            all_tours = []
+            for artist in artists[:10]:  # Limit to 10 artists
+                artist_tours = get_artist_tour_dates(artist, limit=20, latlong=latlong, radius=radius, genre_id=genre_id, start_date=start_date, end_date=end_date)
+                all_tours.extend(artist_tours)
+            
+            # Remove duplicates based on event URL
+            seen_urls = set()
+            tours = []
+            for event in all_tours:
+                if event['ticket_url'] not in seen_urls:
+                    seen_urls.add(event['ticket_url'])
+                    tours.append(event)
+            
+            # Sort by date
+            tours.sort(key=lambda x: x.get('datetime', '9999-12-31'))
+            
+            # Apply price filter
+            if price_min is not None or price_max is not None:
+                tours = filter_by_price(tours, price_min, price_max)
+            
+            if not tours:
+                error = f"No upcoming events found for the selected artists"
+                
+        elif venue_query:
+            # Venue-specific search
+            # Ticketmaster API: search by venue name using keyword parameter
+            try:
+                url = f"https://app.ticketmaster.com/discovery/v2/events.json"
+                params = {
+                    'apikey': TICKETMASTER_API_KEY,
+                    'keyword': venue_query,
+                    'size': 50,
+                    'sort': 'date,asc'
+                }
+                
+                if latlong:
+                    params['latlong'] = latlong
+                    params['radius'] = radius
+                
+                if genre_id:
+                    params['genreId'] = genre_id
+                
+                if start_date:
+                    params['startDateTime'] = start_date
+                if end_date:
+                    params['endDateTime'] = end_date
+                
+                response = requests.get(url, params=params, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if '_embedded' in data and 'events' in data['_embedded']:
+                        events = data['_embedded']['events']
+                        
+                        for event in events:
+                            # Filter to only include events at venues matching the query
+                            venue_name = event.get('_embedded', {}).get('venues', [{}])[0].get('name', '')
+                            if venue_query.lower() in venue_name.lower():
+                                event_info = {
+                                    'event_name': event.get('name', 'Unknown Event'),
+                                    'artist': event.get('_embedded', {}).get('attractions', [{}])[0].get('name', 'Various Artists') if event.get('_embedded', {}).get('attractions') else 'Various Artists',
+                                    'venue_name': venue_name,
+                                    'city': event.get('_embedded', {}).get('venues', [{}])[0].get('city', {}).get('name', 'Unknown'),
+                                    'region': event.get('_embedded', {}).get('venues', [{}])[0].get('state', {}).get('stateCode', ''),
+                                    'ticket_url': event.get('url', '#'),
+                                    'datetime': event.get('dates', {}).get('start', {}).get('dateTime', ''),
+                                    'artist_image': event.get('images', [{}])[0].get('url', '') if event.get('images') else '',
+                                    'price_range': f"${event.get('priceRanges', [{}])[0].get('min', 'N/A')} - ${event.get('priceRanges', [{}])[0].get('max', 'N/A')}" if event.get('priceRanges') else None
+                                }
+                                tours.append(event_info)
+                
+                # Apply price filter
+                if price_min is not None or price_max is not None:
+                    tours = filter_by_price(tours, price_min, price_max)
+                
+                if not tours:
+                    error = f"No upcoming events found at '{venue_query}'"
+            except Exception as e:
+                print(f"Error fetching venue events: {str(e)}")
+                error = "Failed to fetch venue events"
+                
+        elif artist_query:
             # Search for specific artist
             tours = get_artist_tour_dates(artist_query, limit=50, latlong=latlong, radius=radius, genre_id=genre_id, start_date=start_date, end_date=end_date, price_min=price_min, price_max=price_max)
             
@@ -1616,6 +1752,9 @@ def touring():
         genre_filter=genre_filter,
         date_filter=date_filter,
         price_filter=price_filter,
+        multi_artist=multi_artist,
+        venue_query=venue_query,
+        festival_only=festival_only,
         error=error
     )
 

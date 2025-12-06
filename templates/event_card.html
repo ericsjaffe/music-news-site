@@ -16,6 +16,14 @@
       <div class="ticket-status-badge few-left">🔥 Few Left</div>
     {% endif %}
     
+    <!-- Follow Artist Button -->
+    <button class="follow-artist-btn" 
+            onclick="toggleFollowArtist(event, '{{ event.artist|replace("'", "\\'") }}'); return false;" 
+            data-artist="{{ event.artist }}"
+            title="Follow Artist">
+      <span class="follow-icon">♡</span>
+    </button>
+    
     <div class="event-content-carousel">
       <div class="event-date-info">
         <span class="event-date-text">
@@ -40,6 +48,25 @@
         <button class="event-tickets-btn-carousel">Get Tickets</button>
         <button class="event-calendar-btn" onclick="addToCalendar(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.venue_name|replace("'", "\\'") }}', '{{ event.datetime }}', '{{ event.ticket_url }}'); return false;" title="Add to Calendar">
           📅
+        </button>
+        <button class="event-share-btn" onclick="toggleShareMenu(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;" title="Share Event">
+          🔗
+        </button>
+      </div>
+      
+      <!-- Share Menu (hidden by default) -->
+      <div class="share-menu" style="display: none;">
+        <button class="share-option" onclick="shareOnFacebook(event, '{{ event.ticket_url }}'); return false;">
+          <span class="share-icon">📘</span> Facebook
+        </button>
+        <button class="share-option" onclick="shareOnTwitter(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;">
+          <span class="share-icon">🐦</span> Twitter
+        </button>
+        <button class="share-option" onclick="shareOnWhatsApp(event, '{{ event.event_name|replace("'", "\\'") }}', '{{ event.ticket_url }}'); return false;">
+          <span class="share-icon">💬</span> WhatsApp
+        </button>
+        <button class="share-option" onclick="copyEventLink(event, '{{ event.ticket_url }}'); return false;">
+          <span class="share-icon">📋</span> Copy Link
         </button>
       </div>
     </div>

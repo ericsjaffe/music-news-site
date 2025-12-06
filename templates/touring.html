@@ -147,12 +147,80 @@
           </svg>
         </button>
       </div>
+      <button type="button" class="advanced-search-toggle" onclick="toggleAdvancedSearch()">
+        Advanced Search
+      </button>
     </form>
 
-    {% if artist_query %}
-      <!-- Artist Search Results -->
+    <!-- Advanced Search Modal -->
+    <div id="advanced-search-modal" class="advanced-search-modal" style="display: none;">
+      <div class="advanced-search-content">
+        <div class="advanced-search-header">
+          <h3>Advanced Search</h3>
+          <button class="close-advanced-search" onclick="toggleAdvancedSearch()">✕</button>
+        </div>
+        <form action="/touring" method="get" class="advanced-search-form">
+          <div class="advanced-search-field">
+            <label for="multi-artist">Artists (one per line):</label>
+            <textarea 
+              id="multi-artist" 
+              name="multi_artist" 
+              rows="5" 
+              placeholder="e.g.,&#10;Taylor Swift&#10;Beyoncé&#10;Ed Sheeran"
+            >{{ multi_artist or '' }}</textarea>
+            <small>Search for multiple artists at once</small>
+          </div>
+          
+          <div class="advanced-search-field">
+            <label for="venue-search">Venue Name:</label>
+            <input 
+              type="text" 
+              id="venue-search" 
+              name="venue" 
+              value="{{ venue_query or '' }}"
+              placeholder="e.g., Madison Square Garden"
+            >
+            <small>Search for events at a specific venue</small>
+          </div>
+          
+          <div class="advanced-search-field">
+            <label for="location-advanced">Location:</label>
+            <input 
+              type="text" 
+              id="location-advanced" 
+              name="location" 
+              value="{{ location_query or '' }}"
+              placeholder="City or ZIP code"
+            >
+          </div>
+          
+          <div class="advanced-search-checkboxes">
+            <label>
+              <input type="checkbox" name="festival_only" value="true" {{ 'checked' if festival_only }}>
+              Festivals Only
+            </label>
+          </div>
+          
+          <div class="advanced-search-actions">
+            <button type="submit" class="advanced-search-btn">Search</button>
+            <button type="button" class="advanced-search-cancel" onclick="toggleAdvancedSearch()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if artist_query or multi_artist or venue_query %}
+      <!-- Search Results -->
       <div class="tours-header">
-        <h2>{{ artist_query }}</h2>
+        <h2>
+          {% if multi_artist %}
+            Multi-Artist Search
+          {% elif venue_query %}
+            {{ venue_query }}
+          {% else %}
+            {{ artist_query }}
+          {% endif %}
+        </h2>
         <a href="/touring" class="clear-search-link-header">← View all events</a>
       </div>
 
@@ -195,6 +263,44 @@
           <p class="error-hint">Try again or check your connection.</p>
         </div>
       {% endif %}
+
+      <!-- Your Artists Carousel (populated via JavaScript) -->
+      <section class="carousel-section" id="your-artists-section" style="display: none;">
+        <div class="carousel-header">
+          <h3 class="carousel-title">⭐ Your Artists</h3>
+          <div class="carousel-controls">
+            <button class="carousel-btn carousel-prev" data-carousel="your-artists">‹</button>
+            <button class="carousel-btn carousel-next" data-carousel="your-artists">›</button>
+          </div>
+        </div>
+        <div class="carousel-container" id="carousel-your-artists">
+          <div class="carousel-track">
+            <!-- Events will be dynamically loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Recommended for You Carousel (populated via JavaScript) -->
+      <section class="carousel-section" id="recommended-section" style="display: none;">
+        <div class="carousel-header">
+          <h3 class="carousel-title">💎 Recommended for You</h3>
+          <div class="carousel-controls">
+            <button class="carousel-btn carousel-prev" data-carousel="recommended">‹</button>
+            <button class="carousel-btn carousel-next" data-carousel="recommended">›</button>
+          </div>
+        </div>
+        <div class="carousel-container" id="carousel-recommended">
+          <div class="carousel-track">
+            <!-- Events will be dynamically loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 1. Trending Now Carousel -->
+      {% if trending_now %}
+          </div>
+        </div>
+      </section>
 
       <!-- 1. Trending Now Carousel -->
       {% if trending_now %}
@@ -658,6 +764,194 @@
       height: 20px;
     }
 
+    /* Advanced Search Toggle */
+    .advanced-search-toggle {
+      margin-top: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .advanced-search-toggle:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: var(--accent-primary);
+    }
+
+    /* Advanced Search Modal */
+    .advanced-search-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .advanced-search-content {
+      background: var(--bg-card);
+      border-radius: 1rem;
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.3);
+      border: 2px solid var(--border-color);
+    }
+
+    .advanced-search-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .advanced-search-header h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .close-advanced-search {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-radius: 50%;
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-advanced-search:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .advanced-search-form {
+      padding: 1.5rem;
+    }
+
+    .advanced-search-field {
+      margin-bottom: 1.5rem;
+    }
+
+    .advanced-search-field label {
+      display: block;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .advanced-search-field input,
+    .advanced-search-field textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .advanced-search-field input:focus,
+    .advanced-search-field textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      background: var(--bg-primary);
+    }
+
+    .advanced-search-field small {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .advanced-search-checkboxes {
+      margin-bottom: 1.5rem;
+    }
+
+    .advanced-search-checkboxes label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .advanced-search-checkboxes input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .advanced-search-actions {
+      display: flex;
+      gap: 0.75rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .advanced-search-btn {
+      flex: 1;
+      padding: 0.85rem;
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .advanced-search-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .advanced-search-cancel {
+      flex: 1;
+      padding: 0.85rem;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .advanced-search-cancel:hover {
+      background: var(--bg-primary);
+      border-color: var(--accent-primary);
+    }
+
     /* Old search styles for backwards compatibility */
     .search-container {
       position: relative;
@@ -1093,6 +1387,47 @@
       color: white;
     }
 
+    /* Follow Artist Button */
+    .follow-artist-btn {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .follow-artist-btn:hover {
+      transform: scale(1.1);
+      background: rgba(0, 0, 0, 0.7);
+      border-color: var(--accent-primary);
+    }
+
+    .follow-artist-btn.following {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .follow-artist-btn.following .follow-icon {
+      color: white;
+    }
+
+    .follow-icon {
+      transition: all 0.2s;
+    }
+
     .venue-rating-badge {
       position: absolute;
       top: 0.75rem;
@@ -1231,6 +1566,70 @@
       background: var(--accent-primary);
       border-color: var(--accent-primary);
       transform: scale(1.05);
+    }
+
+    .event-share-btn {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-radius: 0.5rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .event-share-btn:hover {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      transform: scale(1.05);
+    }
+
+    /* Share Menu */
+    .share-menu {
+      position: absolute;
+      bottom: 60px;
+      right: 0;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 0.75rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      padding: 0.5rem;
+      z-index: 1000;
+      min-width: 180px;
+      backdrop-filter: blur(10px);
+    }
+
+    .share-option {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 0.5rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .share-option:hover {
+      background: var(--bg-secondary);
+      color: var(--accent-primary);
+    }
+
+    .share-icon {
+      font-size: 1.1rem;
     }
 
     /* Mobile Responsive */
@@ -1408,6 +1807,159 @@
   </style>
 
   <script>
+    // Artist Following System with localStorage
+    function getFollowedArtists() {
+      const stored = localStorage.getItem('followedArtists');
+      return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveFollowedArtists(artists) {
+      localStorage.setItem('followedArtists', JSON.stringify(artists));
+    }
+
+    function isFollowingArtist(artistName) {
+      const followed = getFollowedArtists();
+      return followed.includes(artistName);
+    }
+
+    function toggleFollowArtist(event, artistName) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const button = event.currentTarget;
+      const followed = getFollowedArtists();
+      const index = followed.indexOf(artistName);
+      
+      if (index > -1) {
+        // Unfollow
+        followed.splice(index, 1);
+        button.classList.remove('following');
+        button.querySelector('.follow-icon').textContent = '♡';
+        button.title = 'Follow Artist';
+      } else {
+        // Follow
+        followed.push(artistName);
+        button.classList.add('following');
+        button.querySelector('.follow-icon').textContent = '♥';
+        button.title = 'Unfollow Artist';
+      }
+      
+      saveFollowedArtists(followed);
+    }
+
+    // Initialize follow button states on page load
+    function initializeFollowButtons() {
+      const followButtons = document.querySelectorAll('.follow-artist-btn');
+      followButtons.forEach(button => {
+        const artistName = button.dataset.artist;
+        if (isFollowingArtist(artistName)) {
+          button.classList.add('following');
+          button.querySelector('.follow-icon').textContent = '♥';
+          button.title = 'Unfollow Artist';
+        }
+      });
+    }
+
+    // Social Sharing Functions
+    function toggleShareMenu(event, eventName, ticketUrl) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const shareBtn = event.currentTarget;
+      const eventCard = shareBtn.closest('.event-card-carousel');
+      const shareMenu = eventCard.querySelector('.share-menu');
+      
+      // Close all other share menus
+      document.querySelectorAll('.share-menu').forEach(menu => {
+        if (menu !== shareMenu) {
+          menu.style.display = 'none';
+        }
+      });
+      
+      // Toggle this menu
+      shareMenu.style.display = shareMenu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function shareOnFacebook(event, url) {
+      event.preventDefault();
+      event.stopPropagation();
+      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+      window.open(facebookUrl, '_blank', 'width=600,height=400');
+      hideShareMenus();
+    }
+
+    function shareOnTwitter(event, eventName, url) {
+      event.preventDefault();
+      event.stopPropagation();
+      const text = `Check out ${eventName}! 🎵`;
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+      window.open(twitterUrl, '_blank', 'width=600,height=400');
+      hideShareMenus();
+    }
+
+    function shareOnWhatsApp(event, eventName, url) {
+      event.preventDefault();
+      event.stopPropagation();
+      const text = `Check out ${eventName}! 🎵 ${url}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(whatsappUrl, '_blank');
+      hideShareMenus();
+    }
+
+    function copyEventLink(event, url) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="share-icon">✓</span> Copied!';
+        btn.style.color = 'var(--accent-primary)';
+        
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.style.color = '';
+          hideShareMenus();
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy link:', err);
+        alert('Failed to copy link. Please try again.');
+      });
+    }
+
+    function hideShareMenus() {
+      document.querySelectorAll('.share-menu').forEach(menu => {
+        menu.style.display = 'none';
+      });
+    }
+
+    // Close share menus when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.event-share-btn') && !e.target.closest('.share-menu')) {
+        hideShareMenus();
+      }
+    });
+
+    // Advanced Search Modal
+    function toggleAdvancedSearch() {
+      const modal = document.getElementById('advanced-search-modal');
+      if (modal.style.display === 'none') {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      } else {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Close advanced search modal when clicking outside
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('advanced-search-modal');
+      if (e.target === modal) {
+        toggleAdvancedSearch();
+      }
+    });
+
     // Add to Calendar function
     function addToCalendar(e, eventName, venueName, dateTime, ticketUrl) {
       e.preventDefault();
@@ -1443,6 +1995,9 @@
 
     // Geolocation functionality to show concerts near user
     document.addEventListener('DOMContentLoaded', function() {
+      // Initialize follow button states
+      initializeFollowButtons();
+      
       // Check if we already have location or if user searched for specific location
       const urlParams = new URLSearchParams(window.location.search);
       const hasLocation = urlParams.has('latlong') || urlParams.has('location');
@@ -1659,7 +2214,210 @@
       
       // Initialize carousels after DOM is ready
       initCarousels();
+      
+      // Load Your Artists carousel
+      loadYourArtistsCarousel();
+      
+      // Load Recommended for You carousel
+      loadRecommendedCarousel();
     });
+
+    // Load events from followed artists
+    async function loadYourArtistsCarousel() {
+      const followedArtists = getFollowedArtists();
+      
+      if (followedArtists.length === 0) {
+        // Hide the carousel if no artists followed
+        document.getElementById('your-artists-section').style.display = 'none';
+        return;
+      }
+      
+      // Show the carousel
+      document.getElementById('your-artists-section').style.display = 'block';
+      
+      // Fetch events for followed artists
+      const track = document.querySelector('#carousel-your-artists .carousel-track');
+      track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">Loading your artists...</div>';
+      
+      try {
+        // Fetch events for each artist and combine
+        const allEvents = [];
+        for (const artist of followedArtists.slice(0, 10)) { // Limit to 10 artists
+          const response = await fetch(`/api/artist-events?artist=${encodeURIComponent(artist)}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.events) {
+              allEvents.push(...data.events.slice(0, 5)); // Max 5 events per artist
+            }
+          }
+        }
+        
+        // Sort by date
+        allEvents.sort((a, b) => {
+          if (!a.datetime) return 1;
+          if (!b.datetime) return -1;
+          return new Date(a.datetime) - new Date(b.datetime);
+        });
+        
+        // Render events
+        if (allEvents.length > 0) {
+          track.innerHTML = allEvents.map(event => renderEventCard(event)).join('');
+          // Re-initialize follow buttons for the new cards
+          initializeFollowButtons();
+          // Re-init carousel for this section
+          const container = document.getElementById('carousel-your-artists');
+          if (container) {
+            initCarousel(container, 'your-artists');
+          }
+        } else {
+          track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">No upcoming events found for your followed artists.</div>';
+        }
+      } catch (error) {
+        console.error('Error loading your artists events:', error);
+        track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">Unable to load events. Please try again later.</div>';
+      }
+    }
+
+    // Load recommended events based on user preferences
+    async function loadRecommendedCarousel() {
+      const followedArtists = getFollowedArtists();
+      
+      if (followedArtists.length === 0) {
+        // Hide the carousel if no preferences
+        document.getElementById('recommended-section').style.display = 'none';
+        return;
+      }
+      
+      // Show the carousel
+      document.getElementById('recommended-section').style.display = 'block';
+      
+      const track = document.querySelector('#carousel-recommended .carousel-track');
+      track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">Finding recommendations...</div>';
+      
+      try {
+        // Get the current location parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const latlong = urlParams.get('latlong') || '';
+        const radius = urlParams.get('radius') || '50';
+        
+        // Fetch trending events (similar to what you might like)
+        const params = new URLSearchParams({
+          limit: 30,
+          sort: 'relevance,desc'
+        });
+        
+        if (latlong) {
+          params.append('latlong', latlong);
+          params.append('radius', radius);
+        }
+        
+        // Use Ticketmaster API to get general popular events
+        const response = await fetch(`/api/recommended-events?${params.toString()}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.events && data.events.length > 0) {
+            // Filter out events from artists already followed
+            const recommendedEvents = data.events.filter(event => 
+              !followedArtists.includes(event.artist)
+            ).slice(0, 20);
+            
+            if (recommendedEvents.length > 0) {
+              track.innerHTML = recommendedEvents.map(event => renderEventCard(event)).join('');
+              initializeFollowButtons();
+              const container = document.getElementById('carousel-recommended');
+              if (container) {
+                initCarousel(container, 'recommended');
+              }
+            } else {
+              track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">No new recommendations at this time. Follow more artists to improve recommendations!</div>';
+            }
+          } else {
+            track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">No recommendations available right now.</div>';
+          }
+        } else {
+          track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">Unable to load recommendations.</div>';
+        }
+      } catch (error) {
+        console.error('Error loading recommendations:', error);
+        track.innerHTML = '<div style="padding: 2rem; text-align: center; width: 100%; color: var(--text-secondary);">Unable to load recommendations. Please try again later.</div>';
+      }
+    }
+
+    // Helper function to render an event card
+    function renderEventCard(event) {
+      const randomStatus = Math.floor(Math.random() * 10) + 1;
+      let statusBadge = '';
+      if (randomStatus <= 3) {
+        statusBadge = '<div class="ticket-status-badge selling-fast">⚡ Selling Fast</div>';
+      } else if (randomStatus <= 5) {
+        statusBadge = '<div class="ticket-status-badge few-left">🔥 Few Left</div>';
+      }
+      
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      let dateText = 'TBA';
+      if (event.datetime) {
+        const date = new Date(event.datetime);
+        dateText = monthNames[date.getMonth()] + ' ' + date.getDate();
+      }
+      
+      const attendees = Math.floor(Math.random() * 900) + 100;
+      const imageSrc = event.artist_image || '';
+      const imageHtml = imageSrc 
+        ? `<div class="event-image-carousel" style="background-image: url('${imageSrc}');"></div>`
+        : `<div class="event-image-carousel event-image-placeholder"><span class="event-icon-large">🎵</span></div>`;
+      
+      const priceHtml = event.price_range ? `<p class="event-price">${event.price_range}</p>` : '';
+      
+      return `
+        <div class="event-card-carousel">
+          <a href="${event.ticket_url}" target="_blank" rel="noopener noreferrer" class="event-card-link">
+            ${imageHtml}
+            ${statusBadge}
+            <button class="follow-artist-btn" 
+                    onclick="toggleFollowArtist(event, '${event.artist.replace(/'/g, "\\'")}'); return false;" 
+                    data-artist="${event.artist}"
+                    title="Follow Artist">
+              <span class="follow-icon">♡</span>
+            </button>
+            <div class="event-content-carousel">
+              <div class="event-date-info">
+                <span class="event-date-text">${dateText}</span>
+                <span class="event-attendees">👥 ${attendees}</span>
+              </div>
+              <h4 class="event-title-carousel">${event.event_name || event.artist}</h4>
+              <p class="event-venue-carousel">${event.venue_name}</p>
+              <p class="event-location-carousel">${event.city}${event.region ? ', ' + event.region : ''}</p>
+              ${priceHtml}
+              <div class="event-actions">
+                <button class="event-tickets-btn-carousel">Get Tickets</button>
+                <button class="event-calendar-btn" onclick="addToCalendar(event, '${(event.event_name || event.artist).replace(/'/g, "\\'")}', '${event.venue_name.replace(/'/g, "\\'")}', '${event.datetime}', '${event.ticket_url}'); return false;" title="Add to Calendar">
+                  📅
+                </button>
+                <button class="event-share-btn" onclick="toggleShareMenu(event, '${(event.event_name || event.artist).replace(/'/g, "\\'")}', '${event.ticket_url}'); return false;" title="Share Event">
+                  🔗
+                </button>
+              </div>
+              <div class="share-menu" style="display: none;">
+                <button class="share-option" onclick="shareOnFacebook(event, '${event.ticket_url}'); return false;">
+                  <span class="share-icon">📘</span> Facebook
+                </button>
+                <button class="share-option" onclick="shareOnTwitter(event, '${(event.event_name || event.artist).replace(/'/g, "\\'")}', '${event.ticket_url}'); return false;">
+                  <span class="share-icon">🐦</span> Twitter
+                </button>
+                <button class="share-option" onclick="shareOnWhatsApp(event, '${(event.event_name || event.artist).replace(/'/g, "\\'")}', '${event.ticket_url}'); return false;">
+                  <span class="share-icon">💬</span> WhatsApp
+                </button>
+                <button class="share-option" onclick="copyEventLink(event, '${event.ticket_url}'); return false;">
+                  <span class="share-icon">📋</span> Copy Link
+                </button>
+              </div>
+            </div>
+          </a>
+        </div>
+      `;
+    }
   </script>
 </body>
 </html>

@@ -213,7 +213,8 @@
                 <tr class="release-row">
                   <td class="cover-cell">
                     {% if r.cover_art %}
-                      <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="album-cover" onerror="this.style.display='none'">
+                      <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="album-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                      <div class="no-cover" style="display:none;">♪</div>
                     {% else %}
                       <div class="no-cover">♪</div>
                     {% endif %}
@@ -245,7 +246,8 @@
             <div class="release-card">
               <div class="release-card-cover">
                 {% if r.cover_art %}
-                  <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="card-album-cover" onerror="this.style.display='none'">
+                  <img src="{{ r.cover_art }}" alt="{{ r.title }}" class="card-album-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <div class="card-no-cover" style="display:none;">♪</div>
                 {% else %}
                   <div class="card-no-cover">♪</div>
                 {% endif %}

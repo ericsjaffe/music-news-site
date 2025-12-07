@@ -13,7 +13,10 @@
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <h1>Music Hub</h1>
+      <a href="/" class="site-logo-link" style="display: flex; align-items: center; gap: 0.5em; text-decoration: none;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Music Hub Logo" class="site-logo" style="height: 40px; width: auto; display: block;"/>
+        <span style="font-size: 2rem; font-weight: bold; color: inherit;">Music Hub</span>
+      </a>
       <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
       <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
     </div>

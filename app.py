@@ -349,8 +349,9 @@ def get_spotify_search_url(artist: str, track: str = "") -> str:
 
 def get_apple_music_search_url(artist: str, track: str = "") -> str:
     """Generate Apple Music search URL."""
+    from urllib.parse import quote
     query = f"{artist} {track}".strip()
-    return f"https://music.apple.com/us/search?term={quote_plus(query)}"
+    return f"https://music.apple.com/us/search?term={quote(query)}"
 
 
 def send_confirmation_email(email: str, token: str, base_url: str = None) -> bool:
@@ -1480,7 +1481,8 @@ def release_detail(mbid):
         primary_type = release_group.get("primary-type", "Album")
         
         # Build Spotify and Apple Music search links
-        search_query = f"{artist_name} {title}".replace(" ", "+")
+        # Use simple string replacement for consistency with template behavior
+        search_query = f"{artist_name} {title}".replace(" ", "%20")
         spotify_url = f"https://open.spotify.com/search/{search_query}"
         apple_music_url = f"https://music.apple.com/us/search?term={search_query}"
         
@@ -2004,8 +2006,89 @@ def videos():
 
 @app.route("/merch")
 def merch():
-    """Merch page - coming soon."""
-    return render_template("merch.html")
+    """Merch page with Printful products."""
+    try:
+        # Get Printful products
+        products = get_printful_products()
+        return render_template("merch.html", products=products)
+    except Exception as e:
+        print(f"Error fetching merch: {e}")
+        return render_template("merch.html", products=[], error=str(e))
+
+
+def get_printful_products():
+    """Fetch products from Printful Store API."""
+    # Printful Store API endpoint
+    # Note: You'll need to set PRINTFUL_STORE_ID in your environment
+    store_id = os.environ.get("PRINTFUL_STORE_ID", "")
+    
+    if not store_id:
+        # Return sample products for demo
+        return [
+            {
+                "id": 1,
+                "name": "Music Hub Classic T-Shirt",
+                "description": "Premium cotton t-shirt with Music Hub logo",
+                "price": "24.99",
+                "currency": "USD",
+                "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500",
+                "variants": ["S", "M", "L", "XL"],
+            },
+            {
+                "id": 2,
+                "name": "Music Lover Hoodie",
+                "description": "Cozy hoodie for true music fans",
+                "price": "44.99",
+                "currency": "USD",
+                "image": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500",
+                "variants": ["S", "M", "L", "XL"],
+            },
+            {
+                "id": 3,
+                "name": "Vinyl Enthusiast Poster",
+                "description": "High-quality print for your music room",
+                "price": "19.99",
+                "currency": "USD",
+                "image": "https://images.unsplash.com/photo-1594623930572-300a3011d9ae?w=500",
+                "variants": ["18x24", "24x36"],
+            },
+        ]
+    
+    try:
+        # Printful Store API uses store ID
+        api_url = f"https://api.printful.com/store/products"
+        headers = {
+            "Authorization": f"Bearer {os.environ.get('PRINTFUL_API_KEY', '')}",
+        }
+        
+        response = requests.get(api_url, headers=headers, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Transform Printful response to our format
+        products = []
+        for item in data.get("result", []):
+            sync_product = item.get("sync_product", {})
+            sync_variants = item.get("sync_variants", [])
+            
+            if sync_variants:
+                variant = sync_variants[0]
+                products.append({
+                    "id": sync_product.get("id"),
+                    "name": sync_product.get("name", ""),
+                    "description": sync_product.get("description", ""),
+                    "price": variant.get("retail_price", "0.00"),
+                    "currency": variant.get("currency", "USD"),
+                    "image": sync_product.get("thumbnail_url", ""),
+                    "variants": [v.get("name", "") for v in sync_variants],
+                    "url": sync_product.get("url", ""),
+                })
+        
+        return products
+    except Exception as e:
+        print(f"Printful API error: {e}")
+        # Return sample products on error
+        return []
 
 
 @app.route("/subscribe")

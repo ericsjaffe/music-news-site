@@ -2,18 +2,28 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Merch Store - Music Hub</title>
+  <title>Merch Store - Music Hub | Official Music Merchandise</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Shop official music merchandise">
+  <meta name="description" content="Shop official Music Hub merchandise - t-shirts, hoodies, posters and more. High quality music-themed apparel and collectibles.">
+  <meta name="keywords" content="music merch, band merchandise, music t-shirts, vinyl posters, music hoodies">
   <meta name="theme-color" content="#ec4899">
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://music-news-site.onrender.com/merch">
+  <meta property="og:title" content="Music Hub Merch Store">
+  <meta property="og:description" content="Shop official music merchandise and exclusive gear">
+  
+  <link rel="canonical" href="https://music-news-site.onrender.com/merch">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <h1>Music Hub</h1>
+      <h1><a href="/" style="color: inherit; text-decoration: none;">MUSIC HUB</a></h1>
       <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
       <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
     </div>
@@ -47,10 +57,69 @@
   </header>
 
   <main class="container">
+    <!-- Page Title -->
+    <div class="page-title-section">
+      <h2 class="page-title">Official Merch Store</h2>
+      <p class="page-subtitle">Premium music merchandise and exclusive gear</p>
+    </div>
+
+    {% if error %}
+    <div class="error-message" style="text-align: center; padding: 1rem; background: rgba(255,193,7,0.1); border-radius: 0.5rem; margin-bottom: 2rem;">
+      <p>⚠️ Unable to load products. Showing demo items.</p>
+    </div>
+    {% endif %}
+
+    {% if products %}
+    <!-- Product Grid -->
+    <div class="merch-grid">
+      {% for product in products %}
+      <div class="merch-card">
+        <div class="merch-image-wrapper">
+          <img src="{{ product.image }}" alt="{{ product.name }}" class="merch-image" loading="lazy">
+          <div class="merch-overlay">
+            <button class="btn-quick-view" onclick="viewProduct({{ product.id }})">
+              👁️ Quick View
+            </button>
+          </div>
+        </div>
+        
+        <div class="merch-info">
+          <h3 class="merch-name">{{ product.name }}</h3>
+          <p class="merch-description">{{ product.description }}</p>
+          
+          <div class="merch-footer">
+            <div class="merch-price">
+              <span class="price-amount">${{ product.price }}</span>
+              <span class="price-currency">{{ product.currency }}</span>
+            </div>
+            
+            <button class="btn-add-cart" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})">
+              🛒 Add to Cart
+            </button>
+          </div>
+          
+          {% if product.variants %}
+          <div class="merch-variants">
+            <span class="variants-label">Available:</span>
+            {% for variant in product.variants[:3] %}
+              <span class="variant-badge">{{ variant }}</span>
+            {% endfor %}
+            {% if product.variants|length > 3 %}
+              <span class="variant-badge">+{{ product.variants|length - 3 }} more</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    {% else %}
+    <!-- Coming Soon State -->
     <div class="coming-soon-container">
       <div class="coming-soon-icon">🛍️</div>
       <h2 class="coming-soon-title">Merch Store Coming Soon</h2>
-      <p class="coming-soon-subtitle">Your one-stop shop for official band merchandise and exclusive gear</p>
+      <p class="coming-soon-subtitle">We're working on bringing you awesome music merchandise</p>
       
       <div class="coming-soon-features">
         <div class="feature-item">
@@ -72,9 +141,218 @@
         <a href="/subscribe" class="cta-button">Subscribe to Newsletter</a>
       </div>
     </div>
+    {% endif %}
   </main>
 
+  <script>
+    // Simple cart functionality
+    let cart = [];
+
+    function addToCart(productId, name, price) {
+      cart.push({ id: productId, name: name, price: price });
+      showNotification(`Added ${name} to cart! 🛒`);
+      console.log('Cart:', cart);
+    }
+
+    function viewProduct(productId) {
+      showNotification('Product details coming soon!');
+      console.log('Viewing product:', productId);
+    }
+
+    function showNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'merch-notification';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => notification.classList.add('show'), 10);
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+  </script>
+
   <style>
+    .merch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+      padding-bottom: 3rem;
+    }
+
+    .merch-card {
+      background: var(--bg-card);
+      border-radius: 1rem;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .merch-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(236, 72, 153, 0.3);
+    }
+
+    .merch-image-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 100%;
+      overflow: hidden;
+      background: var(--bg-elevated);
+    }
+
+    .merch-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .merch-card:hover .merch-image {
+      transform: scale(1.05);
+    }
+
+    .merch-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .merch-card:hover .merch-overlay {
+      opacity: 1;
+    }
+
+    .btn-quick-view {
+      padding: 0.75rem 1.5rem;
+      background: white;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn-quick-view:hover {
+      transform: scale(1.05);
+    }
+
+    .merch-info {
+      padding: 1.5rem;
+    }
+
+    .merch-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .merch-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin: 0 0 1rem;
+      line-height: 1.5;
+    }
+
+    .merch-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .merch-price {
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+    }
+
+    .price-amount {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .price-currency {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .btn-add-cart {
+      padding: 0.625rem 1.25rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-add-cart:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4);
+    }
+
+    .merch-variants {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .variants-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .variant-badge {
+      padding: 0.25rem 0.625rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .merch-notification {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      border: 1px solid var(--accent-primary);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 9999;
+    }
+
+    .merch-notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
     .coming-soon-container {
       display: flex;
       flex-direction: column;
@@ -92,12 +370,8 @@
     }
 
     @keyframes float {
-      0%, 100% {
-        transform: translateY(0px);
-      }
-      50% {
-        transform: translateY(-20px);
-      }
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
     }
 
     .coming-soon-title {
@@ -172,7 +446,24 @@
       box-shadow: 0 12px 32px rgba(236, 72, 153, 0.6);
     }
 
+    @media (max-width: 768px) {
+      .merch-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .merch-notification {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+      }
+    }
+
     @media (max-width: 640px) {
+      .merch-grid {
+        grid-template-columns: 1fr;
+      }
+
       .coming-soon-icon {
         font-size: 5rem;
       }
@@ -185,17 +476,9 @@
         font-size: 1rem;
       }
 
-      .coming-soon-features {
-        gap: 1rem;
-      }
-
       .feature-item {
         min-width: 120px;
         padding: 1rem;
-      }
-
-      .feature-icon {
-        font-size: 2rem;
       }
     }
   </style>

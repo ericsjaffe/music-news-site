@@ -36,8 +36,9 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icon-192.png') }}">
-  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icon-512.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
   
   <!-- RSS Feed -->
   <link rel="alternate" type="application/rss+xml" title="Music Hub RSS Feed" href="/rss">
@@ -73,7 +74,10 @@
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <h1>Music Hub</h1>
+      <a href="/" class="site-logo-link" style="display: flex; align-items: center; gap: 0.5em; text-decoration: none;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Music Hub Logo" class="site-logo" style="height: 40px; width: auto; display: block;"/>
+        <span style="font-size: 2rem; font-weight: bold; color: inherit;">Music Hub</span>
+      </a>
       <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
       <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
     </div>
@@ -152,60 +156,35 @@
     {% else %}
       <section class="grid">
         {% for article in articles %}
-          <article class="card">
-            <button class="bookmark-btn" data-url="{{ article.url }}" title="Bookmark this article">☆</button>
-            <div class="card-image">
+          <article class="news-video-style-card">
+            <div class="news-card-thumbnail">
               <img
                 src="{{ article.image or url_for('static', filename='default-music.png') }}"
                 alt="{{ article.title }}"
                 loading="lazy"
                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='default-music.png') }}';"
               >
-            </div>
-
-            <div class="card-body">
-              <h2 class="card-title">
-                <a href="/article?url={{ article.url|urlencode }}">
-                  {{ article.title }}
-                </a>
-              </h2>
-
-              {% if article.artist %}
-                <p class="card-artist">
-                  <a href="/artist/{{ article.artist|urlencode }}" class="artist-link">🎤 {{ article.artist }}</a>
-                </p>
-              {% endif %}
-
               {% if article.published_at_human %}
-                <p class="card-meta">
-                  <span>{{ article.published_at_human }}</span>
-                  {% if article.genres %}
-                    <span class="genres">
-                      {% for genre in article.genres[:3] %}
-                        <span class="genre-tag">{{ genre }}</span>
-                      {% endfor %}
-                    </span>
-                  {% endif %}
-                </p>
+                <div class="news-date-badge">{{ article.published_at_human }}</div>
               {% endif %}
-
+            </div>
+            <div class="news-card-info">
+              <h3 class="news-card-title">{{ article.title }}</h3>
+              {% if article.artist %}
+                <p class="news-card-artist">🎤 {{ article.artist }}</p>
+              {% endif %}
+              {% if article.genres %}
+                <div class="news-card-genres">
+                  {% for genre in article.genres[:3] %}
+                    <span class="genre-tag">{{ genre }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
               {% if article.description %}
-                <p class="card-description">{{ article.description[:150] }}{% if article.description|length > 150 %}...{% endif %}</p>
+                <p class="news-card-description">{{ article.description[:150] }}{% if article.description|length > 150 %}...{% endif %}</p>
               {% endif %}
-
-              <div class="share-buttons">
-                <button class="share-btn" onclick="shareOnTwitter('{{ article.title|replace('\'', '\\\'') }}', '{{ request.host_url }}article?url={{ article.url|urlencode }}')">
-                  🐦 Twitter
-                </button>
-                <button class="share-btn" onclick="shareOnFacebook('{{ request.host_url }}article?url={{ article.url|urlencode }}')">
-                  📘 Facebook
-                </button>
-                <button class="share-btn" onclick="shareOnReddit('{{ article.title|replace('\'', '\\\'') }}', '{{ request.host_url }}article?url={{ article.url|urlencode }}')">
-                  🔴 Reddit
-                </button>
-                <button class="share-btn" onclick="copyToClipboard('{{ request.host_url }}article?url={{ article.url|urlencode }}')">
-                  🔗 Copy
-                </button>
+              <div class="news-card-actions">
+                <a href="/article?url={{ article.url|urlencode }}" class="news-read-btn">📰 Read Article</a>
               </div>
             </div>
           </article>

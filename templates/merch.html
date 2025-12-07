@@ -17,13 +17,19 @@
   <link rel="canonical" href="https://music-news-site.onrender.com/merch">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <h1><a href="/" style="color: inherit; text-decoration: none;">MUSIC HUB</a></h1>
+      <a href="/" class="site-logo-link" style="display: flex; align-items: center; gap: 0.5em; text-decoration: none;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Music Hub Logo" class="site-logo" style="height: 40px; width: auto; display: block;"/>
+        <span style="font-size: 2rem; font-weight: bold; color: inherit;">Music Hub</span>
+      </a>
       <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
       <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
     </div>

@@ -141,21 +141,137 @@
       </div>
     </div>
     {% endif %}
+
+    <!-- Shopping Cart Sidebar -->
+    <div id="cart-sidebar" class="cart-sidebar">
+      <div class="cart-header">
+        <h3>🛒 Shopping Cart</h3>
+        <button class="btn-close-cart" onclick="toggleCart()">✕</button>
+      </div>
+      <div class="cart-items" id="cart-items">
+        <p class="cart-empty">Your cart is empty</p>
+      </div>
+      <div class="cart-footer">
+        <div class="cart-total">
+          <span>Total:</span>
+          <span id="cart-total-amount">$0.00</span>
+        </div>
+        <button class="btn-checkout" onclick="goToCheckout()">Proceed to Checkout</button>
+      </div>
+    </div>
+
+    <!-- Cart Button (fixed position) -->
+    <button id="cart-button" class="cart-button" onclick="toggleCart()">
+      🛒 <span id="cart-count">0</span>
+    </button>
   </main>
 
   <script>
-    // Simple cart functionality
+    // Cart functionality with backend API
     let cart = [];
 
-    function addToCart(productId, name, price) {
-      cart.push({ id: productId, name: name, price: price });
-      showNotification(`Added ${name} to cart! 🛒`);
-      console.log('Cart:', cart);
+    // Load cart on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCart();
+    });
+
+    async function loadCart() {
+      try {
+        const response = await fetch('/api/cart');
+        const data = await response.json();
+        cart = data.cart || [];
+        updateCartUI();
+      } catch (error) {
+        console.error('Error loading cart:', error);
+      }
+    }
+
+    async function addToCart(productId, name, price) {
+      try {
+        const response = await fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: productId,
+            name: name,
+            price: price,
+            description: '',
+            image: ''
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          cart = data.cart;
+          updateCartUI();
+          showNotification(`Added ${name} to cart! 🛒`);
+        }
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        showNotification('Error adding to cart');
+      }
+    }
+
+    async function removeFromCart(productId) {
+      try {
+        const response = await fetch(`/api/cart?id=${productId}`, {
+          method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          cart = data.cart;
+          updateCartUI();
+        }
+      } catch (error) {
+        console.error('Error removing from cart:', error);
+      }
+    }
+
+    function updateCartUI() {
+      const cartCount = document.getElementById('cart-count');
+      const cartItems = document.getElementById('cart-items');
+      const cartTotal = document.getElementById('cart-total-amount');
+      
+      // Update count
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartCount.textContent = totalItems;
+      
+      // Update cart items
+      if (cart.length === 0) {
+        cartItems.innerHTML = '<p class="cart-empty">Your cart is empty</p>';
+        cartTotal.textContent = '$0.00';
+      } else {
+        cartItems.innerHTML = cart.map(item => `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-price">$${item.price} × ${item.quantity}</div>
+            </div>
+            <button class="btn-remove" onclick="removeFromCart(${item.id})">✕</button>
+          </div>
+        `).join('');
+        
+        const total = cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+        cartTotal.textContent = `$${total.toFixed(2)}`;
+      }
+    }
+
+    function toggleCart() {
+      const sidebar = document.getElementById('cart-sidebar');
+      sidebar.classList.toggle('open');
+    }
+
+    function goToCheckout() {
+      if (cart.length === 0) {
+        showNotification('Your cart is empty!');
+        return;
+      }
+      window.location.href = '/checkout';
     }
 
     function viewProduct(productId) {
       showNotification('Product details coming soon!');
-      console.log('Viewing product:', productId);
     }
 
     function showNotification(message) {
@@ -478,6 +594,178 @@
       .feature-item {
         min-width: 120px;
         padding: 1rem;
+      }
+    }
+
+    /* Cart Sidebar */
+    .cart-sidebar {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      height: 100vh;
+      background: var(--bg-card);
+      box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+      transition: right 0.3s;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-sidebar.open {
+      right: 0;
+    }
+
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .cart-header h3 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .btn-close-cart {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 0.25rem 0.5rem;
+    }
+
+    .btn-close-cart:hover {
+      color: var(--text-primary);
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .cart-empty {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 2rem;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--bg-elevated);
+      border-radius: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .cart-item-price {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .btn-remove {
+      background: rgba(255,0,0,0.1);
+      border: none;
+      color: #ff4444;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .btn-remove:hover {
+      background: rgba(255,0,0,0.2);
+    }
+
+    .cart-footer {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .btn-checkout {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn-checkout:hover {
+      transform: scale(1.02);
+    }
+
+    /* Cart Button */
+    .cart-button {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      border: none;
+      padding: 1rem 1.5rem;
+      border-radius: 999px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4);
+      transition: transform 0.2s;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .cart-button:hover {
+      transform: scale(1.05);
+    }
+
+    #cart-count {
+      background: white;
+      color: var(--accent-primary);
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .cart-sidebar {
+        width: 100%;
+        right: -100%;
+      }
+
+      .cart-button {
+        bottom: 1rem;
+        right: 1rem;
       }
     }
   </style>

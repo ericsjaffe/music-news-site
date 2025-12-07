@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Confirmed - Music Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1><a href="/" style="color: inherit; text-decoration: none;">MUSIC HUB</a></h1>
+      <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="success-container">
+      <div class="success-icon">✅</div>
+      <h1 class="success-title">Order Confirmed!</h1>
+      <p class="success-message">Thank you for your purchase! Your order has been received and is being processed.</p>
+      
+      <div class="order-info">
+        <div class="info-item">
+          <span class="info-label">Order ID:</span>
+          <span class="info-value">{{ session.id }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Amount Paid:</span>
+          <span class="info-value">${{ "%.2f"|format(session.amount_total / 100) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Status:</span>
+          <span class="info-value status-paid">{{ session.payment_status }}</span>
+        </div>
+      </div>
+
+      <div class="next-steps">
+        <h3>What's Next?</h3>
+        <ul>
+          <li>📧 You'll receive an email confirmation shortly</li>
+          <li>📦 Your order will be printed and shipped via Printful</li>
+          <li>🚚 Shipping typically takes 5-7 business days</li>
+          <li>📱 Track your order with the link in your email</li>
+        </ul>
+      </div>
+
+      <div class="action-buttons">
+        <a href="/merch" class="btn-continue">Continue Shopping</a>
+        <a href="/" class="btn-home">Back to Home</a>
+      </div>
+    </div>
+  </main>
+
+  <style>
+    .success-container {
+      max-width: 700px;
+      margin: 4rem auto;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .success-icon {
+      font-size: 6rem;
+      margin-bottom: 1rem;
+      animation: bounceIn 0.6s;
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .success-title {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .success-message {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .order-info {
+      background: var(--bg-card);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .info-value {
+      font-weight: 700;
+    }
+
+    .status-paid {
+      color: #4caf50;
+      text-transform: capitalize;
+    }
+
+    .next-steps {
+      background: var(--bg-card);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      text-align: left;
+      border: 1px solid var(--border-color);
+    }
+
+    .next-steps h3 {
+      margin-top: 0;
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .next-steps ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .next-steps li {
+      padding: 0.75rem 0;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .btn-continue,
+    .btn-home {
+      padding: 1rem 2rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: transform 0.2s;
+    }
+
+    .btn-continue {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+    }
+
+    .btn-home {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-continue:hover,
+    .btn-home:hover {
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 640px) {
+      .success-title {
+        font-size: 2rem;
+      }
+
+      .success-icon {
+        font-size: 4rem;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+    }
+  </style>
+</body>
+</html>

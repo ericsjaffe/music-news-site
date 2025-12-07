@@ -6,18 +6,22 @@ from html import unescape
 from datetime import datetime
 from typing import List, Dict, Any
 from urllib.parse import quote_plus
-from flask import Flask, render_template, request, make_response, jsonify
+from flask import Flask, render_template, request, make_response, jsonify, session, redirect, url_for
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
 from dotenv import load_dotenv
 import threading
+import stripe
 
 # Load environment variables
 load_dotenv()
 
 import feedparser
 import requests
+
+# Configure Stripe
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
 # Try to import SendGrid for email sending (preferred for Render)
 try:
@@ -56,6 +60,7 @@ except ImportError:
     print("Warning: Twilio not installed. SMS features disabled. Run: pip install twilio")
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 
 # Initialize databases
 init_db()
@@ -2091,6 +2096,136 @@ def merch():
     except Exception as e:
         print(f"Error fetching merch: {e}")
         return render_template("merch.html", products=[], error=str(e))
+
+
+@app.route("/checkout")
+def checkout():
+    """Checkout page."""
+    # Get cart from session
+    cart = session.get('cart', [])
+    if not cart:
+        return redirect(url_for('merch'))
+    
+    # Calculate total
+    total = sum(float(item['price']) * item['quantity'] for item in cart)
+    
+    stripe_key = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+    return render_template("checkout.html", cart=cart, total=total, stripe_publishable_key=stripe_key)
+
+
+@app.route("/create-checkout-session", methods=["POST"])
+def create_checkout_session():
+    """Create Stripe checkout session."""
+    try:
+        cart = session.get('cart', [])
+        if not cart:
+            return jsonify({'error': 'Cart is empty'}), 400
+        
+        # Create line items for Stripe
+        line_items = []
+        for item in cart:
+            line_items.append({
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': item['name'],
+                        'description': item.get('description', ''),
+                        'images': [item.get('image', '')],
+                    },
+                    'unit_amount': int(float(item['price']) * 100),  # Convert to cents
+                },
+                'quantity': item['quantity'],
+            })
+        
+        # Create Stripe checkout session
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=line_items,
+            mode='payment',
+            success_url=request.host_url + 'order-success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.host_url + 'checkout',
+            metadata={'cart': str(cart)}  # Store cart for order processing
+        )
+        
+        return jsonify({'id': checkout_session.id})
+    except Exception as e:
+        print(f"Stripe error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route("/order-success")
+def order_success():
+    """Order confirmation page after successful payment."""
+    session_id = request.args.get('session_id')
+    
+    if not session_id:
+        return redirect(url_for('merch'))
+    
+    try:
+        # Retrieve the session from Stripe
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+        
+        # Clear cart
+        session.pop('cart', None)
+        
+        # TODO: Create Printful order here
+        # This would send the order to Printful for fulfillment
+        
+        return render_template("order_success.html", session=checkout_session)
+    except Exception as e:
+        print(f"Order retrieval error: {e}")
+        return redirect(url_for('merch'))
+
+
+@app.route("/api/cart", methods=["GET", "POST", "DELETE"])
+def cart_api():
+    """API endpoint for cart operations."""
+    if request.method == "GET":
+        # Get cart
+        cart = session.get('cart', [])
+        total = sum(float(item['price']) * item['quantity'] for item in cart)
+        return jsonify({'cart': cart, 'total': total})
+    
+    elif request.method == "POST":
+        # Add to cart
+        data = request.json
+        cart = session.get('cart', [])
+        
+        # Check if item already in cart
+        found = False
+        for item in cart:
+            if item['id'] == data['id']:
+                item['quantity'] += 1
+                found = True
+                break
+        
+        if not found:
+            cart.append({
+                'id': data['id'],
+                'name': data['name'],
+                'description': data.get('description', ''),
+                'price': data['price'],
+                'image': data.get('image', ''),
+                'quantity': 1
+            })
+        
+        session['cart'] = cart
+        total = sum(float(item['price']) * item['quantity'] for item in cart)
+        return jsonify({'success': True, 'cart': cart, 'total': total})
+    
+    elif request.method == "DELETE":
+        # Remove from cart or clear cart
+        item_id = request.args.get('id')
+        if item_id:
+            cart = session.get('cart', [])
+            cart = [item for item in cart if str(item['id']) != str(item_id)]
+            session['cart'] = cart
+        else:
+            session.pop('cart', None)
+            cart = []
+        
+        total = sum(float(item['price']) * item['quantity'] for item in cart) if cart else 0
+        return jsonify({'success': True, 'cart': cart, 'total': total})
 
 
 @app.route("/subscribe")

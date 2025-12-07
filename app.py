@@ -2176,8 +2176,8 @@ def create_printful_order(checkout_session):
         # Get cart from session metadata
         cart_data = eval(checkout_session.metadata.get('cart', '[]'))
         
-        # Get shipping details from Stripe
-        shipping = checkout_session.shipping_details or checkout_session.shipping
+        # Get shipping details from Stripe (using dict access)
+        shipping = checkout_session.get('shipping_details') or checkout_session.get('shipping')
         if not shipping:
             print("No shipping details found")
             return None
@@ -2258,10 +2258,7 @@ def stripe_webhook():
             checkout_session = event['data']['object']
             
             # Retrieve full session details including shipping
-            full_session = stripe.checkout.Session.retrieve(
-                checkout_session['id'],
-                expand=['shipping_details', 'customer_details']
-            )
+            full_session = stripe.checkout.Session.retrieve(checkout_session['id'])
             
             # Create Printful order
             printful_order = create_printful_order(full_session)
@@ -2288,10 +2285,7 @@ def order_success():
     
     try:
         # Retrieve the session from Stripe
-        checkout_session = stripe.checkout.Session.retrieve(
-            session_id,
-            expand=['shipping_details', 'customer_details']
-        )
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
         
         # Clear cart
         session.pop('cart', None)

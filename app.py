@@ -2083,11 +2083,11 @@ def videos():
     if search_query:
         # Search for specific artist/song
         videos = search_music_videos(search_query, max_results=24)
-        page_title = f"Videos: {search_query}"
+        page_title = f"🎬 Videos: {search_query}"
     else:
         # Show trending music videos
         videos = get_trending_music_videos(max_results=24)
-        page_title = "Trending Music Videos"
+        page_title = "🎬 Trending Music Videos"
     
     return render_template(
         "videos.html",

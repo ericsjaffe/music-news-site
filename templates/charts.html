@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Charts - Music Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="See the latest music charts and trending songs. Powered by LyricFind.">
+  <meta name="theme-color" content="#ec4899">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="site-logo-link" style="display: flex; align-items: center; gap: 0.5em; text-decoration: none;">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Music Hub Logo" class="site-logo" style="height: 40px; width: auto; display: block;"/>
+        <span style="font-size: 2rem; font-weight: bold; color: inherit;">Music Hub</span>
+      </a>
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+      <button id="theme-toggle" class="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+    <div id="mobile-nav-wrapper" class="mobile-nav-wrapper collapsed">
+      <nav class="nav-links">
+        <a href="/">News</a>
+        <a href="/releases">Releases</a>
+        <a href="/touring">Tours</a>
+        <a href="/videos">Videos</a>
+        <a href="/merch">Merch</a>
+        <a href="/lyrics">Lyrics</a>
+        <a href="/charts" class="active">Charts</a>
+        <a href="#newsletter-section" class="subscribe-link">📧 Subscribe</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
+    <div class="page-title-section">
+      <h2 class="page-title">📈 Charts</h2>
+      <p class="page-subtitle">See the latest trending songs and top charts</p>
+    </div>
+    {% if charts %}
+      <section class="charts-list">
+        <ol>
+          {% for song in charts %}
+            <li>
+              <strong>{{ song.title }}</strong> <span class="charts-artist">by {{ song.artist }}</span>
+              {% if song.rank %}<span class="charts-rank">#{{ song.rank }}</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% elif error %}
+      <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+  </main>
+</body>
+</html>

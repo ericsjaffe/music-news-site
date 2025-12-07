@@ -1,3 +1,62 @@
+# --- Lyrics and Charts Pages (LyricFind API) ---
+import requests
+
+LYRICFIND_API_KEY = "YOUR_LYRICFIND_API_KEY"  # Replace with your actual API key
+LYRICFIND_API_URL = "https://api.lyricfind.com/lyric.do"
+LYRICFIND_CHARTS_URL = "https://api.lyricfind.com/chart.do"
+
+@app.route('/lyrics')
+def lyrics():
+    query = request.args.get('q', '').strip()
+    lyrics = None
+    error = None
+    if query:
+        params = {
+            'apikey': LYRICFIND_API_KEY,
+            'q': query,
+            'output': 'json',
+        }
+        try:
+            resp = requests.get(LYRICFIND_API_URL, params=params, timeout=6)
+            data = resp.json()
+            if 'track' in data and 'lyrics' in data:
+                lyrics = {
+                    'title': data['track']['title'],
+                    'artist': data['track']['artist']['name'],
+                    'text': data['lyrics']['lyrics'],
+                }
+            else:
+                error = data.get('error', 'No lyrics found for this query.')
+        except Exception as e:
+            error = f"Error fetching lyrics: {e}"
+    return render_template('lyrics.html', lyrics=lyrics, error=error)
+
+@app.route('/charts')
+def charts():
+    charts = []
+    error = None
+    try:
+        params = {
+            'apikey': LYRICFIND_API_KEY,
+            'output': 'json',
+            'territory': 'US',
+            'type': 'track',
+            'range': '1-20',
+        }
+        resp = requests.get(LYRICFIND_CHARTS_URL, params=params, timeout=6)
+        data = resp.json()
+        if 'tracks' in data:
+            for i, track in enumerate(data['tracks'], 1):
+                charts.append({
+                    'title': track['title'],
+                    'artist': track['artist']['name'],
+                    'rank': i
+                })
+        else:
+            error = data.get('error', 'No chart data available.')
+    except Exception as e:
+        error = f"Error fetching charts: {e}"
+    return render_template('charts.html', charts=charts, error=error)
 import re
 import time
 import os

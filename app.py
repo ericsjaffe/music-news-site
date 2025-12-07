@@ -892,10 +892,18 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     Call MusicBrainz search:
       /ws/2/release/?query=date:YYYY-MM-DD&fmt=json&limit=...
     Returns list of releases (dicts).
+    Uses fuzzy matching to catch releases with partial dates.
     """
     ymd = f"{year}-{mm_dd}"  # e.g. 2019-11-22
+    
+    # Search for exact date first, but also include partial dates
+    # MusicBrainz sometimes only has year-month or just year
+    # Format: date:YYYY-MM-DD OR date:YYYY-MM
+    month = mm_dd[:2]
+    query = f"(date:{ymd} OR date:{year}-{month}) AND (status:official OR status:promotion) AND primarytype:album"
+    
     params = {
-        "query": f"date:{ymd}",
+        "query": query,
         "fmt": "json",
         "limit": str(limit),
     }
@@ -906,7 +914,21 @@ def search_releases_for_date(year: int, mm_dd: str, limit: int = 50):
     resp = requests.get(API_BASE, params=params, headers=headers, timeout=30)
     resp.raise_for_status()
     data = resp.json()
-    return data.get("releases", [])
+    releases = data.get("releases", [])
+    
+    # Post-filter to only include releases that actually match the day (if date is available)
+    filtered = []
+    for r in releases:
+        date_str = r.get("date", "")
+        if not date_str:
+            continue
+        
+        # Check if the date matches our target day
+        # Accept: exact match (YYYY-MM-DD) or month match (YYYY-MM)
+        if date_str.startswith(ymd) or (len(date_str) >= 7 and date_str.startswith(f"{year}-{month}") and (len(date_str) == 7 or date_str[7:] == f"-{mm_dd[3:]}")):
+            filtered.append(r)
+    
+    return filtered if filtered else releases  # Return filtered if we got matches, otherwise return all
 
 
 def filter_by_price(events, price_min=None, price_max=None):
@@ -1107,12 +1129,16 @@ def search_releases_by_artist(artist_name: str, year: int = None, limit: int = 1
     Call MusicBrainz search by artist name:
       /ws/2/release/?query=artist:ARTIST&fmt=json&limit=...
     Optionally filter by year if provided.
+    Filters for original studio albums only, excluding re-releases and compilations.
     Supports pagination with offset parameter.
     Returns list of releases (dicts).
     """
-    # Use quotes for exact phrase matching in MusicBrainz
-    # Filter for albums only (type:album) to exclude singles, EPs, etc.
-    query = f'artist:"{artist_name}" AND type:album AND (status:official OR status:promotion)'
+    # Enhanced query to filter out re-releases, compilations, and live albums
+    # primarytype:album gets studio albums
+    # -secondarytype:compilation excludes compilations
+    # -secondarytype:live excludes live albums
+    # status:official gets official releases (no bootlegs)
+    query = f'artist:"{artist_name}" AND primarytype:album AND status:official AND NOT secondarytype:compilation AND NOT secondarytype:live'
     if year:
         query += f" AND date:{year}*"
     
@@ -1261,6 +1287,18 @@ def releases():
                     if not title:
                         continue
                     
+                    # Filter out obvious re-releases and special editions
+                    title_lower = title.lower()
+                    skip_keywords = [
+                        'remaster', 'reissue', 'deluxe', 'expanded', 'anniversary',
+                        'special edition', 'bonus', 'limited edition', 'collector',
+                        're-release', 'redux', 'revisited', 'edition'
+                    ]
+                    
+                    # Check if title contains re-release indicators
+                    if any(keyword in title_lower for keyword in skip_keywords):
+                        continue
+                    
                     # Extract year from release date
                     release_year = None
                     if date:
@@ -1274,9 +1312,15 @@ def releases():
                     if not release_year:
                         continue
                     
-                    # Create a unique key for deduplication (title + year)
-                    # This helps avoid showing multiple editions of the same album
-                    unique_key = f"{title.lower().strip()}_{release_year}"
+                    # Clean title for better deduplication
+                    # Remove common variations like [Album Title] vs Album Title
+                    clean_title = title_lower.strip()
+                    for char in ['[', ']', '(', ')']:
+                        clean_title = clean_title.replace(char, '')
+                    clean_title = ' '.join(clean_title.split())  # Normalize whitespace
+                    
+                    # Create a unique key for deduplication (cleaned title + year)
+                    unique_key = f"{clean_title}_{release_year}"
                     
                     if unique_key in seen_titles:
                         continue  # Skip duplicate
@@ -1329,6 +1373,8 @@ def releases():
                 )
 
             results = []
+            seen_titles = set()  # Track unique albums by title to avoid duplicates
+            
             # Iterate in reverse to fetch newest years first
             for year in range(end_year, start_year - 1, -1):
                 try:
@@ -1345,6 +1391,36 @@ def releases():
                 for r in releases:
                     title = r.get("title")
                     date = r.get("date")
+                    
+                    # Skip if no title
+                    if not title:
+                        continue
+                    
+                    # Filter out re-releases and special editions
+                    title_lower = title.lower()
+                    skip_keywords = [
+                        'remaster', 'reissue', 'deluxe', 'expanded', 'anniversary',
+                        'special edition', 'bonus', 'limited edition', 'collector',
+                        're-release', 'redux', 'revisited', 'edition'
+                    ]
+                    
+                    if any(keyword in title_lower for keyword in skip_keywords):
+                        continue
+                    
+                    # Clean title for deduplication
+                    clean_title = title_lower.strip()
+                    for char in ['[', ']', '(', ')']:
+                        clean_title = clean_title.replace(char, '')
+                    clean_title = ' '.join(clean_title.split())
+                    
+                    # Create unique key (title + year)
+                    unique_key = f"{clean_title}_{year}"
+                    
+                    if unique_key in seen_titles:
+                        continue
+                    
+                    seen_titles.add(unique_key)
+                    
                     artist = None
                     ac = r.get("artist-credit") or []
                     if ac and isinstance(ac, list) and "name" in ac[0]:

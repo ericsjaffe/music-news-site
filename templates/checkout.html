@@ -55,45 +55,54 @@
   </main>
 
   <script>
-    const stripe = Stripe('{{ stripe_publishable_key }}');
+    const stripeKey = '{{ stripe_publishable_key }}';
     
-    document.getElementById('checkout-button').addEventListener('click', async () => {
-      const button = document.getElementById('checkout-button');
-      button.disabled = true;
-      button.textContent = 'Processing...';
+    if (!stripeKey || stripeKey === 'None' || stripeKey === '') {
+      console.error('Stripe publishable key not configured');
+      document.getElementById('checkout-button').addEventListener('click', () => {
+        alert('Stripe is not configured. Please add STRIPE_PUBLISHABLE_KEY environment variable.');
+      });
+    } else {
+      const stripe = Stripe(stripeKey);
       
-      try {
-        const response = await fetch('/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
+      document.getElementById('checkout-button').addEventListener('click', async () => {
+        const button = document.getElementById('checkout-button');
+        button.disabled = true;
+        button.textContent = 'Processing...';
         
-        const session = await response.json();
-        
-        if (session.error) {
-          alert('Error: ' + session.error);
+        try {
+          const response = await fetch('/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          const session = await response.json();
+          
+          if (session.error) {
+            alert('Error: ' + session.error);
+            button.disabled = false;
+            button.textContent = '🔒 Proceed to Secure Payment';
+            return;
+          }
+          
+          // Redirect to Stripe Checkout
+          const result = await stripe.redirectToCheckout({
+            sessionId: session.id
+          });
+          
+          if (result.error) {
+            alert(result.error.message);
+            button.disabled = false;
+            button.textContent = '🔒 Proceed to Secure Payment';
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('An error occurred: ' + error.message);
           button.disabled = false;
           button.textContent = '🔒 Proceed to Secure Payment';
-          return;
         }
-        
-        // Redirect to Stripe Checkout
-        const result = await stripe.redirectToCheckout({
-          sessionId: session.id
-        });
-        
-        if (result.error) {
-          alert(result.error.message);
-          button.disabled = false;
-          button.textContent = '🔒 Proceed to Secure Payment';
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-        button.disabled = false;
-        button.textContent = '🔒 Proceed to Secure Payment';
-      }
-    });
+      });
+    }
   </script>
 
   <style>

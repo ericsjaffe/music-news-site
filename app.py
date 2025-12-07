@@ -2117,6 +2117,10 @@ def checkout():
 def create_checkout_session():
     """Create Stripe checkout session."""
     try:
+        # Check if Stripe is configured
+        if not stripe.api_key or stripe.api_key == "":
+            return jsonify({'error': 'Stripe is not configured on the server'}), 500
+        
         cart = session.get('cart', [])
         if not cart:
             return jsonify({'error': 'Cart is empty'}), 400
@@ -2130,7 +2134,7 @@ def create_checkout_session():
                     'product_data': {
                         'name': item['name'],
                         'description': item.get('description', ''),
-                        'images': [item.get('image', '')],
+                        'images': [item.get('image', '')] if item.get('image') else [],
                     },
                     'unit_amount': int(float(item['price']) * 100),  # Convert to cents
                 },

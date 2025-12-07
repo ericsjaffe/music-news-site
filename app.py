@@ -1,6 +1,7 @@
 import re
 import time
 import os
+import json
 import sqlite3
 from html import unescape
 from datetime import datetime
@@ -2169,6 +2170,114 @@ def create_checkout_session():
         return jsonify({'error': str(e)}), 500
 
 
+def create_printful_order(checkout_session):
+    """Create an order in Printful after successful payment."""
+    try:
+        # Get cart from session metadata
+        cart_data = eval(checkout_session.metadata.get('cart', '[]'))
+        
+        # Get shipping details from Stripe
+        shipping = checkout_session.shipping_details or checkout_session.shipping
+        if not shipping:
+            print("No shipping details found")
+            return None
+        
+        # Build Printful order
+        printful_items = []
+        for item in cart_data:
+            # For demo products, we'll need to map to real Printful product IDs
+            # In production, store the actual Printful sync_variant_id with each product
+            printful_items.append({
+                "sync_variant_id": item.get('id'),  # This should be the Printful variant ID
+                "quantity": item.get('quantity', 1),
+                "retail_price": str(item.get('price', '0.00')),
+            })
+        
+        # Prepare order data
+        order_data = {
+            "recipient": {
+                "name": shipping.get('name', ''),
+                "address1": shipping.get('address', {}).get('line1', ''),
+                "address2": shipping.get('address', {}).get('line2', ''),
+                "city": shipping.get('address', {}).get('city', ''),
+                "state_code": shipping.get('address', {}).get('state', ''),
+                "country_code": shipping.get('address', {}).get('country', ''),
+                "zip": shipping.get('address', {}).get('postal_code', ''),
+                "email": checkout_session.customer_details.get('email', ''),
+            },
+            "items": printful_items,
+            "retail_costs": {
+                "currency": "USD",
+                "total": str(checkout_session.amount_total / 100),  # Convert from cents
+            },
+        }
+        
+        # Send to Printful
+        headers = {
+            "Authorization": f"Bearer {os.environ.get('PRINTFUL_API_KEY', '')}",
+            "Content-Type": "application/json",
+        }
+        
+        response = requests.post(
+            "https://api.printful.com/orders",
+            headers=headers,
+            json=order_data,
+            timeout=10
+        )
+        response.raise_for_status()
+        
+        result = response.json()
+        print(f"Printful order created: {result.get('result', {}).get('id')}")
+        return result.get('result')
+        
+    except Exception as e:
+        print(f"Error creating Printful order: {e}")
+        return None
+
+
+@app.route("/webhook/stripe", methods=["POST"])
+def stripe_webhook():
+    """Handle Stripe webhook events."""
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+    
+    # For webhook verification, you'll need to set STRIPE_WEBHOOK_SECRET in Render
+    webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+    
+    try:
+        if webhook_secret:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, webhook_secret
+            )
+        else:
+            # If no webhook secret, just parse the payload (not recommended for production)
+            event = json.loads(payload)
+        
+        # Handle the checkout.session.completed event
+        if event['type'] == 'checkout.session.completed':
+            checkout_session = event['data']['object']
+            
+            # Retrieve full session details including shipping
+            full_session = stripe.checkout.Session.retrieve(
+                checkout_session['id'],
+                expand=['shipping_details', 'customer_details']
+            )
+            
+            # Create Printful order
+            printful_order = create_printful_order(full_session)
+            
+            if printful_order:
+                print(f"Order fulfilled for session {checkout_session['id']}")
+            else:
+                print(f"Failed to create Printful order for session {checkout_session['id']}")
+        
+        return jsonify({'status': 'success'}), 200
+        
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return jsonify({'error': str(e)}), 400
+
+
 @app.route("/order-success")
 def order_success():
     """Order confirmation page after successful payment."""
@@ -2179,13 +2288,18 @@ def order_success():
     
     try:
         # Retrieve the session from Stripe
-        checkout_session = stripe.checkout.Session.retrieve(session_id)
+        checkout_session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=['shipping_details', 'customer_details']
+        )
         
         # Clear cart
         session.pop('cart', None)
         
-        # TODO: Create Printful order here
-        # This would send the order to Printful for fulfillment
+        # Note: Order creation happens via webhook for reliability
+        # But we can also try to create it here as a backup
+        if checkout_session.payment_status == 'paid':
+            create_printful_order(checkout_session)
         
         return render_template("order_success.html", session=checkout_session)
     except Exception as e:

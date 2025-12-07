@@ -18,32 +18,84 @@
   <main class="container">
     <div class="success-container">
       <div class="success-icon">✅</div>
-      <h1 class="success-title">Order Confirmed!</h1>
-      <p class="success-message">Thank you for your purchase! Your order has been received and is being processed.</p>
+      <h1 class="success-title">Payment Successful!</h1>
+      <p class="success-message">Thank you for your purchase! Your order has been confirmed and is being prepared for shipment.</p>
       
       <div class="order-info">
+        <h3 class="section-title">Order Details</h3>
         <div class="info-item">
           <span class="info-label">Order ID:</span>
           <span class="info-value">{{ session.id }}</span>
         </div>
         <div class="info-item">
           <span class="info-label">Amount Paid:</span>
-          <span class="info-value">${{ "%.2f"|format(session.amount_total / 100) }}</span>
+          <span class="info-value">${{ "%.2f"|format(session.amount_total / 100) }} USD</span>
         </div>
         <div class="info-item">
-          <span class="info-label">Status:</span>
-          <span class="info-value status-paid">{{ session.payment_status }}</span>
+          <span class="info-label">Payment Status:</span>
+          <span class="info-value status-paid">✓ {{ session.payment_status }}</span>
+        </div>
+        {% if session.customer_details and session.customer_details.email %}
+        <div class="info-item">
+          <span class="info-label">Confirmation Email:</span>
+          <span class="info-value">{{ session.customer_details.email }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="timeline-section">
+        <h3 class="section-title">What Happens Next</h3>
+        <div class="timeline">
+          <div class="timeline-item active">
+            <div class="timeline-icon">✅</div>
+            <div class="timeline-content">
+              <h4>Order Confirmed</h4>
+              <p>Your payment was successful</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-icon">🎨</div>
+            <div class="timeline-content">
+              <h4>Production Started</h4>
+              <p>Your item is being printed (1-2 days)</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-icon">📦</div>
+            <div class="timeline-content">
+              <h4>Shipped</h4>
+              <p>You'll receive tracking info via email</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-icon">🎉</div>
+            <div class="timeline-content">
+              <h4>Delivered</h4>
+              <p>Estimated 5-7 business days</p>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="next-steps">
-        <h3>What's Next?</h3>
-        <ul>
-          <li>📧 You'll receive an email confirmation shortly</li>
-          <li>📦 Your order will be printed and shipped via Printful</li>
-          <li>🚚 Shipping typically takes 5-7 business days</li>
-          <li>📱 Track your order with the link in your email</li>
-        </ul>
+        <h3 class="section-title">Important Information</h3>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="card-icon">📧</div>
+            <h4>Check Your Email</h4>
+            <p>Order confirmation and shipping updates will be sent to your email address.</p>
+          </div>
+          <div class="info-card">
+            <div class="card-icon">🚚</div>
+            <h4>Track Your Order</h4>
+            <p>You'll receive a tracking number once your order ships from our fulfillment center.</p>
+          </div>
+          <div class="info-card">
+            <div class="card-icon">💬</div>
+            <h4>Need Help?</h4>
+            <p>Questions about your order? Contact us and we'll be happy to assist you.</p>
+          </div>
+        </div>
       </div>
 
       <div class="action-buttons">
@@ -55,9 +107,8 @@
 
   <style>
     .success-container {
-      max-width: 700px;
+      max-width: 900px;
       margin: 4rem auto;
-      text-align: center;
       padding: 2rem;
     }
 
@@ -65,6 +116,7 @@
       font-size: 6rem;
       margin-bottom: 1rem;
       animation: bounceIn 0.6s;
+      text-align: center;
     }
 
     @keyframes bounceIn {
@@ -80,20 +132,28 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      text-align: center;
     }
 
     .success-message {
       font-size: 1.25rem;
       color: var(--text-secondary);
-      margin-bottom: 2rem;
+      margin-bottom: 3rem;
       line-height: 1.6;
+      text-align: center;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin: 0 0 1.5rem;
+      text-align: center;
     }
 
     .order-info {
       background: var(--bg-card);
       border-radius: 1rem;
       padding: 2rem;
-      margin-bottom: 2rem;
+      margin-bottom: 3rem;
       border: 1px solid var(--border-color);
     }
 
@@ -115,6 +175,10 @@
 
     .info-value {
       font-weight: 700;
+      text-align: right;
+      word-break: break-all;
+      max-width: 60%;
+      font-size: 0.9rem;
     }
 
     .status-paid {
@@ -122,32 +186,105 @@
       text-transform: capitalize;
     }
 
-    .next-steps {
+    .timeline-section {
       background: var(--bg-card);
       border-radius: 1rem;
       padding: 2rem;
-      margin-bottom: 2rem;
-      text-align: left;
+      margin-bottom: 3rem;
       border: 1px solid var(--border-color);
     }
 
-    .next-steps h3 {
-      margin-top: 0;
-      text-align: center;
-      font-size: 1.5rem;
-      margin-bottom: 1.5rem;
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-top: 2rem;
     }
 
-    .next-steps ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    .timeline-item {
+      display: flex;
+      gap: 1rem;
+      align-items: start;
+      opacity: 0.5;
+      transition: opacity 0.3s;
     }
 
-    .next-steps li {
-      padding: 0.75rem 0;
+    .timeline-item.active {
+      opacity: 1;
+    }
+
+    .timeline-icon {
+      font-size: 2rem;
+      min-width: 3rem;
+      height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-elevated);
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+    }
+
+    .timeline-item.active .timeline-icon {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-color: var(--accent-primary);
+    }
+
+    .timeline-content {
+      flex: 1;
+      padding-top: 0.5rem;
+    }
+
+    .timeline-content h4 {
+      margin: 0 0 0.25rem;
       font-size: 1.1rem;
+    }
+
+    .timeline-content p {
+      margin: 0;
       color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .next-steps {
+      margin-bottom: 3rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .info-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .card-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .info-card h4 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
     }
 
     .action-buttons {
@@ -159,11 +296,11 @@
     .btn-continue,
     .btn-home {
       padding: 1rem 2rem;
-      border-radius: 0.5rem;
+      border-radius: 999px;
       text-decoration: none;
       font-weight: 700;
       font-size: 1rem;
-      transition: transform 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .btn-continue {
@@ -177,12 +314,21 @@
       border: 1px solid var(--border-color);
     }
 
-    .btn-continue:hover,
+    .btn-continue:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4);
+    }
+
     .btn-home:hover {
       transform: scale(1.05);
+      background: var(--bg-elevated);
     }
 
     @media (max-width: 640px) {
+      .success-container {
+        padding: 1rem;
+      }
+
       .success-title {
         font-size: 2rem;
       }
@@ -193,6 +339,25 @@
 
       .action-buttons {
         flex-direction: column;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline {
+        gap: 1rem;
+      }
+
+      .timeline-icon {
+        font-size: 1.5rem;
+        min-width: 2.5rem;
+        height: 2.5rem;
+      }
+
+      .info-value {
+        font-size: 0.8rem;
+        max-width: 50%;
       }
     }
   </style>

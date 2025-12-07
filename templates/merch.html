@@ -87,28 +87,27 @@
           <h3 class="merch-name">{{ product.name }}</h3>
           <p class="merch-description">{{ product.description }}</p>
           
+          {% if product.variants %}
+          <div class="merch-variants">
+            <span class="variants-label">Select Size:</span>
+            {% for variant in product.variants %}
+              <button class="variant-button" data-product-id="{{ product.id }}" data-variant="{{ variant }}" onclick="selectVariant({{ product.id }}, '{{ variant }}', this)">
+                {{ variant }}
+              </button>
+            {% endfor %}
+          </div>
+          {% endif %}
+          
           <div class="merch-footer">
             <div class="merch-price">
               <span class="price-amount">${{ product.price }}</span>
               <span class="price-currency">{{ product.currency }}</span>
             </div>
             
-            <button class="btn-add-cart" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})">
+            <button class="btn-add-cart" id="add-cart-{{ product.id }}" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }}, '{{ product.image }}')">
               🛒 Add to Cart
             </button>
           </div>
-          
-          {% if product.variants %}
-          <div class="merch-variants">
-            <span class="variants-label">Available:</span>
-            {% for variant in product.variants[:3] %}
-              <span class="variant-badge">{{ variant }}</span>
-            {% endfor %}
-            {% if product.variants|length > 3 %}
-              <span class="variant-badge">+{{ product.variants|length - 3 }} more</span>
-            {% endif %}
-          </div>
-          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -186,17 +185,42 @@
       }
     }
 
-    async function addToCart(productId, name, price) {
+    // Store selected variants
+    const selectedVariants = {};
+
+    function selectVariant(productId, variant, button) {
+      // Deselect all variants for this product
+      document.querySelectorAll(`[data-product-id="${productId}"]`).forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      
+      // Select this variant
+      button.classList.add('selected');
+      selectedVariants[productId] = variant;
+    }
+
+    async function addToCart(productId, name, price, image) {
+      // Check if a size is selected for products with variants
+      const variantButtons = document.querySelectorAll(`[data-product-id="${productId}"]`);
+      if (variantButtons.length > 0 && !selectedVariants[productId]) {
+        showNotification('Please select a size first!');
+        return;
+      }
+      
+      const variant = selectedVariants[productId] || null;
+      const fullName = variant ? `${name} (${variant})` : name;
+      
       try {
         const response = await fetch('/api/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: productId,
-            name: name,
+            name: fullName,
             price: price,
-            description: '',
-            image: ''
+            description: variant || '',
+            image: image,
+            variant: variant
           })
         });
         
@@ -204,7 +228,10 @@
         if (data.success) {
           cart = data.cart;
           updateCartUI();
-          showNotification(`Added ${name} to cart! 🛒`);
+          showNotification(`Added ${fullName} to cart! 🛒`);
+          // Clear selection after adding to cart
+          delete selectedVariants[productId];
+          variantButtons.forEach(btn => btn.classList.remove('selected'));
         }
       } catch (error) {
         console.error('Error adding to cart:', error);
@@ -244,6 +271,7 @@
       } else {
         cartItems.innerHTML = cart.map(item => `
           <div class="cart-item">
+            ${item.image ? `<img src="${item.image}" alt="${item.name}" class="cart-item-image">` : ''}
             <div class="cart-item-info">
               <div class="cart-item-name">${item.name}</div>
               <div class="cart-item-price">$${item.price} × ${item.quantity}</div>
@@ -429,13 +457,38 @@
       flex-wrap: wrap;
       gap: 0.5rem;
       align-items: center;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-color);
+      margin-bottom: 1rem;
     }
 
     .variants-label {
       font-size: 0.875rem;
       color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .variant-button {
+      padding: 0.5rem 1rem;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border-color);
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .variant-button:hover {
+      border-color: var(--accent-primary);
+      background: rgba(236, 72, 153, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .variant-button.selected {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-color: var(--accent-primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
     }
 
     .variant-badge {
@@ -656,12 +709,20 @@
 
     .cart-item {
       display: flex;
-      justify-content: space-between;
+      gap: 1rem;
       align-items: center;
       padding: 1rem;
       background: var(--bg-elevated);
       border-radius: 0.5rem;
       margin-bottom: 0.75rem;
+    }
+
+    .cart-item-image {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 0.375rem;
+      border: 1px solid var(--border-color);
     }
 
     .cart-item-info {
@@ -671,11 +732,12 @@
     .cart-item-name {
       font-weight: 600;
       margin-bottom: 0.25rem;
+      font-size: 0.9rem;
     }
 
     .cart-item-price {
       color: var(--text-secondary);
-      font-size: 0.9rem;
+      font-size: 0.875rem;
     }
 
     .btn-remove {

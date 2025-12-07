@@ -87,26 +87,35 @@
 
     {% if products %}
     <!-- Artist Grid -->
-    <div class="merch-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+    <div class="merch-grid">
       {% for product in products %}
-      <div class="artist-card" style="background: var(--card-background); border-radius: 1rem; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onclick="window.open('{{ product.merchbar_url }}', '_blank')">
-        <div class="artist-image-wrapper" style="position: relative; padding-top: 100%; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-          <img src="{{ product.image }}" alt="{{ product.artist }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" loading="lazy" onerror="this.style.opacity='0'">
-          <div class="artist-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.7)); display: flex; align-items: flex-end; padding: 1.5rem; opacity: 0; transition: opacity 0.2s;">
-            <span style="color: white; font-weight: bold; font-size: 1.1rem;">Shop Now →</span>
+      <article class="artist-card" data-artist-id="{{ product.id }}">
+        <div class="artist-thumbnail">
+          <img src="{{ product.image }}" alt="{{ product.artist }}" loading="lazy">
+          <button class="shop-button" onclick="window.open('{{ product.merchbar_url }}', '_blank')" aria-label="Shop {{ product.artist }}">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+              <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+          </button>
+          <a href="{{ product.merchbar_url }}" target="_blank" rel="noopener noreferrer" class="merchbar-link-button" title="Shop on Merchbar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+              <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+            </svg>
+          </a>
+          
+          <div class="category-badge">{{ product.category }}</div>
+        </div>
+        <div class="artist-info">
+          <h3 class="artist-name">{{ product.artist }}</h3>
+          <p class="artist-description">{{ product.description }}</p>
+          
+          <div class="artist-actions">
+            <button class="artist-shop-btn" onclick="window.open('{{ product.merchbar_url }}', '_blank')" aria-label="Shop {{ product.artist }}">
+              🛍️ Shop Now
+            </button>
           </div>
         </div>
-        
-        <div class="artist-info" style="padding: 1.5rem;">
-          <h3 class="artist-name" style="margin: 0 0 0.5rem 0; font-size: 1.3rem; color: var(--text-color);">{{ product.artist }}</h3>
-          <p class="artist-category" style="margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--primary-color); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ product.category }}</p>
-          <p class="artist-description" style="margin: 0 0 1rem 0; font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5;">{{ product.description }}</p>
-          
-          <a href="{{ product.merchbar_url }}" target="_blank" rel="noopener" class="btn-shop-now" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: 0.5rem; font-weight: 600; transition: all 0.2s; width: 100%; justify-content: center;" onclick="event.stopPropagation()">
-            🛍️ Shop {{ product.artist }}
-          </a>
-        </div>
-      </div>
+      </article>
       {% endfor %}
     </div>
 
@@ -152,64 +161,285 @@
       <h2 class="coming-soon-title" style="margin: 0 0 1rem 0; font-size: 2rem;">Merch Store Coming Soon</h2>
       <p class="coming-soon-subtitle" style="color: var(--text-secondary); font-size: 1.1rem;">We're working on bringing you awesome music merchandise</p>
     </div>
-    {% endif %}
   </main>
 
   <style>
-    /* Hover effects */
-    .artist-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    /* Merch Grid - matching video page structure */
+    .merch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
-    
-    .artist-card:hover .artist-overlay {
+
+    .artist-card {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(168, 85, 247, 0.1));
+      border-radius: 1.5rem;
+      overflow: hidden;
+      border: 1px solid rgba(236, 72, 153, 0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .artist-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(236, 72, 153, 0.4), 0 0 0 1px rgba(236, 72, 153, 0.4);
+      border-color: rgba(236, 72, 153, 0.6);
+    }
+
+    .artist-thumbnail {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      overflow: hidden;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+    }
+
+    .artist-thumbnail img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    .artist-card:hover .artist-thumbnail img {
+      transform: scale(1.05);
+    }
+
+    .category-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: white;
+      z-index: 2;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .shop-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border: none;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      opacity: 0;
+      z-index: 2;
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
+    }
+
+    .artist-card:hover .shop-button {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .merchbar-link-button {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: #667eea;
+      border: none;
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      opacity: 0;
+      z-index: 3;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .artist-card:hover .merchbar-link-button {
       opacity: 1;
     }
-    
-    .btn-shop-now:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+
+    .merchbar-link-button:hover {
+      background: #5568d3;
+      transform: scale(1.1);
     }
-    
+
+    .artist-info {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .artist-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0 0 0.75rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .artist-description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin: 0 0 1rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .artist-actions {
+      display: flex;
+      margin-top: auto;
+      padding-top: 0.5rem;
+    }
+
+    .artist-shop-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+    }
+
+    .artist-shop-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(236, 72, 153, 0.5);
+    }
+
+    /* Filter buttons */
+    .filter-btn:hover {
+      background: var(--primary-color) !important;
+    }
+
+    /* Browse More Section */
+    .browse-more-section {
+      background: var(--card-background);
+      border-radius: 1rem;
+      padding: 3rem 2rem;
+      text-align: center;
+      margin: 3rem 0;
+    }
+
+    .browse-more-section h3 {
+      margin: 0 0 1rem 0;
+      font-size: 1.8rem;
+      color: var(--text-color);
+    }
+
+    .browse-more-section p {
+      margin: 0 0 2rem 0;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .btn-browse-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 0.75rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
     .btn-browse-all:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
     }
-    
-    .filter-btn:hover {
-      background: var(--primary-color) !important;
+
+    /* Info Grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin: 3rem 0;
     }
-    
+
     .info-card {
+      background: var(--card-background);
+      padding: 2rem;
+      border-radius: 1rem;
+      text-align: center;
       transition: transform 0.2s;
     }
-    
+
     .info-card:hover {
       transform: translateY(-4px);
     }
-    
+
+    .info-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .info-card h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-color);
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
       .merch-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
-        gap: 1rem !important;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
       }
       
       .artist-info {
-        padding: 1rem !important;
+        padding: 1rem;
       }
       
       .artist-name {
-        font-size: 1.1rem !important;
+        font-size: 1rem;
       }
       
       .artist-description {
-        font-size: 0.85rem !important;
+        font-size: 0.85rem;
       }
       
       .info-grid {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
       }
       
       .filter-buttons {

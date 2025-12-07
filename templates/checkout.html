@@ -29,6 +29,9 @@
             <div class="order-item">
               <div class="item-details">
                 <div class="item-name">{{ item.name }}</div>
+                {% if item.variant %}
+                <div class="item-variant">Size: {{ item.variant }}</div>
+                {% endif %}
                 <div class="item-quantity">Quantity: {{ item.quantity }}</div>
               </div>
               <div class="item-price">${{ "%.2f"|format(item.price|float * item.quantity) }}</div>
@@ -161,6 +164,13 @@
     }
 
     .item-name {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .item-variant {
+      color: var(--accent-primary);
+      font-size: 0.875rem;
       font-weight: 600;
       margin-bottom: 0.25rem;
     }

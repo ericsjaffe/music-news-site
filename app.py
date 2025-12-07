@@ -2128,14 +2128,22 @@ def create_checkout_session():
         # Create line items for Stripe
         line_items = []
         for item in cart:
+            product_data = {
+                'name': item['name'],
+            }
+            
+            # Only add description if it's not empty
+            if item.get('description'):
+                product_data['description'] = item['description']
+            
+            # Only add images if available
+            if item.get('image'):
+                product_data['images'] = [item['image']]
+            
             line_items.append({
                 'price_data': {
                     'currency': 'usd',
-                    'product_data': {
-                        'name': item['name'],
-                        'description': item.get('description', ''),
-                        'images': [item.get('image', '')] if item.get('image') else [],
-                    },
+                    'product_data': product_data,
                     'unit_amount': int(float(item['price']) * 100),  # Convert to cents
                 },
                 'quantity': item['quantity'],

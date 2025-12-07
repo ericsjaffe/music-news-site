@@ -2150,6 +2150,10 @@ def create_checkout_session():
                 'quantity': item['quantity'],
             })
         
+        # Create simplified cart data for metadata (Stripe has 500 char limit)
+        # Store minimal info: just quantities and IDs
+        cart_summary = ','.join([f"{item['id']}:{item['quantity']}" for item in cart])
+        
         # Create Stripe checkout session
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -2157,12 +2161,18 @@ def create_checkout_session():
             mode='payment',
             success_url=request.host_url + 'order-success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=request.host_url + 'checkout',
-            metadata={'cart': str(cart)},  # Store cart for order processing
+            metadata={
+                'cart_summary': cart_summary,  # Simple format: "1:2,2:1,3:1" (id:quantity)
+                'item_count': str(len(cart))
+            },
             billing_address_collection='required',
             shipping_address_collection={
                 'allowed_countries': ['US', 'CA'],
             }
         )
+        
+        # Store full cart in session for order processing
+        session['last_cart'] = cart
         
         return jsonify({'id': checkout_session.id})
     except Exception as e:
@@ -2170,11 +2180,25 @@ def create_checkout_session():
         return jsonify({'error': str(e)}), 500
 
 
-def create_printful_order(checkout_session):
+def create_printful_order(checkout_session, cart_data=None):
     """Create an order in Printful after successful payment."""
     try:
-        # Get cart from session metadata
-        cart_data = eval(checkout_session.metadata.get('cart', '[]'))
+        # Get cart data - either passed in or from session storage
+        if cart_data is None:
+            # Try to reconstruct from line_items in checkout session
+            cart_data = []
+            line_items = checkout_session.get('line_items', {}).get('data', [])
+            for line_item in line_items:
+                cart_data.append({
+                    'id': 1,  # Placeholder
+                    'name': line_item.get('description', ''),
+                    'quantity': line_item.get('quantity', 1),
+                    'price': line_item.get('amount_total', 0) / 100
+                })
+        
+        if not cart_data:
+            print("No cart data available")
+            return None
         
         # Get shipping details from Stripe (using dict access)
         shipping = checkout_session.get('shipping_details') or checkout_session.get('shipping')
@@ -2257,13 +2281,16 @@ def stripe_webhook():
         if event['type'] == 'checkout.session.completed':
             checkout_session = event['data']['object']
             
-            # Retrieve full session details including shipping
-            full_session = stripe.checkout.Session.retrieve(checkout_session['id'])
+            # Retrieve full session details including line items
+            full_session = stripe.checkout.Session.retrieve(
+                checkout_session['id'],
+                expand=['line_items']
+            )
             
-            # Send order confirmation email
+            # Send order confirmation email (will use line_items if cart not available)
             send_order_confirmation_email(full_session)
             
-            # Create Printful order
+            # Create Printful order (will use line_items if cart not available)
             printful_order = create_printful_order(full_session)
             
             if printful_order:
@@ -2278,7 +2305,7 @@ def stripe_webhook():
         return jsonify({'error': str(e)}), 400
 
 
-def send_order_confirmation_email(checkout_session):
+def send_order_confirmation_email(checkout_session, cart_data=None):
     """Send order confirmation email to customer."""
     try:
         # Get customer email
@@ -2287,8 +2314,20 @@ def send_order_confirmation_email(checkout_session):
             print("No customer email found")
             return False
         
-        # Get cart from metadata
-        cart_data = eval(checkout_session.metadata.get('cart', '[]'))
+        # Get cart data - either passed in or from line items
+        if cart_data is None:
+            cart_data = []
+            line_items = checkout_session.get('line_items', {}).get('data', [])
+            for line_item in line_items:
+                cart_data.append({
+                    'name': line_item.get('description', ''),
+                    'quantity': line_item.get('quantity', 1),
+                    'price': line_item.get('amount_total', 0) / 100 / line_item.get('quantity', 1)
+                })
+        
+        if not cart_data:
+            print("No cart data available")
+            return False
         
         # Build order items HTML
         items_html = ""
@@ -2469,19 +2508,26 @@ def order_success():
         return redirect(url_for('merch'))
     
     try:
-        # Retrieve the session from Stripe
-        checkout_session = stripe.checkout.Session.retrieve(session_id)
+        # Retrieve the session from Stripe with line_items
+        checkout_session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=['line_items']
+        )
+        
+        # Get last cart from session
+        last_cart = session.get('last_cart', [])
         
         # Clear cart
         session.pop('cart', None)
+        session.pop('last_cart', None)
         
         # Note: Order creation happens via webhook for reliability
         # But we can also try to create it here as a backup
         if checkout_session.payment_status == 'paid':
-            # Send order confirmation email
-            send_order_confirmation_email(checkout_session)
-            # Create Printful order
-            create_printful_order(checkout_session)
+            # Send order confirmation email with cart data
+            send_order_confirmation_email(checkout_session, last_cart)
+            # Create Printful order with cart data
+            create_printful_order(checkout_session, last_cart)
         
         return render_template("order_success.html", session=checkout_session)
     except Exception as e:

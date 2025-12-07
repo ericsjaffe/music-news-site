@@ -2004,18 +2004,6 @@ def videos():
     )
 
 
-@app.route("/merch")
-def merch():
-    """Merch page with Printful products."""
-    try:
-        # Get Printful products
-        products = get_printful_products()
-        return render_template("merch.html", products=products)
-    except Exception as e:
-        print(f"Error fetching merch: {e}")
-        return render_template("merch.html", products=[], error=str(e))
-
-
 def get_printful_products():
     """Fetch products from Printful Store API."""
     # Printful Store API endpoint
@@ -2089,6 +2077,18 @@ def get_printful_products():
         print(f"Printful API error: {e}")
         # Return sample products on error
         return []
+
+
+@app.route("/merch")
+def merch():
+    """Merch page with Printful products."""
+    try:
+        # Get Printful products
+        products = get_printful_products()
+        return render_template("merch.html", products=products)
+    except Exception as e:
+        print(f"Error fetching merch: {e}")
+        return render_template("merch.html", products=[], error=str(e))
 
 
 @app.route("/subscribe")

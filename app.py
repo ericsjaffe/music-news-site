@@ -13,7 +13,8 @@ from email.mime.multipart import MIMEMultipart
 import smtplib
 from dotenv import load_dotenv
 import threading
-import stripe
+# DISABLED: Stripe no longer needed with Merchbar integration
+# import stripe
 
 # Load environment variables
 load_dotenv()
@@ -21,8 +22,8 @@ load_dotenv()
 import feedparser
 import requests
 
-# Configure Stripe
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+# DISABLED: Stripe configuration no longer needed with Merchbar
+# stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
 # Try to import SendGrid for email sending (preferred for Render)
 try:
@@ -2010,113 +2011,173 @@ def videos():
     )
 
 
-def get_printful_products():
-    """Fetch products from Printful Store API."""
-    # Demo products to show if API fails or returns nothing
-    demo_products = [
+def get_merchbar_products():
+    """Get curated band merchandise from Merchbar.
+    
+    Merchbar is the world's largest marketplace for official band merchandise.
+    Products link directly to Merchbar with affiliate tracking.
+    """
+    # Curated selection of popular artists/bands with Merchbar links
+    # Merchbar affiliate link format: https://www.merchbar.com/[genre]/[artist-slug]
+    # Add ?ref=musichub at the end for affiliate tracking
+    
+    products = [
         {
-            "id": 1,
-            "name": "Music Hub Classic T-Shirt",
-            "description": "Premium cotton t-shirt with Music Hub logo",
-            "price": "24.99",
-            "currency": "USD",
-            "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500",
-            "variants": ["S", "M", "L", "XL"],
+            "id": "taylor-swift",
+            "artist": "Taylor Swift",
+            "category": "Pop",
+            "description": "Official Taylor Swift merchandise including vinyl, clothing, and accessories",
+            "image": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/pop/taylor-swift?ref=musichub",
+            "featured": True
         },
         {
-            "id": 2,
-            "name": "Music Lover Hoodie",
-            "description": "Cozy hoodie for true music fans",
-            "price": "44.99",
-            "currency": "USD",
-            "image": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500",
-            "variants": ["S", "M", "L", "XL"],
+            "id": "metallica",
+            "artist": "Metallica",
+            "category": "Metal",
+            "description": "Official Metallica band merch - t-shirts, hoodies, vinyl records, and collectibles",
+            "image": "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/hard-rock-metal/metallica?ref=musichub",
+            "featured": True
         },
         {
-            "id": 3,
-            "name": "Vinyl Enthusiast Poster",
-            "description": "High-quality print for your music room",
-            "price": "19.99",
-            "currency": "USD",
-            "image": "https://images.unsplash.com/photo-1594623930572-300a3011d9ae?w=500",
-            "variants": ["18x24", "24x36"],
+            "id": "the-weeknd",
+            "artist": "The Weeknd",
+            "category": "R&B / Hip-Hop",
+            "description": "Official The Weeknd merchandise and exclusive album releases",
+            "image": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/r-b-hiphop-rap/the-weeknd?ref=musichub",
+            "featured": True
+        },
+        {
+            "id": "billie-eilish",
+            "artist": "Billie Eilish",
+            "category": "Pop",
+            "description": "Official Billie Eilish merch - apparel, vinyl, posters and more",
+            "image": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/pop/billie-eilish?ref=musichub",
+            "featured": True
+        },
+        {
+            "id": "nirvana",
+            "artist": "Nirvana",
+            "category": "Rock / Alternative",
+            "description": "Official Nirvana band merchandise including vintage-style tees and vinyl",
+            "image": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/rock-alternative/nirvana?ref=musichub",
+            "featured": False
+        },
+        {
+            "id": "harry-styles",
+            "artist": "Harry Styles",
+            "category": "Pop",
+            "description": "Official Harry Styles merchandise and tour items",
+            "image": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/pop/harry-styles?ref=musichub",
+            "featured": False
+        },
+        {
+            "id": "pink-floyd",
+            "artist": "Pink Floyd",
+            "category": "Rock",
+            "description": "Official Pink Floyd merchandise - iconic album art apparel and collectibles",
+            "image": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/rock-alternative/pink-floyd?ref=musichub",
+            "featured": False
+        },
+        {
+            "id": "olivia-rodrigo",
+            "artist": "Olivia Rodrigo",
+            "category": "Pop",
+            "description": "Official Olivia Rodrigo merch including vinyl, clothing and accessories",
+            "image": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/pop/olivia-rodrigo?ref=musichub",
+            "featured": False
+        },
+        {
+            "id": "drake",
+            "artist": "Drake",
+            "category": "Hip-Hop / Rap",
+            "description": "Official Drake OVO merchandise and album releases",
+            "image": "https://images.unsplash.com/photo-1510915228340-29c85a43dcfe?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/r-b-hiphop-rap/drake?ref=musichub",
+            "featured": False
+        },
+        {
+            "id": "led-zeppelin",
+            "artist": "Led Zeppelin",
+            "category": "Rock",
+            "description": "Official Led Zeppelin band merch and classic rock apparel",
+            "image": "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/rock-alternative/led-zeppelin?ref=musichub",
+            "featured": False
+        },
+        {
+            "id": "bad-bunny",
+            "artist": "Bad Bunny",
+            "category": "Latin / Reggaeton",
+            "description": "Official Bad Bunny merchandise and exclusive items",
+            "image": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/r-b-hiphop-rap/bad-bunny?ref=musichub",
+            "featured": False
+        },
+        {
+            "id": "the-beatles",
+            "artist": "The Beatles",
+            "category": "Rock / Classic",
+            "description": "Official Beatles merchandise including vintage-inspired apparel and vinyl",
+            "image": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&q=80",
+            "merchbar_url": "https://www.merchbar.com/rock-alternative/the-beatles?ref=musichub",
+            "featured": False
         },
     ]
     
-    # Printful Store API endpoint
-    store_id = os.environ.get("PRINTFUL_STORE_ID", "")
-    
-    if not store_id:
-        return demo_products
-    
-    try:
-        # Printful Store API uses store ID
-        api_url = f"https://api.printful.com/store/products"
-        headers = {
-            "Authorization": f"Bearer {os.environ.get('PRINTFUL_API_KEY', '')}",
-        }
-        
-        response = requests.get(api_url, headers=headers, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        
-        # Transform Printful response to our format
-        products = []
-        for item in data.get("result", []):
-            sync_product = item.get("sync_product", {})
-            sync_variants = item.get("sync_variants", [])
-            
-            if sync_variants:
-                variant = sync_variants[0]
-                products.append({
-                    "id": sync_product.get("id"),
-                    "name": sync_product.get("name", ""),
-                    "description": sync_product.get("description", ""),
-                    "price": variant.get("retail_price", "0.00"),
-                    "currency": variant.get("currency", "USD"),
-                    "image": sync_product.get("thumbnail_url", ""),
-                    "variants": [v.get("name", "") for v in sync_variants],
-                    "url": sync_product.get("url", ""),
-                })
-        
-        # If no products from API, return demo products
-        return products if products else demo_products
-    except Exception as e:
-        print(f"Printful API error: {e}")
-        # Return demo products on error
-        return demo_products
+    return products
 
 
 @app.route("/merch")
 def merch():
-    """Merch page with Printful products."""
+    """Merch page with Merchbar affiliate products."""
     try:
-        # Get Printful products
-        products = get_printful_products()
-        return render_template("merch.html", products=products)
+        # Get curated Merchbar products
+        products = get_merchbar_products()
+        
+        # Optional: filter by category from query params
+        category_filter = request.args.get('category', '').strip()
+        if category_filter:
+            products = [p for p in products if category_filter.lower() in p['category'].lower()]
+        
+        # Get all unique categories for filter
+        categories = sorted(set(p['category'] for p in products))
+        
+        return render_template("merch.html", products=products, categories=categories, category_filter=category_filter)
     except Exception as e:
         print(f"Error fetching merch: {e}")
-        return render_template("merch.html", products=[], error=str(e))
+        return render_template("merch.html", products=[], categories=[], error=str(e))
 
 
-@app.route("/checkout")
-def checkout():
-    """Checkout page."""
-    # Get cart from session
-    cart = session.get('cart', [])
-    if not cart:
-        return redirect(url_for('merch'))
-    
-    # Calculate total
-    total = sum(float(item['price']) * item['quantity'] for item in cart)
-    
-    stripe_key = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
-    return render_template("checkout.html", cart=cart, total=total, stripe_publishable_key=stripe_key)
+# DISABLED: Cart/checkout functionality replaced with Merchbar direct links
+# @app.route("/checkout")
+# def checkout():
+#     """Checkout page."""
+#     # Get cart from session
+#     cart = session.get('cart', [])
+#     if not cart:
+#         return redirect(url_for('merch'))
+#     
+#     # Calculate total
+#     total = sum(float(item['price']) * item['quantity'] for item in cart)
+#     
+#     stripe_key = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+#     return render_template("checkout.html", cart=cart, total=total, stripe_publishable_key=stripe_key)
 
 
+# DISABLED: Stripe checkout functionality replaced with Merchbar direct links
+# Keeping code commented for reference if switching back to custom e-commerce
+"""
 @app.route("/create-checkout-session", methods=["POST"])
 def create_checkout_session():
-    """Create Stripe checkout session."""
+    # Create Stripe checkout session
     try:
         # Check if Stripe is configured
         if not stripe.api_key or stripe.api_key == "":
@@ -2178,6 +2239,7 @@ def create_checkout_session():
     except Exception as e:
         print(f"Stripe error: {e}")
         return jsonify({'error': str(e)}), 500
+"""
 
 
 def create_printful_order(checkout_session, cart_data=None):
@@ -2535,9 +2597,11 @@ def order_success():
         return redirect(url_for('merch'))
 
 
+# DISABLED: Cart API replaced with Merchbar direct links
+"""
 @app.route("/api/cart", methods=["GET", "POST", "DELETE"])
 def cart_api():
-    """API endpoint for cart operations."""
+    # API endpoint for cart operations
     if request.method == "GET":
         # Get cart
         cart = session.get('cart', [])
@@ -2584,6 +2648,7 @@ def cart_api():
         
         total = sum(float(item['price']) * item['quantity'] for item in cart) if cart else 0
         return jsonify({'success': True, 'cart': cart, 'total': total})
+"""
 
 
 @app.route("/subscribe")

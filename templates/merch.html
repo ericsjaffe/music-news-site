@@ -2,17 +2,17 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Merch Store - Music Hub | Official Music Merchandise</title>
+  <title>Official Band Merch - Music Hub | Shop Artist Merchandise</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Shop official Music Hub merchandise - t-shirts, hoodies, posters and more. High quality music-themed apparel and collectibles.">
-  <meta name="keywords" content="music merch, band merchandise, music t-shirts, vinyl posters, music hoodies">
+  <meta name="description" content="Shop official band merchandise from your favorite artists. T-shirts, vinyl, hoodies, posters and more from Taylor Swift, Metallica, Drake, and hundreds of other artists.">
+  <meta name="keywords" content="band merch, artist merchandise, music t-shirts, vinyl records, concert merch, official band store">
   <meta name="theme-color" content="#ec4899">
   
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://music-news-site.onrender.com/merch">
-  <meta property="og:title" content="Music Hub Merch Store">
-  <meta property="og:description" content="Shop official music merchandise and exclusive gear">
+  <meta property="og:title" content="Official Band Merchandise Store">
+  <meta property="og:description" content="Shop official merchandise from your favorite artists">
   
   <link rel="canonical" href="https://music-news-site.onrender.com/merch">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -59,787 +59,178 @@
   <main class="container">
     <!-- Page Title -->
     <div class="page-title-section">
-      <h2 class="page-title">Official Merch Store</h2>
-      <p class="page-subtitle">Premium music merchandise and exclusive gear</p>
+      <h2 class="page-title">🛍️ Official Band Merchandise</h2>
+      <p class="page-subtitle">Shop authentic merch from your favorite artists</p>
+      <p class="powered-by" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+        Powered by <a href="https://www.merchbar.com" target="_blank" rel="noopener" style="color: var(--primary-color); text-decoration: none; font-weight: bold;">Merchbar</a> - The world's largest marketplace for official band merchandise
+      </p>
     </div>
 
     {% if error %}
     <div class="error-message" style="text-align: center; padding: 1rem; background: rgba(255,193,7,0.1); border-radius: 0.5rem; margin-bottom: 2rem;">
-      <p>⚠️ Unable to load products. Showing demo items.</p>
+      <p>⚠️ {{ error }}</p>
+    </div>
+    {% endif %}
+
+    {% if categories %}
+    <!-- Category Filter -->
+    <div class="filter-section" style="margin-bottom: 2rem; text-align: center;">
+      <div class="filter-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+        <a href="/merch" class="filter-btn {% if not category_filter %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 2rem; background: {% if not category_filter %}var(--primary-color){% else %}rgba(255,255,255,0.1){% endif %}; color: white; text-decoration: none; font-size: 0.9rem; transition: all 0.2s;">
+          All Artists
+        </a>
+        {% for category in categories %}
+        <a href="/merch?category={{ category }}" class="filter-btn {% if category_filter == category %}active{% endif %}" style="padding: 0.5rem 1rem; border-radius: 2rem; background: {% if category_filter == category %}var(--primary-color){% else %}rgba(255,255,255,0.1){% endif %}; color: white; text-decoration: none; font-size: 0.9rem; transition: all 0.2s;">
+          {{ category }}
+        </a>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
 
     {% if products %}
-    <!-- Product Grid -->
-    <div class="merch-grid">
+    <!-- Artist Grid -->
+    <div class="merch-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
       {% for product in products %}
-      <div class="merch-card">
-        <div class="merch-image-wrapper">
-          <img src="{{ product.image }}" alt="{{ product.name }}" class="merch-image" loading="lazy">
-          <div class="merch-overlay">
-            <button class="btn-quick-view" onclick="viewProduct({{ product.id }})">
-              👁️ Quick View
-            </button>
+      <div class="artist-card" style="background: var(--card-background); border-radius: 1rem; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;" onclick="window.open('{{ product.merchbar_url }}', '_blank')">
+        <div class="artist-image-wrapper" style="position: relative; padding-top: 100%; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <img src="{{ product.image }}" alt="{{ product.artist }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" loading="lazy" onerror="this.style.opacity='0'">
+          <div class="artist-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.7)); display: flex; align-items: flex-end; padding: 1.5rem; opacity: 0; transition: opacity 0.2s;">
+            <span style="color: white; font-weight: bold; font-size: 1.1rem;">Shop Now →</span>
           </div>
         </div>
         
-        <div class="merch-info">
-          <h3 class="merch-name">{{ product.name }}</h3>
-          <p class="merch-description">{{ product.description }}</p>
+        <div class="artist-info" style="padding: 1.5rem;">
+          <h3 class="artist-name" style="margin: 0 0 0.5rem 0; font-size: 1.3rem; color: var(--text-color);">{{ product.artist }}</h3>
+          <p class="artist-category" style="margin: 0 0 0.75rem 0; font-size: 0.85rem; color: var(--primary-color); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">{{ product.category }}</p>
+          <p class="artist-description" style="margin: 0 0 1rem 0; font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5;">{{ product.description }}</p>
           
-          {% if product.variants %}
-          <div class="merch-variants">
-            <span class="variants-label">Select Size:</span>
-            {% for variant in product.variants %}
-              <button class="variant-button" data-product-id="{{ product.id }}" data-variant="{{ variant }}" onclick="selectVariant({{ product.id }}, '{{ variant }}', this)">
-                {{ variant }}
-              </button>
-            {% endfor %}
-          </div>
-          {% endif %}
-          
-          <div class="merch-footer">
-            <div class="merch-price">
-              <span class="price-amount">${{ product.price }}</span>
-              <span class="price-currency">{{ product.currency }}</span>
-            </div>
-            
-            <button class="btn-add-cart" id="add-cart-{{ product.id }}" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }}, '{{ product.image }}')">
-              🛒 Add to Cart
-            </button>
-          </div>
+          <a href="{{ product.merchbar_url }}" target="_blank" rel="noopener" class="btn-shop-now" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--primary-color); color: white; text-decoration: none; border-radius: 0.5rem; font-weight: 600; transition: all 0.2s; width: 100%; justify-content: center;" onclick="event.stopPropagation()">
+            🛍️ Shop {{ product.artist }}
+          </a>
         </div>
       </div>
       {% endfor %}
     </div>
-    {% else %}
-    <!-- Coming Soon State -->
-    <div class="coming-soon-container">
-      <div class="coming-soon-icon">🛍️</div>
-      <h2 class="coming-soon-title">Merch Store Coming Soon</h2>
-      <p class="coming-soon-subtitle">We're working on bringing you awesome music merchandise</p>
-      
-      <div class="coming-soon-features">
-        <div class="feature-item">
-          <span class="feature-icon">👕</span>
-          <span>Official apparel</span>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">💿</span>
-          <span>Vinyl & CDs</span>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">🎁</span>
-          <span>Exclusive collectibles</span>
-        </div>
-      </div>
 
-      <div class="coming-soon-cta">
-        <p>Get notified about exclusive drops and sales</p>
-        <a href="/subscribe" class="cta-button">Subscribe to Newsletter</a>
+    <!-- Browse More Section -->
+    <div class="browse-more-section" style="background: var(--card-background); border-radius: 1rem; padding: 3rem 2rem; text-align: center; margin: 3rem 0;">
+      <h3 style="margin: 0 0 1rem 0; font-size: 1.8rem; color: var(--text-color);">Can't find your favorite artist?</h3>
+      <p style="margin: 0 0 2rem 0; color: var(--text-secondary); font-size: 1.1rem;">Browse thousands of artists on Merchbar</p>
+      <a href="https://www.merchbar.com?ref=musichub" target="_blank" rel="noopener" class="btn-browse-all" style="display: inline-flex; align-items: center; gap: 0.75rem; padding: 1rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 0.75rem; font-weight: 700; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+        Browse All Artists on Merchbar →
+      </a>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 3rem 0;">
+      <div class="info-card" style="background: var(--card-background); padding: 2rem; border-radius: 1rem; text-align: center;">
+        <div class="info-icon" style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-color);">100% Official</h4>
+        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">All merchandise is officially licensed and authentic</p>
       </div>
+      
+      <div class="info-card" style="background: var(--card-background); padding: 2rem; border-radius: 1rem; text-align: center;">
+        <div class="info-icon" style="font-size: 3rem; margin-bottom: 1rem;">🚚</div>
+        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-color);">Fast Shipping</h4>
+        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Quick delivery on all orders worldwide</p>
+      </div>
+      
+      <div class="info-card" style="background: var(--card-background); padding: 2rem; border-radius: 1rem; text-align: center;">
+        <div class="info-icon" style="font-size: 3rem; margin-bottom: 1rem;">💯</div>
+        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-color);">Secure Checkout</h4>
+        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Safe and secure payment processing</p>
+      </div>
+      
+      <div class="info-card" style="background: var(--card-background); padding: 2rem; border-radius: 1rem; text-align: center;">
+        <div class="info-icon" style="font-size: 3rem; margin-bottom: 1rem;">🎁</div>
+        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-color);">Exclusive Items</h4>
+        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Limited editions and tour exclusives available</p>
+      </div>
+    </div>
+    {% else %}
+    <!-- No Products State -->
+    <div class="coming-soon-container" style="text-align: center; padding: 4rem 2rem;">
+      <div class="coming-soon-icon" style="font-size: 5rem; margin-bottom: 1.5rem;">🛍️</div>
+      <h2 class="coming-soon-title" style="margin: 0 0 1rem 0; font-size: 2rem;">Merch Store Coming Soon</h2>
+      <p class="coming-soon-subtitle" style="color: var(--text-secondary); font-size: 1.1rem;">We're working on bringing you awesome music merchandise</p>
     </div>
     {% endif %}
-
-    <!-- Shopping Cart Sidebar -->
-    <div id="cart-sidebar" class="cart-sidebar">
-      <div class="cart-header">
-        <h3>🛒 Shopping Cart</h3>
-        <button class="btn-close-cart" onclick="toggleCart()">✕</button>
-      </div>
-      <div class="cart-items" id="cart-items">
-        <p class="cart-empty">Your cart is empty</p>
-      </div>
-      <div class="cart-footer">
-        <div class="cart-total">
-          <span>Total:</span>
-          <span id="cart-total-amount">$0.00</span>
-        </div>
-        <button class="btn-checkout" onclick="goToCheckout()">Proceed to Checkout</button>
-      </div>
-    </div>
-
-    <!-- Cart Button (fixed position) -->
-    <button id="cart-button" class="cart-button" onclick="toggleCart()">
-      🛒 <span id="cart-count">0</span>
-    </button>
   </main>
 
-  <script>
-    // Cart functionality with backend API
-    let cart = [];
-
-    // Load cart on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      loadCart();
-    });
-
-    async function loadCart() {
-      try {
-        const response = await fetch('/api/cart');
-        const data = await response.json();
-        cart = data.cart || [];
-        updateCartUI();
-      } catch (error) {
-        console.error('Error loading cart:', error);
-      }
-    }
-
-    // Store selected variants
-    const selectedVariants = {};
-
-    function selectVariant(productId, variant, button) {
-      // Deselect all variants for this product
-      document.querySelectorAll(`[data-product-id="${productId}"]`).forEach(btn => {
-        btn.classList.remove('selected');
-      });
-      
-      // Select this variant
-      button.classList.add('selected');
-      selectedVariants[productId] = variant;
-    }
-
-    async function addToCart(productId, name, price, image) {
-      // Check if a size is selected for products with variants
-      const variantButtons = document.querySelectorAll(`[data-product-id="${productId}"]`);
-      if (variantButtons.length > 0 && !selectedVariants[productId]) {
-        showNotification('Please select a size first!');
-        return;
-      }
-      
-      const variant = selectedVariants[productId] || null;
-      const fullName = variant ? `${name} (${variant})` : name;
-      
-      try {
-        const response = await fetch('/api/cart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: productId,
-            name: fullName,
-            price: price,
-            description: variant || '',
-            image: image,
-            variant: variant
-          })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-          cart = data.cart;
-          updateCartUI();
-          showNotification(`Added ${fullName} to cart! 🛒`);
-          // Clear selection after adding to cart
-          delete selectedVariants[productId];
-          variantButtons.forEach(btn => btn.classList.remove('selected'));
-        }
-      } catch (error) {
-        console.error('Error adding to cart:', error);
-        showNotification('Error adding to cart');
-      }
-    }
-
-    async function removeFromCart(productId) {
-      try {
-        const response = await fetch(`/api/cart?id=${productId}`, {
-          method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-          cart = data.cart;
-          updateCartUI();
-        }
-      } catch (error) {
-        console.error('Error removing from cart:', error);
-      }
-    }
-
-    function updateCartUI() {
-      const cartCount = document.getElementById('cart-count');
-      const cartItems = document.getElementById('cart-items');
-      const cartTotal = document.getElementById('cart-total-amount');
-      
-      // Update count
-      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-      cartCount.textContent = totalItems;
-      
-      // Update cart items
-      if (cart.length === 0) {
-        cartItems.innerHTML = '<p class="cart-empty">Your cart is empty</p>';
-        cartTotal.textContent = '$0.00';
-      } else {
-        cartItems.innerHTML = cart.map(item => `
-          <div class="cart-item">
-            ${item.image ? `<img src="${item.image}" alt="${item.name}" class="cart-item-image">` : ''}
-            <div class="cart-item-info">
-              <div class="cart-item-name">${item.name}</div>
-              ${item.variant ? `<div class="cart-item-variant">Size: ${item.variant}</div>` : ''}
-              <div class="cart-item-price">$${item.price} × ${item.quantity}</div>
-            </div>
-            <button class="btn-remove" onclick="removeFromCart(${item.id})">✕</button>
-          </div>
-        `).join('');
-        
-        const total = cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
-        cartTotal.textContent = `$${total.toFixed(2)}`;
-      }
-    }
-
-    function toggleCart() {
-      const sidebar = document.getElementById('cart-sidebar');
-      sidebar.classList.toggle('open');
-    }
-
-    function goToCheckout() {
-      if (cart.length === 0) {
-        showNotification('Your cart is empty!');
-        return;
-      }
-      window.location.href = '/checkout';
-    }
-
-    function viewProduct(productId) {
-      showNotification('Product details coming soon!');
-    }
-
-    function showNotification(message) {
-      const notification = document.createElement('div');
-      notification.className = 'merch-notification';
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      
-      setTimeout(() => notification.classList.add('show'), 10);
-      
-      setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
-    }
-  </script>
-
   <style>
-    .merch-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 2rem;
-      margin-top: 2rem;
-      padding-bottom: 3rem;
+    /* Hover effects */
+    .artist-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     }
-
-    .merch-card {
-      background: var(--bg-card);
-      border-radius: 1rem;
-      overflow: hidden;
-      border: 1px solid var(--border-color);
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .merch-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 32px rgba(236, 72, 153, 0.3);
-    }
-
-    .merch-image-wrapper {
-      position: relative;
-      width: 100%;
-      padding-top: 100%;
-      overflow: hidden;
-      background: var(--bg-elevated);
-    }
-
-    .merch-image {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s;
-    }
-
-    .merch-card:hover .merch-image {
-      transform: scale(1.05);
-    }
-
-    .merch-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .merch-card:hover .merch-overlay {
+    
+    .artist-card:hover .artist-overlay {
       opacity: 1;
     }
-
-    .btn-quick-view {
-      padding: 0.75rem 1.5rem;
-      background: white;
-      color: #1a1a1a;
-      border: none;
-      border-radius: 999px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .btn-quick-view:hover {
-      transform: scale(1.05);
-    }
-
-    .merch-info {
-      padding: 1.5rem;
-    }
-
-    .merch-name {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem;
-      color: var(--text-primary);
-    }
-
-    .merch-description {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin: 0 0 1rem;
-      line-height: 1.5;
-    }
-
-    .merch-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
-    .merch-price {
-      display: flex;
-      align-items: baseline;
-      gap: 0.25rem;
-    }
-
-    .price-amount {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--accent-primary);
-    }
-
-    .price-currency {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-    }
-
-    .btn-add-cart {
-      padding: 0.625rem 1.25rem;
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .btn-add-cart:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4);
-    }
-
-    .merch-variants {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .variants-label {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      font-weight: 600;
-    }
-
-    .variant-button {
-      padding: 0.5rem 1rem;
-      background: var(--bg-elevated);
-      border: 2px solid var(--border-color);
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: all 0.2s;
-      font-weight: 600;
-    }
-
-    .variant-button:hover {
-      border-color: var(--accent-primary);
-      background: rgba(236, 72, 153, 0.1);
+    
+    .btn-shop-now:hover {
+      background: var(--primary-dark);
       transform: translateY(-2px);
-    }
-
-    .variant-button.selected {
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      border-color: var(--accent-primary);
-      color: white;
       box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
     }
-
-    .variant-badge {
-      padding: 0.25rem 0.625rem;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: 0.25rem;
-      font-size: 0.75rem;
-      color: var(--text-secondary);
+    
+    .btn-browse-all:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
     }
-
-    .merch-notification {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: var(--bg-card);
-      color: var(--text-primary);
-      padding: 1rem 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      border: 1px solid var(--accent-primary);
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s;
-      z-index: 9999;
+    
+    .filter-btn:hover {
+      background: var(--primary-color) !important;
     }
-
-    .merch-notification.show {
-      transform: translateY(0);
-      opacity: 1;
+    
+    .info-card {
+      transition: transform 0.2s;
     }
-
-    .coming-soon-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
-      text-align: center;
-      padding: 3rem 1rem;
-    }
-
-    .coming-soon-icon {
-      font-size: 8rem;
-      margin-bottom: 1rem;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
-    }
-
-    .coming-soon-title {
-      font-size: 3rem;
-      margin: 0 0 1rem;
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .coming-soon-subtitle {
-      font-size: 1.25rem;
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 3rem;
-    }
-
-    .coming-soon-features {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2rem;
-      justify-content: center;
-      margin-bottom: 3rem;
-    }
-
-    .feature-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 1.5rem;
-      background: var(--bg-card);
-      border-radius: 1rem;
-      border: 1px solid var(--border-color);
-      min-width: 160px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .feature-item:hover {
+    
+    .info-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.3);
     }
-
-    .feature-icon {
-      font-size: 2.5rem;
-    }
-
-    .coming-soon-cta {
-      margin-top: 2rem;
-    }
-
-    .coming-soon-cta p {
-      margin-bottom: 1rem;
-      color: var(--text-secondary);
-    }
-
-    .cta-button {
-      display: inline-block;
-      padding: 1rem 2rem;
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      color: white;
-      text-decoration: none;
-      border-radius: 999px;
-      font-weight: 700;
-      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.5);
-      transition: all 0.3s;
-    }
-
-    .cta-button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 12px 32px rgba(236, 72, 153, 0.6);
-    }
-
+    
+    /* Responsive adjustments */
     @media (max-width: 768px) {
       .merch-grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+        gap: 1rem !important;
       }
-
-      .merch-notification {
-        bottom: 1rem;
-        right: 1rem;
-        left: 1rem;
+      
+      .artist-info {
+        padding: 1rem !important;
       }
-    }
-
-    @media (max-width: 640px) {
-      .merch-grid {
-        grid-template-columns: 1fr;
+      
+      .artist-name {
+        font-size: 1.1rem !important;
       }
-
-      .coming-soon-icon {
-        font-size: 5rem;
+      
+      .artist-description {
+        font-size: 0.85rem !important;
       }
-
-      .coming-soon-title {
-        font-size: 2rem;
+      
+      .info-grid {
+        grid-template-columns: 1fr !important;
       }
-
-      .coming-soon-subtitle {
-        font-size: 1rem;
+      
+      .filter-buttons {
+        gap: 0.25rem !important;
       }
-
-      .feature-item {
-        min-width: 120px;
-        padding: 1rem;
-      }
-    }
-
-    /* Cart Sidebar */
-    .cart-sidebar {
-      position: fixed;
-      top: 0;
-      right: -400px;
-      width: 400px;
-      height: 100vh;
-      background: var(--bg-card);
-      box-shadow: -4px 0 20px rgba(0,0,0,0.3);
-      transition: right 0.3s;
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .cart-sidebar.open {
-      right: 0;
-    }
-
-    .cart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .cart-header h3 {
-      margin: 0;
-      font-size: 1.25rem;
-    }
-
-    .btn-close-cart {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--text-secondary);
-      padding: 0.25rem 0.5rem;
-    }
-
-    .btn-close-cart:hover {
-      color: var(--text-primary);
-    }
-
-    .cart-items {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-    }
-
-    .cart-empty {
-      text-align: center;
-      color: var(--text-secondary);
-      padding: 2rem;
-    }
-
-    .cart-item {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      padding: 1rem;
-      background: var(--bg-elevated);
-      border-radius: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .cart-item-image {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      border-radius: 0.375rem;
-      border: 1px solid var(--border-color);
-    }
-
-    .cart-item-info {
-      flex: 1;
-    }
-
-    .cart-item-name {
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-      font-size: 0.9rem;
-    }
-
-    .cart-item-variant {
-      color: var(--accent-primary);
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .cart-item-price {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-    }
-
-    .btn-remove {
-      background: rgba(255,0,0,0.1);
-      border: none;
-      color: #ff4444;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-
-    .btn-remove:hover {
-      background: rgba(255,0,0,0.2);
-    }
-
-    .cart-footer {
-      padding: 1.5rem;
-      border-top: 1px solid var(--border-color);
-      padding-bottom: 2rem; /* Extra padding on mobile */
-    }
-
-    .cart-total {
-      display: flex;
-      justify-content: space-between;
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-
-    .btn-checkout {
-      width: 100%;
-      padding: 1rem;
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: transform 0.2s;
-      margin-bottom: 1rem; /* Space above button for easier clicking */
-    }
-
-    .btn-checkout:hover {
-      transform: scale(1.02);
-    }
-
-    /* Cart Button */
-    .cart-button {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      color: white;
-      border: none;
-      padding: 1rem 1.5rem;
-      border-radius: 999px;
-      font-size: 1.25rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4);
-      transition: transform 0.2s;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .cart-button:hover {
-      transform: scale(1.05);
-    }
-
-    #cart-count {
-      background: white;
-      color: var(--accent-primary);
-      padding: 0.25rem 0.5rem;
-      border-radius: 999px;
-      font-size: 0.9rem;
-      min-width: 24px;
-      text-align: center;
-    }
-
-    @media (max-width: 640px) {
-      .cart-sidebar {
-        width: 100%;
-        right: -100%;
-      }
-
-      .cart-button {
-        bottom: 1rem;
-        right: 1rem;
+      
+      .filter-btn {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.85rem !important;
       }
     }
   </style>
+
+  <footer style="background: var(--card-background); margin-top: 4rem; padding: 2rem 0; text-align: center; color: var(--text-secondary);">
+    <div class="container">
+      <p style="margin: 0 0 1rem 0;">All merchandise sold through <a href="https://www.merchbar.com" target="_blank" rel="noopener" style="color: var(--primary-color); text-decoration: none;">Merchbar</a></p>
+      <p style="margin: 0; font-size: 0.9rem;">Music Hub is a participant in the Merchbar affiliate program</p>
+    </div>
+  </footer>
 </body>
 </html>

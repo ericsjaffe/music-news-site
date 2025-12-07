@@ -1910,8 +1910,8 @@ body {
   box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
 }
 
-/* PWA Install Button */
-.pwa-install-btn {
+/* PWA Install Button - DISABLED */
+/* .pwa-install-btn {
   display: none;
   padding: 0.5rem 1rem;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -1938,7 +1938,7 @@ body {
   50% {
     box-shadow: 0 2px 16px rgba(236, 72, 153, 0.5);
   }
-}
+} */
 
 /* Artist Image */
 .artist-image {

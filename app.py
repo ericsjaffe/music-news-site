@@ -1586,7 +1586,9 @@ def api_artist_events():
     artist = request.args.get('artist', '').strip()
     
     if not artist:
-        return jsonify({'error': 'Artist name required'}), 400
+        response = jsonify({'error': 'Artist name required'})
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        return response, 400
     
     try:
         # Fetch events for this artist (no location filter for followed artists)
@@ -1598,10 +1600,14 @@ def api_artist_events():
             sort='date,asc'
         )
         
-        return jsonify({'events': events})
+        response = jsonify({'events': events})
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        return response
     except Exception as e:
         print(f"Error fetching artist events: {str(e)}")
-        return jsonify({'error': 'Failed to fetch events'}), 500
+        error_response = jsonify({'error': 'Failed to fetch events'})
+        error_response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        return error_response, 500
 
 
 @app.route("/api/recommended-events")
@@ -1621,10 +1627,14 @@ def api_recommended_events():
             sort='relevance,desc'
         )
         
-        return jsonify({'events': events})
+        response = jsonify({'events': events})
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        return response
     except Exception as e:
         print(f"Error fetching recommended events: {str(e)}")
-        return jsonify({'error': 'Failed to fetch recommendations'}), 500
+        error_response = jsonify({'error': 'Failed to fetch recommendations'})
+        error_response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        return error_response, 500
 
 
 @app.route("/touring")
@@ -2685,9 +2695,13 @@ def load_more():
             else:
                 a["published_at_human"] = ""
         
-        return {"articles": paginated, "has_more": offset + limit < len(all_articles)}
+        response = jsonify({"articles": paginated, "has_more": offset + limit < len(all_articles)})
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        return response
     except Exception as e:
-        return {"error": str(e)}, 500
+        error_response = jsonify({"error": str(e)})
+        error_response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+        return error_response, 500
 
 
 @app.route("/offline")
@@ -3060,9 +3074,19 @@ Allow: /
 Allow: /static/*.css
 Allow: /static/*.js
 Allow: /static/*.png
+
+# Block API endpoints from indexing
+Disallow: /api/
+Disallow: /webhook/
+
+# Block utility and transactional pages
+Disallow: /offline
+Disallow: /order-success
+Disallow: /sms/
+
+# Block admin and unsubscribe pages
 Disallow: /admin/
 Disallow: /newsletter/unsubscribe
-Disallow: /sms/unsubscribe
 
 # Crawl-delay for politeness
 Crawl-delay: 1

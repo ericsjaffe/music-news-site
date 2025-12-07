@@ -2006,41 +2006,42 @@ def videos():
 
 def get_printful_products():
     """Fetch products from Printful Store API."""
+    # Demo products to show if API fails or returns nothing
+    demo_products = [
+        {
+            "id": 1,
+            "name": "Music Hub Classic T-Shirt",
+            "description": "Premium cotton t-shirt with Music Hub logo",
+            "price": "24.99",
+            "currency": "USD",
+            "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500",
+            "variants": ["S", "M", "L", "XL"],
+        },
+        {
+            "id": 2,
+            "name": "Music Lover Hoodie",
+            "description": "Cozy hoodie for true music fans",
+            "price": "44.99",
+            "currency": "USD",
+            "image": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500",
+            "variants": ["S", "M", "L", "XL"],
+        },
+        {
+            "id": 3,
+            "name": "Vinyl Enthusiast Poster",
+            "description": "High-quality print for your music room",
+            "price": "19.99",
+            "currency": "USD",
+            "image": "https://images.unsplash.com/photo-1594623930572-300a3011d9ae?w=500",
+            "variants": ["18x24", "24x36"],
+        },
+    ]
+    
     # Printful Store API endpoint
-    # Note: You'll need to set PRINTFUL_STORE_ID in your environment
     store_id = os.environ.get("PRINTFUL_STORE_ID", "")
     
     if not store_id:
-        # Return sample products for demo
-        return [
-            {
-                "id": 1,
-                "name": "Music Hub Classic T-Shirt",
-                "description": "Premium cotton t-shirt with Music Hub logo",
-                "price": "24.99",
-                "currency": "USD",
-                "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500",
-                "variants": ["S", "M", "L", "XL"],
-            },
-            {
-                "id": 2,
-                "name": "Music Lover Hoodie",
-                "description": "Cozy hoodie for true music fans",
-                "price": "44.99",
-                "currency": "USD",
-                "image": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500",
-                "variants": ["S", "M", "L", "XL"],
-            },
-            {
-                "id": 3,
-                "name": "Vinyl Enthusiast Poster",
-                "description": "High-quality print for your music room",
-                "price": "19.99",
-                "currency": "USD",
-                "image": "https://images.unsplash.com/photo-1594623930572-300a3011d9ae?w=500",
-                "variants": ["18x24", "24x36"],
-            },
-        ]
+        return demo_products
     
     try:
         # Printful Store API uses store ID
@@ -2072,11 +2073,12 @@ def get_printful_products():
                     "url": sync_product.get("url", ""),
                 })
         
-        return products
+        # If no products from API, return demo products
+        return products if products else demo_products
     except Exception as e:
         print(f"Printful API error: {e}")
-        # Return sample products on error
-        return []
+        # Return demo products on error
+        return demo_products
 
 
 @app.route("/merch")

@@ -2156,7 +2156,11 @@ def create_checkout_session():
             mode='payment',
             success_url=request.host_url + 'order-success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=request.host_url + 'checkout',
-            metadata={'cart': str(cart)}  # Store cart for order processing
+            metadata={'cart': str(cart)},  # Store cart for order processing
+            billing_address_collection='required',
+            shipping_address_collection={
+                'allowed_countries': ['US', 'CA'],
+            }
         )
         
         return jsonify({'id': checkout_session.id})

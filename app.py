@@ -2260,6 +2260,9 @@ def stripe_webhook():
             # Retrieve full session details including shipping
             full_session = stripe.checkout.Session.retrieve(checkout_session['id'])
             
+            # Send order confirmation email
+            send_order_confirmation_email(full_session)
+            
             # Create Printful order
             printful_order = create_printful_order(full_session)
             
@@ -2273,6 +2276,188 @@ def stripe_webhook():
     except Exception as e:
         print(f"Webhook error: {e}")
         return jsonify({'error': str(e)}), 400
+
+
+def send_order_confirmation_email(checkout_session):
+    """Send order confirmation email to customer."""
+    try:
+        # Get customer email
+        customer_email = checkout_session.get('customer_details', {}).get('email')
+        if not customer_email:
+            print("No customer email found")
+            return False
+        
+        # Get cart from metadata
+        cart_data = eval(checkout_session.metadata.get('cart', '[]'))
+        
+        # Build order items HTML
+        items_html = ""
+        items_text = ""
+        for item in cart_data:
+            item_total = float(item.get('price', 0)) * int(item.get('quantity', 1))
+            items_html += f"""
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+                    {item.get('name', 'Item')}
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+                    {item.get('quantity', 1)}
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+                    ${item.get('price', '0.00')}
+                </td>
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">
+                    ${item_total:.2f}
+                </td>
+            </tr>
+            """
+            items_text += f"{item.get('name', 'Item')} - Qty: {item.get('quantity', 1)} - ${item_total:.2f}\n"
+        
+        # Get shipping address
+        shipping = checkout_session.get('shipping_details') or checkout_session.get('shipping', {})
+        address_html = ""
+        address_text = ""
+        if shipping:
+            address = shipping.get('address', {})
+            address_html = f"""
+            <p><strong>Shipping Address:</strong><br>
+            {shipping.get('name', '')}<br>
+            {address.get('line1', '')}<br>
+            {address.get('line2', '') + '<br>' if address.get('line2') else ''}
+            {address.get('city', '')}, {address.get('state', '')} {address.get('postal_code', '')}<br>
+            {address.get('country', '')}</p>
+            """
+            address_text = f"""Shipping Address:
+{shipping.get('name', '')}
+{address.get('line1', '')}
+{address.get('line2', '') + chr(10) if address.get('line2') else ''}{address.get('city', '')}, {address.get('state', '')} {address.get('postal_code', '')}
+{address.get('country', '')}"""
+        
+        total = checkout_session.amount_total / 100
+        order_id = checkout_session.id
+        
+        # HTML email
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #ec4899, #8b5cf6); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 32px;">Order Confirmed! ✅</h1>
+            </div>
+            
+            <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+                <p style="font-size: 18px; margin-bottom: 20px;">Thank you for your order!</p>
+                
+                <p>Your order has been confirmed and is being prepared for shipment. You'll receive another email with tracking information once your order ships.</p>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
+                    <h2 style="margin-top: 0; color: #ec4899;">Order Details</h2>
+                    <p><strong>Order ID:</strong> {order_id}</p>
+                    <p><strong>Order Total:</strong> ${total:.2f} USD</p>
+                </div>
+                
+                {address_html}
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
+                    <h2 style="margin-top: 0; color: #ec4899;">Order Items</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f3f4f6;">
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Item</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">Qty</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Price</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items_html}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f3f4f6; font-weight: bold;">
+                                <td colspan="3" style="padding: 12px; text-align: right;">Total:</td>
+                                <td style="padding: 12px; text-align: right;">${total:.2f}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+                    <p style="margin: 0;"><strong>📦 What's Next?</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>Your order will be printed and prepared (1-2 days)</li>
+                        <li>You'll receive tracking info when it ships</li>
+                        <li>Estimated delivery: 5-7 business days</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://music-news-site.onrender.com/merch" style="display: inline-block; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold;">Continue Shopping</a>
+                </div>
+                
+                <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px;">
+                    Questions? Reply to this email or visit our website.<br>
+                    Music Hub - Your Music Merchandise Store
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text email
+        text = f"""
+Order Confirmed!
+
+Thank you for your order!
+
+Your order has been confirmed and is being prepared for shipment. You'll receive another email with tracking information once your order ships.
+
+Order Details:
+Order ID: {order_id}
+Order Total: ${total:.2f} USD
+
+{address_text}
+
+Order Items:
+{items_text}
+Total: ${total:.2f}
+
+What's Next?
+- Your order will be printed and prepared (1-2 days)
+- You'll receive tracking info when it ships
+- Estimated delivery: 5-7 business days
+
+Questions? Reply to this email or visit https://music-news-site.onrender.com
+
+Music Hub - Your Music Merchandise Store
+"""
+        
+        # Send email using SendGrid
+        if SENDGRID_AVAILABLE and SENDGRID_API_KEY:
+            print(f"Sending order confirmation to {customer_email}")
+            message = Mail(
+                from_email=Email(SMTP_USERNAME if SMTP_USERNAME != "your-email@gmail.com" else "noreply@musichub.com", "Music Hub"),
+                to_emails=To(customer_email),
+                subject=f"Order Confirmed - #{order_id[-8:]}",
+                plain_text_content=Content("text/plain", text),
+                html_content=Content("text/html", html)
+            )
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            response = sg.send(message)
+            print(f"✅ Order confirmation email sent to {customer_email} (status: {response.status_code})")
+            return True
+        else:
+            print("⚠️  SendGrid not configured, skipping order confirmation email")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error sending order confirmation email: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 @app.route("/order-success")
@@ -2293,6 +2478,9 @@ def order_success():
         # Note: Order creation happens via webhook for reliability
         # But we can also try to create it here as a backup
         if checkout_session.payment_status == 'paid':
+            # Send order confirmation email
+            send_order_confirmation_email(checkout_session)
+            # Create Printful order
             create_printful_order(checkout_session)
         
         return render_template("order_success.html", session=checkout_session)
